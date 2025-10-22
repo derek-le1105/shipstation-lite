@@ -4,10 +4,7 @@ import { AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getCurrentProfile } from "@/lib/auth";
-import {
-  listAddresses,
-  type AddressRecord,
-} from "@/lib/supabase/addresses";
+import { listAddresses, type AddressRecord } from "@/lib/supabase/addresses";
 import {
   listShippingLabelsForUser,
   type ShipStationAddressSnapshot,
@@ -48,15 +45,24 @@ function AddressList({
           </p>
         ) : (
           addresses.map((address) => (
-            <div key={address.id} className="border rounded-md p-4 text-sm space-y-1">
+            <div
+              key={address.id}
+              className="border rounded-md p-4 text-sm space-y-1"
+            >
               <div className="flex items-center gap-2">
                 <span className="font-semibold">
                   {address.label ?? address.contact_name ?? "Untitled"}
                 </span>
-                <Badge variant="outline">{address.address_kind === "ship_from" ? "Ship From" : "Ship To"}</Badge>
+                <Badge variant="outline">
+                  {address.address_kind === "ship_from"
+                    ? "Ship From"
+                    : "Ship To"}
+                </Badge>
               </div>
               <div>{address.address_line1}</div>
-              {address.address_line2 ? <div>{address.address_line2}</div> : null}
+              {address.address_line2 ? (
+                <div>{address.address_line2}</div>
+              ) : null}
               <div>
                 {address.city}, {address.state} {address.postal_code}
               </div>
@@ -72,13 +78,25 @@ function AddressList({
 
 function getSnapshotName(snapshot: ShipStationAddressSnapshot) {
   if (!snapshot) return "N/A";
-  if (snapshot.name && typeof snapshot.name === "string" && snapshot.name.length > 0) {
+  if (
+    snapshot.name &&
+    typeof snapshot.name === "string" &&
+    snapshot.name.length > 0
+  ) {
     return snapshot.name;
   }
-  if (snapshot.company && typeof snapshot.company === "string" && snapshot.company.length > 0) {
+  if (
+    snapshot.company &&
+    typeof snapshot.company === "string" &&
+    snapshot.company.length > 0
+  ) {
     return snapshot.company;
   }
-  if (snapshot.street1 && typeof snapshot.street1 === "string" && snapshot.street1.length > 0) {
+  if (
+    snapshot.street1 &&
+    typeof snapshot.street1 === "string" &&
+    snapshot.street1.length > 0
+  ) {
     return snapshot.street1;
   }
   return "N/A";
@@ -99,7 +117,10 @@ function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
           </p>
         ) : (
           labels.map((label) => (
-            <div key={label.id} className="border rounded-md p-4 flex flex-col gap-2 text-sm">
+            <div
+              key={label.id}
+              className="border rounded-md p-4 flex flex-col gap-2 text-sm"
+            >
               <div className="flex flex-wrap items-center gap-3">
                 <Badge variant="secondary">{label.carrier_code}</Badge>
                 <span className="font-semibold">{label.service_code}</span>
@@ -119,15 +140,23 @@ function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
               </div>
               <div className="flex flex-wrap gap-4">
                 <div>
-                  <h4 className="text-xs uppercase text-muted-foreground">Ship from</h4>
-                  <p className="text-sm">{getSnapshotName(label.ship_from_snapshot)}</p>
+                  <h4 className="text-xs uppercase text-muted-foreground">
+                    Ship from
+                  </h4>
+                  <p className="text-sm">
+                    {getSnapshotName(label.ship_from_snapshot)}
+                  </p>
                 </div>
                 <div>
-                  <h4 className="text-xs uppercase text-muted-foreground">Ship to</h4>
-                  <p className="text-sm">{getSnapshotName(label.ship_to_snapshot)}</p>
+                  <h4 className="text-xs uppercase text-muted-foreground">
+                    Ship to
+                  </h4>
+                  <p className="text-sm">
+                    {getSnapshotName(label.ship_to_snapshot)}
+                  </p>
                 </div>
               </div>
-              {label.label_download_url ? (
+              {/* {label.label_download_url ? (
                 <a
                   href={label.label_download_url}
                   className="text-sm text-primary hover:underline"
@@ -136,7 +165,7 @@ function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
                 >
                   Download label
                 </a>
-              ) : null}
+              ) : null} */}
             </div>
           ))
         )}
@@ -216,8 +245,14 @@ export default async function DashboardPage() {
       </section>
 
       <section className="grid md:grid-cols-2 gap-6">
-        <AddressList title="Saved ship-from addresses" addresses={savedFromAddresses} />
-        <AddressList title="Saved ship-to addresses" addresses={savedToAddresses} />
+        <AddressList
+          title="Saved ship-from addresses"
+          addresses={savedFromAddresses}
+        />
+        <AddressList
+          title="Saved ship-to addresses"
+          addresses={savedToAddresses}
+        />
       </section>
 
       <section>

@@ -5,17 +5,20 @@ export type ShipStationAddress = {
   company?: string | null;
   street1: string;
   street2?: string | null;
+  street3?: string | null;
   city: string;
   state: string;
   postalCode: string;
   country: string;
   phone?: string | null;
   residential?: boolean;
+  addressVerified?: boolean;
 };
 
 export type ShipStationWeight = {
   value: number;
   units: "ounces" | "pounds" | "grams" | "kilograms";
+  WeightUnits?: number;
 };
 
 export type CreateLabelPayload = {
@@ -42,29 +45,39 @@ export type CreateLabelPayload = {
 
 export type ShipStationLabel = {
   shipmentId: number;
+  orderId?: number;
+  orderKey?: string;
+  userId?: number;
+  customerEmail?: string;
+  orderNumber?: string;
+  createDate?: string;
+  shipDate?: string;
+  shipmentCost: number;
+  insuranceCost: number;
+  trackingNumber?: string;
+  isReturnLabel: boolean;
+  batchNumber?: number;
   carrierCode: string;
   serviceCode: string;
   packageCode: string;
   confirmation: string;
-  shipmentCost?: {
-    amount: number;
-    currency: string;
-  };
-  insuranceCost?: {
-    amount: number;
-    currency: string;
-  };
-  labelData?: string;
-  labelDownload?: {
-    href: string;
-    type: string;
-  };
-  trackingNumber?: string;
+  warehouseId?: number;
   voided?: boolean;
+  voidDate?: string;
+  marketplaceNotified?: boolean;
+  notifyErrorMessage?: string;
+  shipTo: ShipStationAddress;
+  weight: ShipStationWeight;
+  dimensions?: {
+    length: number;
+    width: number;
+    height: number;
+    units: "inches" | "centimeters";
+  };
+  insuranceOptions?: unknown;
+  advancedOptions?: unknown;
   shipmentItems?: unknown[];
-  shipmentTo?: unknown;
-  shipmentFrom?: unknown;
-  labelCreateDate?: string;
+  labelData?: string;
 };
 
 export type ShipStationCarrier = {

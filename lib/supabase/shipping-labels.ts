@@ -32,17 +32,15 @@ export type ShippingLabelRecord = {
   shipment_cost: number | null;
   insurance_cost: number | null;
   tracking_number: string | null;
-  label_download_url: string | null;
   label_data_base64: string | null;
-  raw_response: Record<string, unknown> | null;
   created_at: string;
+  shipment_id: number;
 };
 
 type ShippingLabelInsert = Omit<
   ShippingLabelRecord,
-  "id" | "created_at" | "label_download_url" | "label_data_base64"
+  "id" | "created_at" | "label_data_base64"
 > & {
-  label_download_url?: string | null;
   label_data_base64?: string | null;
 };
 
@@ -54,14 +52,16 @@ export type ShippingLabelWithProfile = ShippingLabelRecord & {
   };
 };
 
-async function getClient(client?: ServerSupabaseClient): Promise<ServerSupabaseClient> {
+async function getClient(
+  client?: ServerSupabaseClient
+): Promise<ServerSupabaseClient> {
   if (client) return client;
   return createClient();
 }
 
 export async function insertShippingLabel(
   input: ShippingLabelInsert,
-  client?: ServerSupabaseClient,
+  client?: ServerSupabaseClient
 ): Promise<ShippingLabelRecord> {
   const supabase = await getClient(client);
 
@@ -82,7 +82,7 @@ export async function insertShippingLabel(
 
 export async function listShippingLabelsForUser(
   userId: string,
-  client?: ServerSupabaseClient,
+  client?: ServerSupabaseClient
 ): Promise<ShippingLabelRecord[]> {
   const supabase = await getClient(client);
 
@@ -100,14 +100,14 @@ export async function listShippingLabelsForUser(
 }
 
 export async function listAllShippingLabels(
-  client?: ServerSupabaseClient,
+  client?: ServerSupabaseClient
 ): Promise<ShippingLabelWithProfile[]> {
   const supabase = await getClient(client);
 
   const { data, error } = await supabase
     .from("shipping_labels")
     .select(
-      "*, profiles!shipping_labels_user_id_fkey ( email, full_name, role )",
+      "*, profiles!shipping_labels_user_id_fkey ( email, full_name, role )"
     )
     .order("created_at", { ascending: false });
 

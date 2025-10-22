@@ -40,7 +40,9 @@ function AdminTable({ labels }: { labels: ShippingLabelWithProfile[] }) {
               <td className="px-4 py-3">
                 <div className="flex flex-col">
                   <span className="font-medium">
-                    {label.profiles?.full_name ?? label.profiles?.email ?? "Unknown"}
+                    {label.profiles?.full_name ??
+                      label.profiles?.email ??
+                      "Unknown"}
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {label.profiles?.email ?? "No email"}
@@ -53,10 +55,12 @@ function AdminTable({ labels }: { labels: ShippingLabelWithProfile[] }) {
               <td className="px-4 py-3">{label.service_code}</td>
               <td className="px-4 py-3">{label.tracking_number ?? "—"}</td>
               <td className="px-4 py-3 text-right">
-                {label.shipment_cost ? `$${label.shipment_cost.toFixed(2)}` : "—"}
+                {label.shipment_cost
+                  ? `$${label.shipment_cost.toFixed(2)}`
+                  : "—"}
               </td>
               <td className="px-4 py-3">
-                {label.label_download_url ? (
+                {/* {label.label_download_url ? (
                   <a
                     href={label.label_download_url}
                     target="_blank"
@@ -67,7 +71,7 @@ function AdminTable({ labels }: { labels: ShippingLabelWithProfile[] }) {
                   </a>
                 ) : (
                   "—"
-                )}
+                )} */}
               </td>
             </tr>
           ))}
@@ -88,7 +92,7 @@ export default async function AdminPage() {
 
   const totalCost = labels.reduce(
     (sum, label) => sum + (label.shipment_cost ?? 0),
-    0,
+    0
   );
 
   return (

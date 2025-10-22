@@ -653,6 +653,8 @@ export function CreateLabelForm({
           {formState.label.tracking_number ? (
             <p>Tracking number: {formState.label.tracking_number}</p>
           ) : null}
+
+          {/* TODO: Add implementation to convert base64 data to printable label
           {formState.label.label_download_url ? (
             <a
               href={formState.label.label_download_url}
@@ -662,7 +664,7 @@ export function CreateLabelForm({
             >
               Download the label
             </a>
-          ) : null}
+          ) : null} */}
         </div>
       ) : null}
     </form>

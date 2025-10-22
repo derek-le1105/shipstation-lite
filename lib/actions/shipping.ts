@@ -278,18 +278,17 @@ export async function createShippingLabelAction(
       to_address_id: toAddressRecord?.id ?? null,
       ship_from_snapshot: shipFrom,
       ship_to_snapshot: shipTo,
+      weight_value: weight.value,
+      weight_unit: weight.units,
       carrier_code: labelResponse.carrierCode,
       service_code: labelResponse.serviceCode,
       package_code: labelResponse.packageCode ?? null,
-      weight_value: weight.value,
-      weight_unit: weight.units,
       confirmation: labelResponse.confirmation ?? null,
-      shipment_cost: labelResponse.shipmentCost?.amount ?? null,
-      insurance_cost: labelResponse.insuranceCost?.amount ?? null,
+      shipment_cost: labelResponse.shipmentCost ?? null,
+      insurance_cost: labelResponse.insuranceCost ?? null,
       tracking_number: labelResponse.trackingNumber ?? null,
-      label_download_url: labelResponse.labelDownload?.href ?? null,
       label_data_base64: labelResponse.labelData ?? null,
-      raw_response: labelResponse as unknown as Record<string, unknown>,
+      shipment_id: labelResponse.shipmentId,
     });
 
     revalidatePath("/dashboard");
