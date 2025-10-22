@@ -1,0 +1,188 @@
+const DEFAULT_API_BASE = "https://ssapi.shipstation.com";
+
+export type ShipStationAddress = {
+  name: string;
+  company?: string | null;
+  street1: string;
+  street2?: string | null;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  phone?: string | null;
+  residential?: boolean;
+};
+
+export type ShipStationWeight = {
+  value: number;
+  units: "ounces" | "pounds" | "grams" | "kilograms";
+};
+
+export type CreateLabelPayload = {
+  carrierCode: string;
+  serviceCode: string;
+  packageCode?: string;
+  confirmation?: string;
+  shipFrom: ShipStationAddress;
+  shipTo: ShipStationAddress;
+  weight: ShipStationWeight;
+  dimensions?: {
+    length: number;
+    width: number;
+    height: number;
+    units: "inches" | "centimeters";
+  };
+  testLabel?: boolean;
+  externalOrderId?: string;
+  insuranceOptions?: {
+    insureShipment: boolean;
+    insuredValue: number;
+  };
+};
+
+export type ShipStationLabel = {
+  shipmentId: number;
+  carrierCode: string;
+  serviceCode: string;
+  packageCode: string;
+  confirmation: string;
+  shipmentCost?: {
+    amount: number;
+    currency: string;
+  };
+  insuranceCost?: {
+    amount: number;
+    currency: string;
+  };
+  labelData?: string;
+  labelDownload?: {
+    href: string;
+    type: string;
+  };
+  trackingNumber?: string;
+  voided?: boolean;
+  shipmentItems?: unknown[];
+  shipmentTo?: unknown;
+  shipmentFrom?: unknown;
+  labelCreateDate?: string;
+};
+
+export type ShipStationCarrier = {
+  code: string;
+  name: string;
+  accountName?: string;
+  accountNumber?: string;
+  requiresFundedAccount?: boolean;
+};
+
+export type ShipStationService = {
+  carrierCode: string;
+  serviceCode: string;
+  name: string;
+  domestic: boolean;
+  international: boolean;
+  code?: string;
+};
+
+export type ShipStationPackage = {
+  carrierCode: string;
+  packageCode: string;
+  name: string;
+  dimensionsRequired: boolean;
+  domestic: boolean;
+  international: boolean;
+  code?: string;
+};
+
+function getConfig() {
+  const apiKey = process.env.SHIPSTATION_API_KEY;
+  const apiSecret = process.env.SHIPSTATION_API_SECRET;
+
+  if (!apiKey || !apiSecret) {
+    throw new Error(
+      "ShipStation API credentials are not configured. Please set SHIPSTATION_API_KEY and SHIPSTATION_API_SECRET."
+    );
+  }
+
+  const base = process.env.SHIPSTATION_API_BASE ?? DEFAULT_API_BASE;
+  const auth = Buffer.from(`${apiKey}:${apiSecret}`).toString("base64");
+
+  return { base, auth };
+}
+
+async function shipStationRequest<TResponse>(
+  path: string,
+  init: Omit<RequestInit, "headers"> & { headers?: Record<string, string> } = {}
+): Promise<TResponse> {
+  console.log("init: ", init);
+  const { base, auth } = getConfig();
+
+  const headers = {
+    Authorization: `Basic ${auth}`,
+    Accept: "application/json",
+    "Content-Type": "application/json",
+    ...init.headers,
+  };
+
+  const response = await fetch(`${base}${path}`, {
+    cache: "no-store",
+    ...init,
+    headers,
+  });
+
+  if (!response.ok) {
+    let detail: unknown = undefined;
+    try {
+      detail = await response.json();
+    } catch {
+      detail = await response.text();
+    }
+    console.log("detail: ", detail);
+    const message =
+      typeof detail === "object" && detail !== null && "Message" in detail
+        ? `ShipStation error: ${(detail as { Message: string }).Message}`
+        : `ShipStation request failed with status ${response.status}`;
+
+    throw new Error(message);
+  }
+
+  if (response.status === 204) {
+    return undefined as TResponse;
+  }
+
+  return (await response.json()) as TResponse;
+}
+
+export async function createLabel(
+  payload: CreateLabelPayload
+): Promise<ShipStationLabel> {
+  return shipStationRequest<ShipStationLabel>("/shipments/createlabel", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function listCarriers(): Promise<ShipStationCarrier[]> {
+  const carrierRequest = shipStationRequest<ShipStationCarrier[]>(
+    "/carriers"
+  ).then((data) => data.filter((carrier) => carrier.code === "fedex"));
+  return carrierRequest;
+}
+
+export async function listServices(
+  carrierCode: string
+): Promise<ShipStationService[]> {
+  const params = new URLSearchParams({ carrierCode });
+  return shipStationRequest<ShipStationService[]>(
+    `/carriers/listservices?${params.toString()}`
+  );
+}
+
+export async function listPackages(
+  carrierCode: string
+): Promise<ShipStationPackage[]> {
+  const params = new URLSearchParams({ carrierCode });
+  return shipStationRequest<ShipStationPackage[]>(
+    `/carriers/listpackages?${params.toString()}`
+  );
+}
