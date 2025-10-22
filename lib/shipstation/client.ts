@@ -110,7 +110,7 @@ export type ShipStationPackage = {
 function getConfig() {
   const apiKey = process.env.SHIPSTATION_API_KEY;
   const apiSecret = process.env.SHIPSTATION_API_SECRET;
-
+  console.log("Using ShipStation API Key:", apiKey, apiSecret);
   if (!apiKey || !apiSecret) {
     throw new Error(
       "ShipStation API credentials are not configured. Please set SHIPSTATION_API_KEY and SHIPSTATION_API_SECRET."
@@ -200,4 +200,10 @@ export async function listPackages(
   return shipStationRequest<ShipStationPackage[]>(
     `/carriers/listpackages?${params.toString()}`
   );
+}
+
+export async function voidLabel(shipmentId: number): Promise<void> {
+  return shipStationRequest<void>(`/shipments/voidlabel/${shipmentId}`, {
+    method: "POST",
+  });
 }

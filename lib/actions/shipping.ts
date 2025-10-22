@@ -289,6 +289,7 @@ export async function createShippingLabelAction(
       tracking_number: labelResponse.trackingNumber ?? null,
       label_data_base64: labelResponse.labelData ?? null,
       shipment_id: labelResponse.shipmentId,
+      voided: false,
     });
 
     revalidatePath("/dashboard");
@@ -304,7 +305,7 @@ export async function createShippingLabelAction(
       error instanceof Error
         ? error.message
         : "Unable to create shipping label right now.";
-
+    console.log("createShippingLabelAction error: ", error);
     return {
       status: "error",
       message,

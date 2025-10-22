@@ -5,11 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getCurrentProfile } from "@/lib/auth";
 import { listAddresses, type AddressRecord } from "@/lib/supabase/addresses";
-import {
-  listShippingLabelsForUser,
-  type ShipStationAddressSnapshot,
-  type ShippingLabelRecord,
-} from "@/lib/supabase/shipping-labels";
+import { listShippingLabelsForUser } from "@/lib/supabase/shipping-labels";
 import {
   listCarriers,
   listPackages,
@@ -19,6 +15,7 @@ import {
   type ShipStationService,
 } from "@/lib/shipstation/client";
 import { CreateLabelForm } from "@/components/shipping/create-label-form";
+import { LabelHistory } from "@/components/dashboard/label-history";
 
 type CarrierMetadata = {
   carrier: ShipStationCarrier | null;
@@ -76,103 +73,31 @@ function AddressList({
   );
 }
 
-function getSnapshotName(snapshot: ShipStationAddressSnapshot) {
-  if (!snapshot) return "N/A";
-  if (
-    snapshot.name &&
-    typeof snapshot.name === "string" &&
-    snapshot.name.length > 0
-  ) {
-    return snapshot.name;
-  }
-  if (
-    snapshot.company &&
-    typeof snapshot.company === "string" &&
-    snapshot.company.length > 0
-  ) {
-    return snapshot.company;
-  }
-  if (
-    snapshot.street1 &&
-    typeof snapshot.street1 === "string" &&
-    snapshot.street1.length > 0
-  ) {
-    return snapshot.street1;
-  }
-  return "N/A";
-}
-
-function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base font-semibold">
-          Recent shipping labels
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {labels.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Create your first label to see it listed here.
-          </p>
-        ) : (
-          labels.map((label) => (
-            <div
-              key={label.id}
-              className="border rounded-md p-4 flex flex-col gap-2 text-sm"
-            >
-              <div className="flex flex-wrap items-center gap-3">
-                <Badge variant="secondary">{label.carrier_code}</Badge>
-                <span className="font-semibold">{label.service_code}</span>
-                {label.tracking_number ? (
-                  <span className="text-muted-foreground">
-                    Tracking: {label.tracking_number}
-                  </span>
-                ) : null}
-              </div>
-              <div className="flex flex-wrap gap-4 text-muted-foreground">
-                <span>
-                  Weight: {label.weight_value} {label.weight_unit}
-                </span>
-                {label.shipment_cost ? (
-                  <span>Cost: ${label.shipment_cost.toFixed(2)}</span>
-                ) : null}
-              </div>
-              <div className="flex flex-wrap gap-4">
-                <div>
-                  <h4 className="text-xs uppercase text-muted-foreground">
-                    Ship from
-                  </h4>
-                  <p className="text-sm">
-                    {getSnapshotName(label.ship_from_snapshot)}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="text-xs uppercase text-muted-foreground">
-                    Ship to
-                  </h4>
-                  <p className="text-sm">
-                    {getSnapshotName(label.ship_to_snapshot)}
-                  </p>
-                </div>
-              </div>
-              {/* {label.label_download_url ? (
-                <a
-                  href={label.label_download_url}
-                  className="text-sm text-primary hover:underline"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Download label
-                </a>
-              ) : null} */}
-            </div>
-          ))
-        )}
-      </CardContent>
-    </Card>
-  );
-}
+// function getSnapshotName(snapshot: ShipStationAddressSnapshot) {
+//   if (!snapshot) return "N/A";
+//   if (
+//     snapshot.name &&
+//     typeof snapshot.name === "string" &&
+//     snapshot.name.length > 0
+//   ) {
+//     return snapshot.name;
+//   }
+//   if (
+//     snapshot.company &&
+//     typeof snapshot.company === "string" &&
+//     snapshot.company.length > 0
+//   ) {
+//     return snapshot.company;
+//   }
+//   if (
+//     snapshot.street1 &&
+//     typeof snapshot.street1 === "string" &&
+//     snapshot.street1.length > 0
+//   ) {
+//     return snapshot.street1;
+//   }
+//   return "N/A";
+// }
 
 export default async function DashboardPage() {
   const profile = await getCurrentProfile();

@@ -35,6 +35,7 @@ export type ShippingLabelRecord = {
   label_data_base64: string | null;
   created_at: string;
   shipment_id: number;
+  voided: boolean;
 };
 
 type ShippingLabelInsert = Omit<
