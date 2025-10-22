@@ -30,11 +30,7 @@ type CarrierMetadataResponse = {
   packages: ShipStationPackage[];
 };
 
-const getServiceCode = (service: ShipStationService) =>
-  service.serviceCode ?? service.code ?? "";
-
-const getPackageCode = (pkg: ShipStationPackage) =>
-  pkg.packageCode ?? pkg.code ?? "";
+const getServiceCode = (service: ShipStationService) => service.code ?? "";
 
 async function fetchCarrierMetadata(
   carrierCode: string
@@ -303,13 +299,11 @@ export function CreateLabelForm({
   toAddresses,
   carriers,
   initialServices,
-  initialPackages,
 }: {
   fromAddresses: AddressRecord[];
   toAddresses: AddressRecord[];
   carriers: ShipStationCarrier[];
   initialServices: ShipStationService[];
-  initialPackages: ShipStationPackage[];
 }) {
   const [formState, formAction, actionPending] = useActionState<
     CreateShippingLabelState,
@@ -328,17 +322,9 @@ export function CreateLabelForm({
   );
   const [services, setServices] =
     useState<ShipStationService[]>(initialServices);
-  const [packages, setPackages] =
-    useState<ShipStationPackage[]>(initialPackages);
   const [selectedService, setSelectedService] = useState<string>(() => {
     const code = initialServices
       .map(getServiceCode)
-      .find((value) => value.length > 0);
-    return code ?? "";
-  });
-  const [selectedPackage, setSelectedPackage] = useState<string>(() => {
-    const code = initialPackages
-      .map(getPackageCode)
       .find((value) => value.length > 0);
     return code ?? "";
   });
@@ -357,16 +343,6 @@ export function CreateLabelForm({
         setSelectedService((current) => {
           const available = data.services
             .map(getServiceCode)
-            .filter((value) => value.length > 0);
-          if (available.includes(current) && current.length > 0) {
-            return current;
-          }
-          return available[0] ?? "";
-        });
-        setPackages(data.packages);
-        setSelectedPackage((current) => {
-          const available = data.packages
-            .map(getPackageCode)
             .filter((value) => value.length > 0);
           if (available.includes(current) && current.length > 0) {
             return current;
@@ -429,29 +405,6 @@ export function CreateLabelForm({
       });
   }, [hasServiceChoices, services]);
 
-  const hasPackageChoices = useMemo(
-    () => packages.some((pkg) => getPackageCode(pkg).length > 0),
-    [packages]
-  );
-
-  const packageOptions = useMemo(() => {
-    if (!hasPackageChoices) {
-      return <option value="">No package presets</option>;
-    }
-
-    return packages
-      .filter((pkg) => getPackageCode(pkg).length > 0)
-      .map((pkg) => {
-        const value = getPackageCode(pkg);
-        const key = `${pkg.carrierCode}-${value}`;
-        return (
-          <option key={key} value={value}>
-            {pkg.name}
-          </option>
-        );
-      });
-  }, [hasPackageChoices, packages]);
-
   return (
     <form action={onSubmit} className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-2">
@@ -511,7 +464,7 @@ export function CreateLabelForm({
               </p>
             ) : null}
           </div>
-          <div className="grid gap-2">
+          {/* <div className="grid gap-2">
             <Label htmlFor="package">Package</Label>
             <select
               id="package"
@@ -523,8 +476,8 @@ export function CreateLabelForm({
             >
               {packageOptions}
             </select>
-          </div>
-          <div className="grid gap-2">
+          </div> */}
+          {/* <div className="grid gap-2">
             <Label htmlFor="confirmation">Delivery confirmation</Label>
             <Input
               id="confirmation"
@@ -532,37 +485,9 @@ export function CreateLabelForm({
               placeholder="delivery"
               disabled={isPending}
             />
-          </div>
+          </div> */}
         </div>
         <div className="grid gap-4 md:grid-cols-4">
-          <div className="grid gap-2">
-            <Label htmlFor="weight-value">Weight</Label>
-            <Input
-              id="weight-value"
-              name="weight.value"
-              type="number"
-              step="0.1"
-              min="0"
-              placeholder="16"
-              required
-              disabled={isPending}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="weight-unit">Weight unit</Label>
-            <select
-              id="weight-unit"
-              name="weight.unit"
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              defaultValue="ounces"
-              disabled={isPending}
-            >
-              <option value="ounces">Ounces</option>
-              <option value="pounds">Pounds</option>
-              <option value="grams">Grams</option>
-              <option value="kilograms">Kilograms</option>
-            </select>
-          </div>
           <div className="grid gap-2">
             <Label htmlFor="dimensions-length">Length</Label>
             <Input
@@ -610,6 +535,34 @@ export function CreateLabelForm({
             >
               <option value="inches">Inches</option>
               <option value="centimeters">Centimeters</option>
+            </select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="weight-value">Weight</Label>
+            <Input
+              id="weight-value"
+              name="weight.value"
+              type="number"
+              step="0.1"
+              min="0"
+              placeholder="16"
+              required
+              disabled={isPending}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="weight-unit">Weight unit</Label>
+            <select
+              id="weight-unit"
+              name="weight.unit"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              defaultValue="ounces"
+              disabled={isPending}
+            >
+              <option value="ounces">Ounces</option>
+              <option value="pounds">Pounds</option>
+              <option value="grams">Grams</option>
+              <option value="kilograms">Kilograms</option>
             </select>
           </div>
         </div>

@@ -8,10 +8,8 @@ import { listAddresses, type AddressRecord } from "@/lib/supabase/addresses";
 import { listShippingLabelsForUser } from "@/lib/supabase/shipping-labels";
 import {
   listCarriers,
-  listPackages,
   listServices,
   type ShipStationCarrier,
-  type ShipStationPackage,
   type ShipStationService,
 } from "@/lib/shipstation/client";
 import { CreateLabelForm } from "@/components/shipping/create-label-form";
@@ -20,7 +18,6 @@ import { LabelHistory } from "@/components/dashboard/label-history";
 type CarrierMetadata = {
   carrier: ShipStationCarrier | null;
   services: ShipStationService[];
-  packages: ShipStationPackage[];
 };
 
 function AddressList({
@@ -116,7 +113,6 @@ export default async function DashboardPage() {
   let metadata: CarrierMetadata = {
     carrier: null,
     services: [],
-    packages: [],
   };
   let carrierError: string | null = null;
 
@@ -125,14 +121,10 @@ export default async function DashboardPage() {
 
     if (carriers.length > 0) {
       const carrier = carriers[0]!;
-      const [services, packages] = await Promise.all([
-        listServices(carrier.code),
-        listPackages(carrier.code),
-      ]);
+      const [services] = await Promise.all([listServices(carrier.code)]);
       metadata = {
         carrier,
         services,
-        packages,
       };
     }
   } catch (error) {
@@ -157,7 +149,6 @@ export default async function DashboardPage() {
               toAddresses={savedToAddresses}
               carriers={carriers}
               initialServices={metadata.services}
-              initialPackages={metadata.packages}
             />
             {carrierError ? (
               <div className="mt-4 flex items-center gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">

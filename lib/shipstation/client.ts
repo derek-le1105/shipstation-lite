@@ -1,5 +1,15 @@
 const DEFAULT_API_BASE = "https://ssapi.shipstation.com";
 
+export const SUPPORTED_SERVICES = [
+  "fedex_ground",
+  "fedex_home_delivery",
+  "fedex_2day",
+  "fedex_2day_am",
+  "fedex_standard_overnight",
+  "fedex_priority_overnight",
+  "fedex_first_overnight",
+];
+
 export type ShipStationAddress = {
   name: string;
   company?: string | null;
@@ -90,11 +100,10 @@ export type ShipStationCarrier = {
 
 export type ShipStationService = {
   carrierCode: string;
-  serviceCode: string;
+  code: string;
   name: string;
   domestic: boolean;
   international: boolean;
-  code?: string;
 };
 
 export type ShipStationPackage = {
@@ -110,7 +119,6 @@ export type ShipStationPackage = {
 function getConfig() {
   const apiKey = process.env.SHIPSTATION_API_KEY;
   const apiSecret = process.env.SHIPSTATION_API_SECRET;
-  console.log("Using ShipStation API Key:", apiKey, apiSecret);
   if (!apiKey || !apiSecret) {
     throw new Error(
       "ShipStation API credentials are not configured. Please set SHIPSTATION_API_KEY and SHIPSTATION_API_SECRET."
@@ -184,12 +192,23 @@ export async function listCarriers(): Promise<ShipStationCarrier[]> {
   return carrierRequest;
 }
 
+/**
+ * Fetches the list of services for a given carrier from ShipStation.
+ * 10/22 -> Reduced to only FedEx Carriers as shown in listCarriers
+ * Filter for only select services
+ * @param carrierCode The code of the carrier to list services for
+ * @returns A promise that resolves to an array of ShipStationService objects
+ */
 export async function listServices(
   carrierCode: string
 ): Promise<ShipStationService[]> {
   const params = new URLSearchParams({ carrierCode });
   return shipStationRequest<ShipStationService[]>(
     `/carriers/listservices?${params.toString()}`
+  ).then((data) =>
+    data
+      .filter((service) => SUPPORTED_SERVICES.includes(service.code))
+      .sort((a, b) => a.name.localeCompare(b.name))
   );
 }
 

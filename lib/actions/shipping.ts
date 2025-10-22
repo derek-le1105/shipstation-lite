@@ -187,8 +187,8 @@ export async function createShippingLabelAction(
 
     const carrierCode = formData.get("carrierCode");
     const serviceCode = formData.get("serviceCode");
-    const packageCode = formData.get("packageCode");
-    const confirmation = formData.get("confirmation");
+    const packageCode = "package";
+    const confirmation = "delivery";
     const testLabel = formData.get("testLabel") === "true";
 
     if (typeof carrierCode !== "string" || carrierCode.trim().length === 0) {
