@@ -107,14 +107,45 @@ export async function listAllShippingLabels(
 
   const { data, error } = await supabase
     .from("shipping_labels")
-    .select(
-      "*, profiles!shipping_labels_user_id_fkey ( email, full_name, role )"
-    )
+    .select("*")
     .order("created_at", { ascending: false });
 
   if (error) {
     throw error;
   }
 
-  return (data ?? []) as ShippingLabelWithProfile[];
+  const labels = (data ?? []) as ShippingLabelRecord[];
+
+  const userIds = Array.from(
+    new Set(labels.map((label) => label.user_id).filter(Boolean))
+  );
+
+  const profilesById = new Map<
+    string,
+    { email: string | null; full_name: string | null; role: string | null }
+  >();
+
+  if (userIds.length > 0) {
+    const { data: profileRows, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, email, full_name, role")
+      .in("id", userIds);
+
+    if (profileError) {
+      throw profileError;
+    }
+
+    (profileRows ?? []).forEach((profile) => {
+      profilesById.set(profile.id, {
+        email: profile.email ?? null,
+        full_name: profile.full_name ?? null,
+        role: profile.role ?? null,
+      });
+    });
+  }
+
+  return labels.map((label) => ({
+    ...label,
+    profiles: profilesById.get(label.user_id),
+  }));
 }
