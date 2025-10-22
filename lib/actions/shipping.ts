@@ -187,7 +187,7 @@ export async function createShippingLabelAction(
 
     const carrierCode = formData.get("carrierCode");
     const serviceCode = formData.get("serviceCode");
-    const code = formData.get("code");
+    const packageCode = formData.get("packageCode");
     const confirmation = formData.get("confirmation");
     const testLabel = formData.get("testLabel") === "true";
 
@@ -256,8 +256,8 @@ export async function createShippingLabelAction(
       carrierCode: carrierCode.trim(),
       serviceCode: serviceCode.trim(),
       packageCode:
-        typeof code === "string" && code.trim().length > 0
-          ? code.trim()
+        typeof packageCode === "string" && packageCode.trim().length > 0
+          ? packageCode.trim()
           : undefined,
       confirmation:
         typeof confirmation === "string" && confirmation.trim().length > 0

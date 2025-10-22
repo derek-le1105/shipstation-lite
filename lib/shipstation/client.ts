@@ -114,7 +114,6 @@ async function shipStationRequest<TResponse>(
   path: string,
   init: Omit<RequestInit, "headers"> & { headers?: Record<string, string> } = {}
 ): Promise<TResponse> {
-  console.log("init: ", init);
   const { base, auth } = getConfig();
 
   const headers = {
@@ -140,7 +139,10 @@ async function shipStationRequest<TResponse>(
     console.log("detail: ", detail);
     const message =
       typeof detail === "object" && detail !== null && "Message" in detail
-        ? `ShipStation error: ${(detail as { Message: string }).Message}`
+        ? `ShipStation error: ${
+            (detail as { Message: string; ExceptionMessage: string })
+              .ExceptionMessage
+          }`
         : `ShipStation request failed with status ${response.status}`;
 
     throw new Error(message);

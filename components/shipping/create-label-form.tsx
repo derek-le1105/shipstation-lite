@@ -189,6 +189,7 @@ function AddressSection({
               id={`${prefix}-phone`}
               name={`${prefix}.phone`}
               placeholder="555-123-4567"
+              required
               disabled={pending}
             />
           </div>
@@ -422,7 +423,7 @@ export function CreateLabelForm({
         const key = `${service.carrierCode}-${value}`;
         return (
           <option key={key} value={value}>
-            {`${service.name} (${value})`}
+            {service.name}
           </option>
         );
       });
@@ -445,7 +446,7 @@ export function CreateLabelForm({
         const key = `${pkg.carrierCode}-${value}`;
         return (
           <option key={key} value={value}>
-            {`${pkg.name} (${value})`}
+            {pkg.name}
           </option>
         );
       });
@@ -500,7 +501,7 @@ export function CreateLabelForm({
               value={selectedService}
               onChange={(event) => setSelectedService(event.target.value)}
               required
-              disabled={metadataLoading || isPending || services.length === 0}
+              disabled={metadataLoading || isPending || !hasServiceChoices}
             >
               {serviceOptions}
             </select>
@@ -514,11 +515,11 @@ export function CreateLabelForm({
             <Label htmlFor="package">Package</Label>
             <select
               id="package"
-              name="code"
+              name="packageCode"
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
               value={selectedPackage}
               onChange={(event) => setSelectedPackage(event.target.value)}
-              disabled={metadataLoading || isPending || packages.length === 0}
+              disabled={metadataLoading || isPending || !hasPackageChoices}
             >
               {packageOptions}
             </select>
