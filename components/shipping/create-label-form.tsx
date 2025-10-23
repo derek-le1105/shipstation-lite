@@ -15,7 +15,6 @@ import { Label } from "@/components/ui/label";
 import type { AddressRecord } from "@/lib/supabase/addresses";
 import type {
   ShipStationCarrier,
-  ShipStationPackage,
   ShipStationService,
 } from "@/lib/shipstation/client";
 import {
@@ -24,288 +23,22 @@ import {
 } from "@/lib/actions/shipping";
 import { printLabels } from "@/lib/utils";
 import { toast } from "sonner";
-
-type AddressMode = "saved" | "new";
-
-type CarrierMetadataResponse = {
-  services: ShipStationService[];
-  packages: ShipStationPackage[];
-};
+import { AddressMode } from "./types";
+import { Fieldset } from "../ui/fieldset";
+import { AddressSection } from "./address-section";
 
 const getServiceCode = (service: ShipStationService) => service.code ?? "";
-
-async function fetchCarrierMetadata(
-  carrierCode: string
-): Promise<CarrierMetadataResponse> {
-  const params = new URLSearchParams({ carrierCode });
-  const response = await fetch(
-    `/api/shipstation/metadata?${params.toString()}`,
-    {
-      method: "GET",
-    }
-  );
-
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || "Unable to load carrier metadata.");
-  }
-
-  return (await response.json()) as CarrierMetadataResponse;
-}
-
-function Fieldset({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <fieldset className="space-y-4 rounded-lg border border-border p-4">
-      <legend className="px-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-        {title}
-      </legend>
-      {description ? (
-        <p className="text-sm text-muted-foreground">{description}</p>
-      ) : null}
-      <div className="grid gap-4">{children}</div>
-    </fieldset>
-  );
-}
-
-function AddressSection({
-  prefix,
-  title,
-  addresses,
-  mode,
-  setMode,
-  pending,
-}: {
-  prefix: "from" | "to";
-  title: string;
-  addresses: AddressRecord[];
-  mode: AddressMode;
-  setMode: (mode: AddressMode) => void;
-  pending: boolean;
-}) {
-  return (
-    <Fieldset
-      title={title}
-      description={
-        mode === "saved"
-          ? "Use one of your saved addresses."
-          : "Enter a new address. You can optionally save it for later."
-      }
-    >
-      <div className="flex flex-wrap gap-4 text-sm">
-        <label className="flex items-center gap-2">
-          <input
-            type="radio"
-            name={`${prefix}.mode`}
-            value="saved"
-            checked={mode === "saved"}
-            onChange={() => setMode("saved")}
-            disabled={addresses.length === 0 || pending}
-            className="h-4 w-4"
-          />
-          Use saved address
-        </label>
-        <label className="flex items-center gap-2">
-          <input
-            type="radio"
-            name={`${prefix}.mode`}
-            value="new"
-            checked={mode === "new"}
-            onChange={() => setMode("new")}
-            disabled={pending}
-            className="h-4 w-4"
-          />
-          Enter new address
-        </label>
-      </div>
-
-      {mode === "saved" ? (
-        <div className="grid gap-2">
-          <Label htmlFor={`${prefix}-addressId`}>Select address</Label>
-          <select
-            id={`${prefix}-addressId`}
-            name={`${prefix}.addressId`}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            disabled={addresses.length === 0 || pending}
-            required={addresses.length > 0}
-            defaultValue={addresses[0]?.id ?? ""}
-          >
-            {addresses.length === 0 ? (
-              <option value="">No saved addresses available</option>
-            ) : (
-              addresses.map((address) => (
-                <option key={address.id} value={address.id}>
-                  {address.label ??
-                    address.contact_name ??
-                    address.address_line1 ??
-                    ""}
-                </option>
-              ))
-            )}
-          </select>
-        </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="grid gap-2">
-            <Label htmlFor={`${prefix}-label`}>Nickname</Label>
-            <Input
-              id={`${prefix}-label`}
-              name={`${prefix}.label`}
-              placeholder="Warehouse A"
-              disabled={pending}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor={`${prefix}-contact_name`}>Contact name</Label>
-            <Input
-              id={`${prefix}-contact_name`}
-              name={`${prefix}.contact_name`}
-              placeholder="Jane Smith"
-              required
-              disabled={pending}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor={`${prefix}-company`}>Company</Label>
-            <Input
-              id={`${prefix}-company`}
-              name={`${prefix}.company`}
-              placeholder="Acme Corp"
-              disabled={pending}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor={`${prefix}-phone`}>Phone</Label>
-            <Input
-              id={`${prefix}-phone`}
-              name={`${prefix}.phone`}
-              placeholder="555-123-4567"
-              required
-              disabled={pending}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor={`${prefix}-email`}>Email</Label>
-            <Input
-              id={`${prefix}-email`}
-              name={`${prefix}.email`}
-              type="email"
-              placeholder="warehouse@example.com"
-              disabled={pending}
-            />
-          </div>
-          <div className="grid gap-2 md:col-span-2">
-            <Label htmlFor={`${prefix}-address_line1`}>Address line 1</Label>
-            <Input
-              id={`${prefix}-address_line1`}
-              name={`${prefix}.address_line1`}
-              placeholder="123 Market St"
-              required
-              disabled={pending}
-            />
-          </div>
-          <div className="grid gap-2 md:col-span-2">
-            <Label htmlFor={`${prefix}-address_line2`}>Address line 2</Label>
-            <Input
-              id={`${prefix}-address_line2`}
-              name={`${prefix}.address_line2`}
-              placeholder="Suite 200"
-              disabled={pending}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor={`${prefix}-city`}>City</Label>
-            <Input
-              id={`${prefix}-city`}
-              name={`${prefix}.city`}
-              placeholder="Austin"
-              required
-              disabled={pending}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor={`${prefix}-state`}>State / Province</Label>
-            <Input
-              id={`${prefix}-state`}
-              name={`${prefix}.state`}
-              placeholder="TX"
-              required
-              disabled={pending}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor={`${prefix}-postal_code`}>Postal code</Label>
-            <Input
-              id={`${prefix}-postal_code`}
-              name={`${prefix}.postal_code`}
-              placeholder="73301"
-              required
-              disabled={pending}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor={`${prefix}-country`}>Country</Label>
-            <Input
-              id={`${prefix}-country`}
-              name={`${prefix}.country`}
-              placeholder="US"
-              defaultValue="US"
-              disabled={pending}
-            />
-          </div>
-          <div className="flex items-center gap-2 md:col-span-2">
-            <input
-              type="checkbox"
-              id={`${prefix}-is_residential`}
-              name={`${prefix}.is_residential`}
-              value="true"
-              disabled={pending}
-            />
-            <Label
-              htmlFor={`${prefix}-is_residential`}
-              className="text-sm text-muted-foreground"
-            >
-              Residential address
-            </Label>
-          </div>
-          <div className="flex items-center gap-2 md:col-span-2">
-            <input
-              type="checkbox"
-              id={`${prefix}-save`}
-              name={`${prefix}.save`}
-              value="true"
-              disabled={pending}
-            />
-            <Label
-              htmlFor={`${prefix}-save`}
-              className="text-sm text-muted-foreground"
-            >
-              Save this address for future labels
-            </Label>
-          </div>
-        </div>
-      )}
-    </Fieldset>
-  );
-}
 
 export function CreateLabelForm({
   fromAddresses,
   toAddresses,
   carriers,
-  initialServices,
+  services,
 }: {
   fromAddresses: AddressRecord[];
   toAddresses: AddressRecord[];
   carriers: ShipStationCarrier[];
-  initialServices: ShipStationService[];
+  services: ShipStationService[];
 }) {
   const [formState, formAction, actionPending] = useActionState<
     CreateShippingLabelState,
@@ -322,43 +55,10 @@ export function CreateLabelForm({
   const [selectedCarrier, setSelectedCarrier] = useState<string>(
     carriers[0]?.code ?? ""
   );
-  const [services, setServices] =
-    useState<ShipStationService[]>(initialServices);
   const [selectedService, setSelectedService] = useState<string>(() => {
-    const code = initialServices
-      .map(getServiceCode)
-      .find((value) => value.length > 0);
+    const code = services.map(getServiceCode).find((value) => value.length > 0);
     return code ?? "";
   });
-  const [metadataLoading, setMetadataLoading] = useState(false);
-  const [metadataError, setMetadataError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!selectedCarrier) return;
-
-    setMetadataLoading(true);
-    setMetadataError(null);
-
-    fetchCarrierMetadata(selectedCarrier)
-      .then((data) => {
-        setServices(data.services);
-        setSelectedService((current) => {
-          const available = data.services
-            .map(getServiceCode)
-            .filter((value) => value.length > 0);
-          if (available.includes(current) && current.length > 0) {
-            return current;
-          }
-          return available[0] ?? "";
-        });
-      })
-      .catch((error) => {
-        setMetadataError(
-          error instanceof Error ? error.message : String(error)
-        );
-      })
-      .finally(() => setMetadataLoading(false));
-  }, [selectedCarrier]);
 
   useEffect(() => {
     if (formState.status === "success") {
@@ -443,9 +143,6 @@ export function CreateLabelForm({
             >
               {carrierOptions}
             </select>
-            {metadataError ? (
-              <p className="text-xs text-destructive">{metadataError}</p>
-            ) : null}
           </div>
           <div className="grid gap-2">
             <Label htmlFor="service">Service</Label>
@@ -456,38 +153,11 @@ export function CreateLabelForm({
               value={selectedService}
               onChange={(event) => setSelectedService(event.target.value)}
               required
-              disabled={metadataLoading || isPending || !hasServiceChoices}
+              disabled={isPending || !hasServiceChoices}
             >
               {serviceOptions}
             </select>
-            {metadataLoading ? (
-              <p className="text-xs text-muted-foreground">
-                Updating services…
-              </p>
-            ) : null}
           </div>
-          {/* <div className="grid gap-2">
-            <Label htmlFor="package">Package</Label>
-            <select
-              id="package"
-              name="packageCode"
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              value={selectedPackage}
-              onChange={(event) => setSelectedPackage(event.target.value)}
-              disabled={metadataLoading || isPending || !hasPackageChoices}
-            >
-              {packageOptions}
-            </select>
-          </div> */}
-          {/* <div className="grid gap-2">
-            <Label htmlFor="confirmation">Delivery confirmation</Label>
-            <Input
-              id="confirmation"
-              name="confirmation"
-              placeholder="delivery"
-              disabled={isPending}
-            />
-          </div> */}
         </div>
         <div className="grid gap-4 md:grid-cols-4">
           <div className="grid gap-2">

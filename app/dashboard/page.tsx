@@ -102,7 +102,6 @@ export default async function DashboardPage() {
   if (!profile) {
     redirect("/auth/login");
   }
-
   const [savedFromAddresses, savedToAddresses, labels] = await Promise.all([
     listAddresses(profile.id, "ship_from"),
     listAddresses(profile.id, "ship_to"),
@@ -148,7 +147,7 @@ export default async function DashboardPage() {
               fromAddresses={savedFromAddresses}
               toAddresses={savedToAddresses}
               carriers={carriers}
-              initialServices={metadata.services}
+              services={metadata.services}
             />
             {carrierError ? (
               <div className="mt-4 flex items-center gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
