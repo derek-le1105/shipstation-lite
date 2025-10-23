@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2 } from "lucide-react";
+import { EmailOtpType } from "@supabase/supabase-js";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -17,7 +18,8 @@ export default function AuthCallbackPage() {
 
       const code = params.get("code");
       const token_hash = params.get("token_hash");
-      const type = params.get("type") || hashParams.get("type");
+      const type: EmailOtpType = (params.get("type") ||
+        hashParams.get("type")) as EmailOtpType;
       const access_token = hashParams.get("access_token");
       const refresh_token = hashParams.get("refresh_token");
 
@@ -28,7 +30,7 @@ export default function AuthCallbackPage() {
         } else if (token_hash && type) {
           const { error } = await supabase.auth.verifyOtp({
             token_hash,
-            type: type as any, // invite | recovery | magiclink | etc.
+            type, // invite | recovery | magiclink | etc.
           });
           if (error) throw error;
         } else if (access_token && refresh_token) {
