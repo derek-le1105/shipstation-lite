@@ -32,12 +32,30 @@ export function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
                 <div className="flex flex-wrap items-center gap-3">
                   <Badge variant="secondary">{label.carrier_code}</Badge>
                   <span className="font-semibold">{label.service_code}</span>
-                  {label.tracking_number ? (
-                    <span className="text-muted-foreground">
-                      Tracking: {label.tracking_number}
-                    </span>
-                  ) : null}
+                  <span className="text-muted-foreground">
+                    Created:{" "}
+                    {new Date(label.created_at).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
                 </div>
+                {label.tracking_number ? (
+                  <div className="flex flex-wrap gap-2">
+                    <span className="text-muted-foreground">Tracking: </span>
+                    <a
+                      className="underline hover:text-primary"
+                      href={`https://www.fedex.com/wtrk/track/?action=track&trackingnumber=${label.tracking_number}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {label.tracking_number}
+                    </a>
+                  </div>
+                ) : null}
                 <div className="flex flex-wrap gap-4 text-muted-foreground">
                   <span>
                     Weight: {label.weight_value} {label.weight_unit}
@@ -61,29 +79,45 @@ export function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
                   </div>
                 </div>
               </div>
-              <form
-                key={label.id}
-                action={async (formData) => {
-                  try {
-                    await voidShippingLabelAction(formData);
-                    toast.success("Label voided successfully.");
-                  } catch (error) {
-                    toast.error(
-                      `Error voiding label: ${
-                        error instanceof Error ? error.message : String(error)
-                      }`
-                    );
-                  }
-                }}
-                className="flex items-center"
-              >
-                <input
-                  type="hidden"
-                  name="shipmentId"
-                  value={label.shipment_id}
-                />
-                <VoidButton disabled={label.voided} />
-              </form>
+              <div className="flex flex-col items-center justify-center">
+                <form
+                  key={label.id}
+                  action={async (formData) => {
+                    try {
+                      await voidShippingLabelAction(formData);
+                      toast.success("Label voided successfully.");
+                    } catch (error) {
+                      toast.error(
+                        `Error voiding label: ${
+                          error instanceof Error ? error.message : String(error)
+                        }`
+                      );
+                    }
+                  }}
+                  className="flex items-center"
+                >
+                  <input
+                    type="hidden"
+                    name="shipmentId"
+                    value={label.shipment_id}
+                  />
+                  <VoidButton disabled={label.voided} />
+                </form>
+                {label.voided && label.voided_at && (
+                  <div className="text-xs text-muted-foreground mt-2 text-center">
+                    {` Voided on ${new Date(label.voided_at).toLocaleDateString(
+                      "en-US",
+                      {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }
+                    )}`}
+                  </div>
+                )}
+              </div>
             </div>
           ))
         )}
