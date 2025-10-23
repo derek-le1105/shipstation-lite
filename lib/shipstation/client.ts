@@ -222,7 +222,8 @@ export async function listPackages(
 }
 
 export async function voidLabel(shipmentId: number): Promise<void> {
-  return shipStationRequest<void>(`/shipments/voidlabel/${shipmentId}`, {
+  return shipStationRequest<void>(`/shipments/voidlabel`, {
     method: "POST",
+    body: JSON.stringify({ shipmentId }),
   });
 }

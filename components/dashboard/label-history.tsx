@@ -1,10 +1,12 @@
 "use client";
 
-import { voidLabel } from "@/lib/shipstation/client";
 import { ShippingLabelRecord } from "@/lib/supabase/shipping-labels";
 import { Button } from "../ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
+import { voidShippingLabelAction } from "@/lib/actions/shipping";
+import { Spinner } from "../ui/spinner";
+import { useFormStatus } from "react-dom";
 
 export function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
   return (
@@ -58,20 +60,39 @@ export function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
                   </div>
                 </div>
               </div>
-              {/* <div className="flex items-center">
-                <Button
-                  onClick={async () => {
-                    await voidLabel(label.shipment_id);
-                  }}
-                  disabled={label.voided}
-                >
-                  Void Label
-                </Button>
-              </div> */}
+              <form
+                key={label.id}
+                action={voidShippingLabelAction}
+                className="flex items-center"
+              >
+                <input
+                  type="hidden"
+                  name="shipmentId"
+                  value={label.shipment_id}
+                />
+                <VoidButton disabled={label.voided} />
+              </form>
             </div>
           ))
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function VoidButton({ disabled }: { disabled: boolean }) {
+  const { pending } = useFormStatus();
+  return (
+    <Button disabled={disabled || pending}>
+      {pending ? (
+        <>
+          Voiding... <Spinner />
+        </>
+      ) : disabled ? (
+        "Voided"
+      ) : (
+        "Void Label"
+      )}
+    </Button>
   );
 }

@@ -15,10 +15,12 @@ import {
 } from "@/lib/supabase/shipping-labels";
 import {
   createLabel,
+  voidLabel,
   type ShipStationAddress,
   type ShipStationLabel,
   type ShipStationWeight,
 } from "@/lib/shipstation/client";
+import { createClient } from "../supabase/server";
 
 type AddressMode = "saved" | "new";
 
@@ -175,6 +177,32 @@ export type CreateShippingLabelState = {
   shipStationLabel?: ShipStationLabel;
 };
 
+export async function voidShippingLabelAction(formData: FormData) {
+  console.log("voidShippingLabelAction formData: ", formData);
+  const shipmentId = Number(formData.get("shipmentId"));
+  if (!Number.isFinite(shipmentId)) throw new Error("Invalid shipment id");
+
+  const profile = await requireUserProfile();
+  const supabase = await createClient();
+
+  const { data: row, error } = await supabase
+    .from("shipping_labels")
+    .select("id, user_id, voided")
+    .eq("shipment_id", shipmentId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!row || row.user_id !== profile.id) throw new Error("Not found");
+
+  if (!row.voided) {
+    await voidLabel(shipmentId);
+    await supabase
+      .from("shipping_labels")
+      .update({ voided: true, voided_at: new Date().toISOString() })
+      .eq("shipment_id", shipmentId);
+  }
+
+  revalidatePath("/dashboard");
+}
 export async function createShippingLabelAction(
   _: CreateShippingLabelState,
   formData: FormData
@@ -290,6 +318,7 @@ export async function createShippingLabelAction(
       label_data_base64: labelResponse.labelData ?? null,
       shipment_id: labelResponse.shipmentId,
       voided: false,
+      voided_at: null,
     });
 
     revalidatePath("/dashboard");
