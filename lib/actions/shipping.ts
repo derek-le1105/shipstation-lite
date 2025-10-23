@@ -129,7 +129,12 @@ function parseWeight(formData: FormData): ShipStationWeight {
   };
 }
 
-function parseDimensions(formData: FormData) {
+function parseDimensions(formData: FormData): {
+  length: number;
+  width: number;
+  height: number;
+  units: "inches" | "centimeters";
+} {
   const hasDimensions = [
     "dimensions.length",
     "dimensions.width",
@@ -140,7 +145,7 @@ function parseDimensions(formData: FormData) {
   });
 
   if (!hasDimensions) {
-    return undefined;
+    return { length: 0, width: 0, height: 0, units: "inches" };
   }
 
   const length = Number.parseFloat(
@@ -167,7 +172,7 @@ function parseDimensions(formData: FormData) {
     width,
     height,
     units: units === "centimeters" ? "centimeters" : "inches",
-  } as const;
+  };
 }
 
 export type CreateShippingLabelState = {
@@ -178,7 +183,6 @@ export type CreateShippingLabelState = {
 };
 
 export async function voidShippingLabelAction(formData: FormData) {
-  console.log("voidShippingLabelAction formData: ", formData);
   const shipmentId = Number(formData.get("shipmentId"));
   if (!Number.isFinite(shipmentId)) throw new Error("Invalid shipment id");
 
@@ -305,14 +309,16 @@ export async function createShippingLabelAction(
       testLabel,
     });
 
-    console.log("labelResponse: ", labelResponse);
-
     const savedLabel = await insertShippingLabel({
       user_id: profile.id,
       from_address_id: fromAddressRecord?.id ?? null,
       to_address_id: toAddressRecord?.id ?? null,
       ship_from_snapshot: shipFrom,
       ship_to_snapshot: shipTo,
+      length: dimensions.length,
+      width: dimensions.width,
+      height: dimensions.height,
+      units: dimensions.units,
       weight_value: weight.value,
       weight_unit: weight.units,
       carrier_code: labelResponse.carrierCode,

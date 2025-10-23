@@ -26,6 +26,10 @@ export type ShippingLabelRecord = {
   carrier_code: string;
   service_code: string;
   package_code: string | null;
+  length: number;
+  width: number;
+  height: number;
+  units: "inches" | "centimeters";
   weight_value: number;
   weight_unit: string;
   confirmation: string | null;

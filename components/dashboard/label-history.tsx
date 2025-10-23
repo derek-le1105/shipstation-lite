@@ -56,13 +56,27 @@ export function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
                     </a>
                   </div>
                 ) : null}
-                <div className="flex flex-wrap gap-4 text-muted-foreground">
+                <div className="flex flex-wrap gap-2 text-muted-foreground">
+                  <span>Dimensions:</span>
                   <span>
-                    Weight: {label.weight_value} {label.weight_unit}
+                    {label.length} x {label.width} x {label.height}{" "}
+                    {label.units}
                   </span>
-                  {label.shipment_cost ? (
-                    <span>Cost: ${label.shipment_cost.toFixed(2)}</span>
-                  ) : null}
+                </div>
+                <div className="flex flex-wrap gap-2 text-muted-foreground">
+                  <span>Weight:</span>
+                  <span>
+                    {label.weight_value} {label.weight_unit}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2 text-muted-foreground">
+                  <span>Cost:</span>
+                  <span>
+                    {Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                    }).format(label.shipment_cost ?? 0)}
+                  </span>
                 </div>
                 <div className="flex flex-wrap gap-4">
                   <div>
