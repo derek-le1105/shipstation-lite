@@ -116,6 +116,11 @@ export type ShipStationPackage = {
   code?: string;
 };
 
+export type ShipstationVoidLabelResponse = {
+  approved: boolean;
+  message?: string;
+};
+
 function getConfig() {
   const apiKey = process.env.SHIPSTATION_API_KEY;
   const apiSecret = process.env.SHIPSTATION_API_SECRET;
@@ -221,9 +226,14 @@ export async function listPackages(
   );
 }
 
-export async function voidLabel(shipmentId: number): Promise<void> {
-  return shipStationRequest<void>(`/shipments/voidlabel`, {
-    method: "POST",
-    body: JSON.stringify({ shipmentId }),
-  });
+export async function voidLabel(
+  shipmentId: number
+): Promise<ShipstationVoidLabelResponse> {
+  return shipStationRequest<ShipstationVoidLabelResponse>(
+    `/shipments/voidlabel`,
+    {
+      method: "POST",
+      body: JSON.stringify({ shipmentId }),
+    }
+  );
 }

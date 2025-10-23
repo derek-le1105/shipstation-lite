@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { voidShippingLabelAction } from "@/lib/actions/shipping";
 import { Spinner } from "../ui/spinner";
 import { useFormStatus } from "react-dom";
+import { toast } from "sonner";
 
 export function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
   return (
@@ -62,7 +63,18 @@ export function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
               </div>
               <form
                 key={label.id}
-                action={voidShippingLabelAction}
+                action={async (formData) => {
+                  try {
+                    await voidShippingLabelAction(formData);
+                    toast.success("Label voided successfully.");
+                  } catch (error) {
+                    toast.error(
+                      `Error voiding label: ${
+                        error instanceof Error ? error.message : String(error)
+                      }`
+                    );
+                  }
+                }}
                 className="flex items-center"
               >
                 <input

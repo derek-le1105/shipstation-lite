@@ -194,11 +194,18 @@ export async function voidShippingLabelAction(formData: FormData) {
   if (!row || row.user_id !== profile.id) throw new Error("Not found");
 
   if (!row.voided) {
-    await voidLabel(shipmentId);
-    await supabase
+    const { approved, message } = await voidLabel(shipmentId);
+    if (!approved)
+      throw new Error(message || "Unable to void label at this time.");
+
+    const { data: updatedLabel, error: updatedLabelError } = await supabase
       .from("shipping_labels")
       .update({ voided: true, voided_at: new Date().toISOString() })
-      .eq("shipment_id", shipmentId);
+      .eq("shipment_id", shipmentId)
+      .select("*")
+      .single();
+    if (updatedLabelError) throw updatedLabelError;
+    if (!updatedLabel.voided) throw new Error("Failed to update label status.");
   }
 
   revalidatePath("/dashboard");
