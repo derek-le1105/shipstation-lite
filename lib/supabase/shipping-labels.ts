@@ -36,7 +36,7 @@ export type ShippingLabelRecord = {
   shipment_cost: number | null;
   insurance_cost: number | null;
   tracking_number: string | null;
-  label_data_base64: string | null;
+  label_data_base64: string;
   created_at: string;
   shipment_id: number;
   voided: boolean;

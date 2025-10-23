@@ -22,6 +22,8 @@ import {
   createShippingLabelAction,
   type CreateShippingLabelState,
 } from "@/lib/actions/shipping";
+import { printLabels } from "@/lib/utils";
+import { toast } from "sonner";
 
 type AddressMode = "saved" | "new";
 
@@ -601,23 +603,27 @@ export function CreateLabelForm({
       ) : null}
 
       {formState.status === "success" && formState.label ? (
-        <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-4 text-sm text-emerald-700">
-          <p className="font-semibold">Label created successfully.</p>
-          {formState.label.tracking_number ? (
-            <p>Tracking number: {formState.label.tracking_number}</p>
-          ) : null}
+        <div className="flex items-center justify-between rounded-md border border-emerald-500/40 bg-emerald-500/10 p-4 text-sm text-emerald-700">
+          <div className="flex flex-col">
+            <p className="font-semibold">Label created successfully.</p>
+            {formState.label.tracking_number ? (
+              <p>Tracking number: {formState.label.tracking_number}</p>
+            ) : null}
+          </div>
 
-          {/* TODO: Add implementation to convert base64 data to printable label
-          {formState.label.label_download_url ? (
-            <a
-              href={formState.label.label_download_url}
-              className="text-primary underline"
-              target="_blank"
-              rel="noreferrer"
+          {formState.label.label_data_base64 ? (
+            <Button
+              variant="ghost"
+              className="border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 hover:border-emerald-500/60 hover:text-emerald-800"
+              onClick={async () => {
+                if (formState.label?.label_data_base64)
+                  await printLabels([formState.label.label_data_base64]);
+                else toast.error("No label data available to print.");
+              }}
             >
-              Download the label
-            </a>
-          ) : null} */}
+              Print
+            </Button>
+          ) : null}
         </div>
       ) : null}
     </form>
