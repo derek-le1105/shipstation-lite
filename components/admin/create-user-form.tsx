@@ -6,17 +6,17 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   createUserInviteAction,
   type CreateUserState,
 } from "@/lib/actions/admin-users";
 
 export function CreateUserForm() {
-  const [state, formAction, pending] = useActionState<CreateUserState, FormData>(
-    createUserInviteAction,
-    { status: "idle" }
-  );
+  const [state, formAction, pending] = useActionState<
+    CreateUserState,
+    FormData
+  >(createUserInviteAction, { status: "idle" });
 
   if (state.status === "success") {
     toast.success(state.message ?? "User invited", {
@@ -30,18 +30,28 @@ export function CreateUserForm() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-base font-semibold">Create a user</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form action={formAction} className="grid gap-4 md:grid-cols-2">
+      <CardContent className="pt-6">
+        <form action={formAction} className="flex flex-col gap-4">
           <div className="grid gap-2 md:col-span-1">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" required disabled={pending} placeholder="user@example.com" />
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              required
+              disabled={pending}
+              placeholder="user@example.com"
+            />
           </div>
           <div className="grid gap-2 md:col-span-1">
             <Label htmlFor="full_name">Full name</Label>
-            <Input id="full_name" name="full_name" type="text" disabled={pending} placeholder="Optional" />
+            <Input
+              id="full_name"
+              name="full_name"
+              type="text"
+              disabled={pending}
+              placeholder="Optional"
+            />
           </div>
           <div className="grid gap-2 md:col-span-1">
             <Label htmlFor="role">Role</Label>
@@ -61,9 +71,6 @@ export function CreateUserForm() {
             <Button type="submit" disabled={pending}>
               {pending ? "Creating…" : "Create user"}
             </Button>
-            <p className="text-xs text-muted-foreground">
-              Sends an invite email via Supabase. The user will set their password.
-            </p>
           </div>
 
           {state.status === "error" ? (
@@ -76,4 +83,3 @@ export function CreateUserForm() {
     </Card>
   );
 }
-

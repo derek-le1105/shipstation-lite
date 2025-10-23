@@ -1,3 +1,4 @@
+import CreateUserButton from "@/components/admin/users/create-user-button";
 import { UsersTable } from "@/components/admin/users/users-table";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { requireAdminProfile } from "@/lib/auth";
@@ -13,11 +14,20 @@ export default async function AdminUsersPage() {
 
   const profiles = await listProfiles();
 
+  /**
+   * 
+      <section>
+        <CreateUserForm />
+      </section>
+
+      create users with dialog
+   */
   return (
     <section>
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg font-semibold">Users</CardTitle>
+          <CreateUserButton />
         </CardHeader>
         <CardContent>
           <UsersTable profiles={profiles} />
