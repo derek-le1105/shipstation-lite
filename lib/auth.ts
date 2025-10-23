@@ -6,6 +6,8 @@ export type UserProfile = {
   email: string | null;
   full_name: string | null;
   role: "user" | "admin";
+  created_at: string;
+  updated_at: string;
 };
 
 async function ensureProfileRecord(
