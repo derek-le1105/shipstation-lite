@@ -27,36 +27,63 @@ export async function createUserInviteAction(
       typeof fullNameRaw === "string" && fullNameRaw.trim().length > 0
         ? fullNameRaw.trim()
         : null;
-    const role = (typeof roleRaw === "string" ? roleRaw.toLowerCase() : "user") as
-      | "user"
-      | "admin";
+    const role = (
+      typeof roleRaw === "string" ? roleRaw.toLowerCase() : "user"
+    ) as "user" | "admin";
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return { status: "error", message: "Please provide a valid email address." };
+      return {
+        status: "error",
+        message: "Please provide a valid email address.",
+      };
     }
     if (role !== "user" && role !== "admin") {
-      return { status: "error", message: "Invalid role. Must be user or admin." };
+      return {
+        status: "error",
+        message: "Invalid role. Must be user or admin.",
+      };
     }
 
     const admin = createAdminClient();
 
+    // Determine redirect URL for invite link
+    const baseUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      (process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://localhost:3000");
+    const redirectTo = `${baseUrl}/auth/callback`;
+    console.log("redirectTo:", redirectTo);
     // Send an invite so the user sets their own password.
     const inviteRes = await admin.auth.admin.inviteUserByEmail(email, {
       data: full_name ? { full_name } : undefined,
+      redirectTo,
     });
 
     if (inviteRes.error) {
       // If user already exists, proceed to ensure profile.
-      if (inviteRes.error.message?.toLowerCase().includes("already registered")) {
+      if (
+        inviteRes.error.message?.toLowerCase().includes("already registered")
+      ) {
         // Fetch the user by email to get ID
-        const userRes = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
-        const existing = userRes.data.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+        const userRes = await admin.auth.admin.listUsers({
+          page: 1,
+          perPage: 200,
+        });
+        const existing = userRes.data.users.find(
+          (u) => u.email?.toLowerCase() === email.toLowerCase()
+        );
         if (!existing) {
           return { status: "error", message: inviteRes.error.message };
         }
         await ensureProfileRow(admin, existing.id, email, full_name, role);
         revalidatePath("/admin");
-        return { status: "success", userId: existing.id, email, message: "User already existed; profile updated." };
+        return {
+          status: "success",
+          userId: existing.id,
+          email,
+          message: "User already existed; profile updated.",
+        };
       }
       return { status: "error", message: inviteRes.error.message };
     }
@@ -69,9 +96,15 @@ export async function createUserInviteAction(
     await ensureProfileRow(admin, user.id, email, full_name, role);
 
     revalidatePath("/admin");
-    return { status: "success", userId: user.id, email, message: "Invitation sent." };
+    return {
+      status: "success",
+      userId: user.id,
+      email,
+      message: "Invitation sent.",
+    };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Could not create user.";
+    const message =
+      error instanceof Error ? error.message : "Could not create user.";
     return { status: "error", message };
   }
 }
@@ -103,4 +136,3 @@ async function ensureProfileRow(
     if (insErr) throw insErr;
   }
 }
-
