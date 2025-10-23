@@ -12,7 +12,7 @@ async function ensureProfileRecord(
   supabase: SupabaseClient,
   userId: string,
   email: string | null,
-  fullName: string | null,
+  fullName: string | null
 ) {
   const { data, error } = await supabase
     .from("profiles")
@@ -57,12 +57,14 @@ export async function getCurrentProfile(): Promise<UserProfile | null> {
     return null;
   }
 
+  const email = user.email ?? null;
+
   const fullName =
     (typeof user.user_metadata?.full_name === "string"
       ? (user.user_metadata.full_name as string)
       : null) ?? null;
 
-  return ensureProfileRecord(supabase, user.id, user.email, fullName);
+  return ensureProfileRecord(supabase, user.id, email, fullName);
 }
 
 export async function requireUserProfile(): Promise<UserProfile> {
