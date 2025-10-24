@@ -9,7 +9,7 @@ export type UserProfile = {
   created_at: string;
   updated_at: string;
   upcharge_value: number;
-  upcharge_unit: "dollar" | "percent";
+  upcharge_unit: "dollars" | "percent";
 };
 
 async function ensureProfileRecord(

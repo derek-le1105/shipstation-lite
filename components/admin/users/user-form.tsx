@@ -1,6 +1,16 @@
 "use client";
-import { Ellipsis, Loader2 } from "lucide-react";
-import { UserProfile } from "@/lib/auth";
+
+import { UserState } from "@/lib/actions/admin-users";
+import { useActionState, useEffect, useTransition } from "react";
+
+import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogTrigger,
@@ -12,42 +22,57 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { updateProfileAction } from "@/lib/actions/profiles";
-import { toast } from "sonner";
-import { useFormStatus } from "react-dom";
+import { Loader2 } from "lucide-react";
+import { UserProfile } from "@/lib/auth";
 
-export default function EditUserModal({ user }: { user: UserProfile }) {
+/**
+ * A form component for creating or editing a user.
+ */
+export default function UserForm({
+  action,
+  user,
+  icon,
+}: {
+  action: (_prev: UserState, formData: FormData) => Promise<UserState>;
+  user?: UserProfile;
+  icon?: React.ReactNode;
+}) {
+  const [state, formAction, actionPending] = useActionState<
+    UserState,
+    FormData
+  >(action, { status: "idle" });
+  const [transitionPending, startTransition] = useTransition();
+  const isPending = transitionPending || actionPending;
+
+  useEffect(() => {
+    if (state.status === "success")
+      toast.success(state.message ?? "User saved");
+    if (state.status === "error")
+      toast.error(state.message ?? "Could not save user");
+  }, [state.status, state.message]);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    // Append additional value to formData
+    formData.append("user_id", user?.id ?? "");
+    startTransition(() => {
+      formAction(formData);
+    });
+  };
+
   return (
     <Dialog>
       <DialogTrigger asChild>
         <button className="p-2 rounded-md hover:bg-muted/50 transition">
-          <Ellipsis />
+          {icon}
         </button>
       </DialogTrigger>
       <DialogContent>
-        <form
-          action={async (formData) => {
-            console.log("submitted");
-            try {
-              formData.append("user_id", user.id);
-              const data = await updateProfileAction(formData);
-              console.log("data", data);
-              toast.success("User profile updated successfully.");
-            } catch (error) {
-              console.log("error", error);
-              toast.error("Failed to update user profile.");
-            }
-          }}
-        >
-          <DialogTitle>Edit User</DialogTitle>
-          <div className="grid gap-4 pt-4">
+        <DialogTitle>{user ? "Edit User" : "Create User"}</DialogTitle>
+
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4">
             <div className="grid gap-3">
               <Label htmlFor="full_name">Name</Label>
               <Input
@@ -62,7 +87,7 @@ export default function EditUserModal({ user }: { user: UserProfile }) {
             </div>
             <div className="grid gap-3">
               <Label htmlFor="role">Role</Label>
-              <Select name="role" defaultValue={user?.role ?? ""}>
+              <Select name="role" defaultValue={user?.role ?? "user"}>
                 <SelectTrigger className="w-[100px]">
                   <SelectValue placeholder="Select a role"></SelectValue>
                 </SelectTrigger>
@@ -79,20 +104,20 @@ export default function EditUserModal({ user }: { user: UserProfile }) {
                   id="upcharge_value"
                   name="upcharge_value"
                   type="number"
-                  defaultValue={user?.upcharge_value ?? ""}
+                  defaultValue={user?.upcharge_value ?? 0}
                 />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="upcharge_unit">Upcharge Unit</Label>
                 <Select
                   name="upcharge_unit"
-                  defaultValue={user?.upcharge_unit ?? ""}
+                  defaultValue={user?.upcharge_unit ?? "dollars"}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a unit"></SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="dollar">Dollar</SelectItem>
+                    <SelectItem value="dollars">Dollars</SelectItem>
                     <SelectItem value="percent">Percent</SelectItem>
                   </SelectContent>
                 </Select>
@@ -103,25 +128,18 @@ export default function EditUserModal({ user }: { user: UserProfile }) {
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
-            <SaveChangesButton />
+            <Button type="submit" disabled={isPending}>
+              {isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function SaveChangesButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending}>
-      {pending ? (
-        <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving
-        </>
-      ) : (
-        "Save Changes"
-      )}
-    </Button>
   );
 }

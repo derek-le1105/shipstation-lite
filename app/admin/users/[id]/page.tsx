@@ -1,10 +1,11 @@
-import EditUserModal from "@/components/admin/users/user/edit-user";
+import UserForm from "@/components/admin/users/user-form";
 import UserInformation from "@/components/admin/users/user/user-information";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import PageCrumbs from "@/components/ui/page-crumbs";
+import { updateProfileAction } from "@/lib/actions/profiles";
 import { createClient } from "@/lib/supabase/server";
 import { getShippingLabel } from "@/lib/supabase/shipping-labels";
-import { User } from "lucide-react";
+import { User, UserPen } from "lucide-react";
 
 export const metadata = {
   title: "UNS Shipping Manager - Users",
@@ -33,10 +34,14 @@ export default async function UserPage({
           <CardContent>{mostRecentLabel?.created_at}</CardContent>
         </Card>
         <Card className="md:col-span-1">
-          <CardHeader>
+          <CardHeader className="py-4">
             <CardTitle className="flex justify-between items-center">
               User
-              <EditUserModal user={user} />
+              <UserForm
+                action={updateProfileAction}
+                user={user}
+                icon={<UserPen />}
+              />
             </CardTitle>
           </CardHeader>
           <CardContent>

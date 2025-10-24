@@ -235,7 +235,7 @@ export type Database = {
     Enums: {
       package_dimension_units: "inches" | "centimeters";
       user_roles: "user" | "admin";
-      upcharge_units: "dollar" | "percent";
+      upcharge_units: "dollars" | "percent";
     };
     CompositeTypes: {
       [_ in never]: never;
