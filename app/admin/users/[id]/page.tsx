@@ -1,0 +1,62 @@
+import EditUserModal from "@/components/admin/users/user/edit-user";
+import UserInformation from "@/components/admin/users/user/user-information";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import PageCrumbs from "@/components/ui/page-crumbs";
+import { createClient } from "@/lib/supabase/server";
+import { getShippingLabel } from "@/lib/supabase/shipping-labels";
+import { User } from "lucide-react";
+
+export const metadata = {
+  title: "UNS Shipping Manager - Users",
+};
+
+export default async function UserPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const user = await getUser(id);
+  const mostRecentLabel = await getShippingLabel(id);
+  return (
+    <div className="space-y-6">
+      <PageCrumbs
+        title={user?.full_name ?? user.email}
+        icon={<User />}
+        href="/admin/users"
+      />
+      <section className="grid md:grid-cols-[2fr_1fr] gap-6">
+        <Card className="md:col-span-1">
+          <CardHeader>
+            <CardTitle>Last Label Created</CardTitle>
+          </CardHeader>
+          <CardContent>{mostRecentLabel?.created_at}</CardContent>
+        </Card>
+        <Card className="md:col-span-1">
+          <CardHeader>
+            <CardTitle className="flex justify-between items-center">
+              User
+              <EditUserModal user={user} />
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <UserInformation user={user} />
+          </CardContent>
+        </Card>
+      </section>
+    </div>
+  );
+}
+
+async function getUser(id: string) {
+  // Fetch user data based on the provided id
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", id)
+    .single();
+  if (error) throw error;
+
+  return data;
+}

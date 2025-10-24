@@ -102,24 +102,30 @@ export type Database = {
           email: string;
           full_name: string | null;
           id: string;
-          role: string;
+          role: Database["public"]["Enums"]["user_roles"];
           updated_at: string;
+          upcharge_value: number;
+          upcharge_unit: Database["public"]["Enums"]["upcharge_units"];
         };
         Insert: {
           created_at?: string;
           email?: string;
           full_name?: string | null;
           id: string;
-          role?: string;
+          role?: Database["public"]["Enums"]["user_roles"];
           updated_at?: string;
+          upcharge_value?: number;
+          upcharge_unit?: Database["public"]["Enums"]["upcharge_units"];
         };
         Update: {
           created_at?: string;
           email?: string;
           full_name?: string | null;
           id?: string;
-          role?: string;
+          role?: Database["public"]["Enums"]["user_roles"];
           updated_at?: string;
+          upcharge_value?: number;
+          upcharge_unit?: Database["public"]["Enums"]["upcharge_units"];
         };
         Relationships: [];
       };
@@ -228,6 +234,8 @@ export type Database = {
     };
     Enums: {
       package_dimension_units: "inches" | "centimeters";
+      user_roles: "user" | "admin";
+      upcharge_units: "dollar" | "percent";
     };
     CompositeTypes: {
       [_ in never]: never;
