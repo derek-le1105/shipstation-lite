@@ -20,7 +20,7 @@ async function ensureProfileRecord(
 ) {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, email, full_name, role")
+    .select("*")
     .eq("id", userId)
     .maybeSingle();
 
@@ -40,7 +40,7 @@ async function ensureProfileRecord(
       full_name: fullName,
       role: "user",
     })
-    .select("id, email, full_name, role")
+    .select("*")
     .single();
 
   if (insertError) {

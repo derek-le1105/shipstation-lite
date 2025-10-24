@@ -34,6 +34,8 @@ export type ShippingLabelRecord = {
   confirmation: string | null;
   shipment_cost: number | null;
   insurance_cost: number | null;
+  upcharged_shipment_cost: number;
+  upcharged_insurance_cost: number;
   tracking_number: string | null;
   label_data_base64: string;
   created_at: string;

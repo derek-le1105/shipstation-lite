@@ -39,9 +39,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    console.log("Fetching rates with payload:", payload);
     const rates = await getRates(payload);
-    console.log("Fetched rates:", rates);
     return NextResponse.json({ rates });
   } catch (error) {
     const message =

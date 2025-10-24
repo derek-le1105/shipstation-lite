@@ -103,19 +103,19 @@ export type Database = {
           full_name: string | null;
           id: string;
           role: Database["public"]["Enums"]["user_roles"];
-          updated_at: string;
+          upcharge_unit: Database["public"]["Enums"]["upcharging_unit"];
           upcharge_value: number;
-          upcharge_unit: Database["public"]["Enums"]["upcharge_units"];
+          updated_at: string;
         };
         Insert: {
           created_at?: string;
-          email?: string;
+          email: string;
           full_name?: string | null;
           id: string;
           role?: Database["public"]["Enums"]["user_roles"];
-          updated_at?: string;
+          upcharge_unit?: Database["public"]["Enums"]["upcharging_unit"];
           upcharge_value?: number;
-          upcharge_unit?: Database["public"]["Enums"]["upcharge_units"];
+          updated_at?: string;
         };
         Update: {
           created_at?: string;
@@ -123,9 +123,9 @@ export type Database = {
           full_name?: string | null;
           id?: string;
           role?: Database["public"]["Enums"]["user_roles"];
-          updated_at?: string;
+          upcharge_unit?: Database["public"]["Enums"]["upcharging_unit"];
           upcharge_value?: number;
-          upcharge_unit?: Database["public"]["Enums"]["upcharge_units"];
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -149,6 +149,8 @@ export type Database = {
           to_address_id: string | null;
           tracking_number: string | null;
           units: Database["public"]["Enums"]["package_dimension_units"];
+          upcharged_insurance_cost: number;
+          upcharged_shipment_cost: number;
           user_id: string;
           voided: boolean;
           voided_at: string | null;
@@ -175,6 +177,8 @@ export type Database = {
           to_address_id?: string | null;
           tracking_number?: string | null;
           units?: Database["public"]["Enums"]["package_dimension_units"];
+          upcharged_insurance_cost?: number;
+          upcharged_shipment_cost?: number;
           user_id: string;
           voided: boolean;
           voided_at?: string | null;
@@ -201,6 +205,8 @@ export type Database = {
           to_address_id?: string | null;
           tracking_number?: string | null;
           units?: Database["public"]["Enums"]["package_dimension_units"];
+          upcharged_insurance_cost?: number;
+          upcharged_shipment_cost?: number;
           user_id?: string;
           voided?: boolean;
           voided_at?: string | null;
@@ -234,8 +240,8 @@ export type Database = {
     };
     Enums: {
       package_dimension_units: "inches" | "centimeters";
+      upcharging_unit: "dollars" | "percent";
       user_roles: "user" | "admin";
-      upcharge_units: "dollars" | "percent";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -370,6 +376,8 @@ export const Constants = {
   public: {
     Enums: {
       package_dimension_units: ["inches", "centimeters"],
+      upcharging_unit: ["dollars", "percent"],
+      user_roles: ["user", "admin"],
     },
   },
 } as const;

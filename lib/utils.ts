@@ -55,5 +55,5 @@ export function formatUpcharge(value: number, unit: "dollars" | "percent") {
         style: "currency",
         currency: "USD",
       }).format(value)
-    : `${value.toFixed(2)}%`;
+    : `${value?.toFixed(2)}%`;
 }

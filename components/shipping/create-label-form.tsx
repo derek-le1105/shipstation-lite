@@ -31,6 +31,7 @@ import { AddressMode } from "./types";
 import { Fieldset } from "../ui/fieldset";
 import { AddressSection } from "./address-section";
 import { useDebounce } from "@/lib/hooks/useDebounce";
+import { UserProfile } from "@/lib/auth";
 
 const getServiceCode = (service: ShipStationService) => service.code ?? "";
 
@@ -247,11 +248,13 @@ function areRateRequestsEqual(
 }
 
 export function CreateLabelForm({
+  profile,
   fromAddresses,
   toAddresses,
   carriers,
   services,
 }: {
+  profile: UserProfile;
   fromAddresses: AddressRecord[];
   toAddresses: AddressRecord[];
   carriers: ShipStationCarrier[];
@@ -372,10 +375,26 @@ export function CreateLabelForm({
         }
 
         const data = (await response.json()) as { rates?: ShipStationRate[] };
+        const updatedRates = {
+          ...data,
+          rates: data.rates?.map((rate) => {
+            const upchargePercent =
+              profile.upcharge_unit === "percent" ? profile.upcharge_value : 0;
+            return {
+              ...rate,
+              shipmentCost: rate.shipmentCost
+                ? Number(rate.shipmentCost) * (1 + upchargePercent / 100)
+                : rate.shipmentCost,
+              otherCost: rate.otherCost
+                ? Number(rate.otherCost) * (1 + upchargePercent / 100)
+                : rate.otherCost,
+            };
+          }),
+        };
         if (!cancelled) {
           setRateState({
             status: "success",
-            rates: Array.isArray(data.rates) ? data.rates : [],
+            rates: Array.isArray(updatedRates.rates) ? updatedRates.rates : [],
           });
         }
       } catch (error) {
@@ -397,6 +416,8 @@ export function CreateLabelForm({
   }, [debouncedRateRequest]);
 
   const onSubmit = (formData: FormData) => {
+    formData.append("upcharge_value", profile.upcharge_value.toString());
+    formData.append("upcharge_unit", profile.upcharge_unit);
     startTransition(() => {
       formAction(formData);
     });
@@ -449,7 +470,6 @@ export function CreateLabelForm({
   }, [rateState, selectedCarrier, selectedService]);
 
   const priceContent = useMemo(() => {
-    console.log("rateState:", rateState);
     switch (rateState.status) {
       case "loading":
         return (
