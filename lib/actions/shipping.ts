@@ -119,7 +119,7 @@ function parseWeight(formData: FormData): ShipStationWeight {
     throw new Error("Weight must be a positive number.");
   }
 
-  if (!["ounces", "pounds", "grams", "kilograms"].includes(unit)) {
+  if (!["ounces", "pounds", "grams"].includes(unit)) {
     throw new Error("Unsupported weight unit.");
   }
 
@@ -309,6 +309,15 @@ export async function createShippingLabelAction(
       testLabel,
     });
 
+    const upchargedShipmentCost = calculateUpchargeCost(
+      formData,
+      labelResponse.shipmentCost
+    );
+    const upchargedInsuranceCost = calculateUpchargeCost(
+      formData,
+      labelResponse.insuranceCost
+    );
+
     const savedLabel = await insertShippingLabel({
       user_id: profile.id,
       from_address_id: fromAddressRecord?.id ?? null,
@@ -327,6 +336,8 @@ export async function createShippingLabelAction(
       confirmation: labelResponse.confirmation ?? null,
       shipment_cost: labelResponse.shipmentCost ?? null,
       insurance_cost: labelResponse.insuranceCost ?? null,
+      upcharged_shipment_cost: upchargedShipmentCost,
+      upcharged_insurance_cost: upchargedInsuranceCost,
       tracking_number: labelResponse.trackingNumber ?? null,
       label_data_base64: labelResponse.labelData ?? null,
       shipment_id: labelResponse.shipmentId,
@@ -353,4 +364,27 @@ export async function createShippingLabelAction(
       message,
     };
   }
+}
+
+function calculateUpchargeCost(formData: FormData, totalShipmentCost: number) {
+  const upchargeValueRaw = formData.get("upcharge_value");
+  const upchargeUnitRaw = formData.get("upcharge_unit");
+  const upchargeValue =
+    typeof upchargeValueRaw === "string"
+      ? Number.parseFloat(upchargeValueRaw)
+      : 0;
+  const upchargeUnit =
+    typeof upchargeUnitRaw === "string" ? upchargeUnitRaw : "dollars";
+  if (
+    Number.isFinite(upchargeValue) &&
+    upchargeValue > 0 &&
+    (upchargeUnit === "dollars" || upchargeUnit === "percent")
+  ) {
+    if (upchargeUnit === "dollars") {
+      return totalShipmentCost + upchargeValue;
+    } else if (upchargeUnit === "percent") {
+      return totalShipmentCost * (1 + upchargeValue / 100);
+    }
+  }
+  return totalShipmentCost;
 }

@@ -13,7 +13,6 @@ export type ShipStationAddressSnapshot = {
   country?: string | null;
   phone?: string | null;
   residential?: boolean | null;
-  [key: string]: unknown;
 };
 
 export type ShippingLabelRecord = {
@@ -35,6 +34,8 @@ export type ShippingLabelRecord = {
   confirmation: string | null;
   shipment_cost: number | null;
   insurance_cost: number | null;
+  upcharged_shipment_cost: number;
+  upcharged_insurance_cost: number;
   tracking_number: string | null;
   label_data_base64: string;
   created_at: string;
@@ -84,6 +85,27 @@ export async function insertShippingLabel(
   }
 
   return data as ShippingLabelRecord;
+}
+
+export async function getShippingLabel(
+  userId: string,
+  client?: ServerSupabaseClient
+): Promise<ShippingLabelRecord | null> {
+  const supabase = await getClient(client);
+  const { data, error } = await supabase
+    .from("shipping_labels")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+  if (error) {
+    if (error.code === "PGRST116") {
+      return null;
+    }
+    throw error;
+  }
+  return data as ShippingLabelRecord | null;
 }
 
 export async function listShippingLabelsForUser(

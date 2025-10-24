@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdminProfile } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export type CreateUserState = {
+export type UserState = {
   status: "idle" | "success" | "error";
   message?: string;
   userId?: string;
@@ -12,9 +12,9 @@ export type CreateUserState = {
 };
 
 export async function createUserInviteAction(
-  _prev: CreateUserState,
+  _prev: UserState,
   formData: FormData
-): Promise<CreateUserState> {
+): Promise<UserState> {
   try {
     await requireAdminProfile();
 

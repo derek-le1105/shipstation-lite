@@ -8,6 +8,8 @@ export type UserProfile = {
   role: "user" | "admin";
   created_at: string;
   updated_at: string;
+  upcharge_value: number;
+  upcharge_unit: "dollars" | "percent";
 };
 
 async function ensureProfileRecord(
@@ -18,7 +20,7 @@ async function ensureProfileRecord(
 ) {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, email, full_name, role")
+    .select("*")
     .eq("id", userId)
     .maybeSingle();
 
@@ -38,7 +40,7 @@ async function ensureProfileRecord(
       full_name: fullName,
       role: "user",
     })
-    .select("id, email, full_name, role")
+    .select("*")
     .single();
 
   if (insertError) {
