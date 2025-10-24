@@ -48,3 +48,12 @@ export const printLabels = async (pdfValues: string[]) => {
     console.error("Error printing labels:", error);
   }
 };
+
+export function formatUpcharge(value: number, unit: "dollars" | "percent") {
+  return unit === "dollars"
+    ? Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+      }).format(value)
+    : `${value.toFixed(2)}%`;
+}

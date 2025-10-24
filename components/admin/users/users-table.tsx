@@ -1,4 +1,5 @@
 import { UserProfile } from "@/lib/auth";
+import { formatUpcharge } from "@/lib/utils";
 
 export function UsersTable({ profiles }: { profiles: UserProfile[] }) {
   return (
@@ -10,6 +11,7 @@ export function UsersTable({ profiles }: { profiles: UserProfile[] }) {
             <th className="px-4 py-3 text-left">Email</th>
             <th className="px-4 py-3 text-left">Full Name</th>
             <th className="px-4 py-3 text-left">Role</th>
+            <th className="px-4 py-3 text-center">Upcharge Value</th>
             <th className="px-4 py-3 text-left">Actions</th>
           </tr>
         </thead>
@@ -31,6 +33,14 @@ export function UsersTable({ profiles }: { profiles: UserProfile[] }) {
               </td>
               <td className="px-4 py-3">
                 <span className="font-medium">{profile.role}</span>
+              </td>
+              <td className="px-4 py-3 text-center">
+                <span className="font-medium">
+                  {formatUpcharge(
+                    profile.upcharge_value,
+                    profile.upcharge_unit
+                  )}
+                </span>
               </td>
               <td className="px-4 py-3">
                 <a

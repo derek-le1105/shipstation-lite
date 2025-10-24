@@ -1,13 +1,5 @@
 import { UserProfile } from "@/lib/auth";
-
-function formatUpcharge(value: number, unit: "dollars" | "percent") {
-  return unit === "dollars"
-    ? Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(value)
-    : `${value.toFixed(2)}%`;
-}
+import { formatUpcharge } from "@/lib/utils";
 
 export default function UserInformation({ user }: { user: UserProfile }) {
   return (
