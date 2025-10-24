@@ -9,7 +9,7 @@ export default function DashboardLoading() {
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle className="text-xl font-semibold">
-              <Skeleton className="h-6 w-1/3" />
+              Create a shipping label
             </CardTitle>
           </CardHeader>
           <CardContent>
