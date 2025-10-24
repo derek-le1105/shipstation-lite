@@ -10,6 +10,29 @@ export const SUPPORTED_SERVICES = [
   "fedex_first_overnight",
 ];
 
+export type ShipstationRatesRequest = {
+  carrierCode: string;
+  serviceCode?: string;
+  packageCode?: string;
+  fromPostalCode: string;
+  fromCity?: string;
+  fromState?: string;
+  fromWarehouseId?: string;
+  toState?: string; //required from UPS carrier
+  toCountry: string;
+  toPostalCode: string;
+  toCity?: string;
+  weight: ShipStationWeight;
+  dimensions?: ShipStationDimensions;
+  confirmation?:
+    | "none"
+    | "delivery"
+    | "signature"
+    | "adult_signature"
+    | "direct_signature";
+  residential?: boolean;
+};
+
 export type ShipStationAddress = {
   name: string;
   company?: string | null;
@@ -27,8 +50,15 @@ export type ShipStationAddress = {
 
 export type ShipStationWeight = {
   value: number;
-  units: "ounces" | "pounds" | "grams" | "kilograms";
+  units: "ounces" | "pounds" | "grams";
   WeightUnits?: number;
+};
+
+export type ShipStationDimensions = {
+  length: number;
+  width: number;
+  height: number;
+  units: "inches" | "centimeters";
 };
 
 export type CreateLabelPayload = {
@@ -121,6 +151,20 @@ export type ShipstationVoidLabelResponse = {
   message?: string;
 };
 
+export type ShipStationRate = {
+  carrierCode: string;
+  serviceCode: string;
+  serviceName: string;
+  shipmentCost: number;
+  otherCost?: number;
+  deliveryDays?: number | null;
+  guaranteedService?: boolean;
+  packageType?: string | null;
+  confirmation?: string | null;
+  residential?: boolean;
+  errorMessages?: string[];
+};
+
 function getConfig() {
   const apiKey = process.env.SHIPSTATION_API_KEY;
   const apiSecret = process.env.SHIPSTATION_API_SECRET;
@@ -187,6 +231,15 @@ export async function createLabel(
   return shipStationRequest<ShipStationLabel>("/shipments/createlabel", {
     method: "POST",
     body: JSON.stringify(payload),
+  });
+}
+
+export async function getRates(
+  request: ShipstationRatesRequest
+): Promise<ShipStationRate[]> {
+  return shipStationRequest<ShipStationRate[]>("/shipments/getrates", {
+    method: "POST",
+    body: JSON.stringify(request),
   });
 }
 

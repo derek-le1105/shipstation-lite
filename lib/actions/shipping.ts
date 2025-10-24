@@ -119,7 +119,7 @@ function parseWeight(formData: FormData): ShipStationWeight {
     throw new Error("Weight must be a positive number.");
   }
 
-  if (!["ounces", "pounds", "grams", "kilograms"].includes(unit)) {
+  if (!["ounces", "pounds", "grams"].includes(unit)) {
     throw new Error("Unsupported weight unit.");
   }
 
