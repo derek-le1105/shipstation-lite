@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "13.0.5";
   };
-  graphql_public: {
-    Tables: {
-      [_ in never]: never;
-    };
-    Views: {
-      [_ in never]: never;
-    };
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json;
-          operationName?: string;
-          query?: string;
-          variables?: Json;
-        };
-        Returns: Json;
-      };
-    };
-    Enums: {
-      [_ in never]: never;
-    };
-    CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
   public: {
     Tables: {
       addresses: {
@@ -140,6 +115,7 @@ export type Database = {
           insurance_cost: number | null;
           label_data_base64: string | null;
           length: number;
+          order_number: string | null;
           package_code: string | null;
           service_code: string;
           ship_from_snapshot: Json;
@@ -168,6 +144,7 @@ export type Database = {
           insurance_cost?: number | null;
           label_data_base64?: string | null;
           length?: number;
+          order_number?: string | null;
           package_code?: string | null;
           service_code: string;
           ship_from_snapshot: Json;
@@ -196,6 +173,7 @@ export type Database = {
           insurance_cost?: number | null;
           label_data_base64?: string | null;
           length?: number;
+          order_number?: string | null;
           package_code?: string | null;
           service_code?: string;
           ship_from_snapshot?: Json;
@@ -370,9 +348,6 @@ export type CompositeTypes<
   : never;
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       package_dimension_units: ["inches", "centimeters"],

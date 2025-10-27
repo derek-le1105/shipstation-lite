@@ -25,7 +25,7 @@ const NAV_MAIN = [
         url: "/dashboard/labels",
         enabled: false,
       },
-      { title: "Addresses", url: "/dashboard/address", enabled: false },
+      { title: "Addresses", url: "/dashboard/addresses", enabled: false },
     ],
   },
   {
