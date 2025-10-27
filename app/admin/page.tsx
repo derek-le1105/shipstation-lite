@@ -5,6 +5,10 @@ import { requireAdminProfile } from "@/lib/auth";
 import { listAllShippingLabels } from "@/lib/supabase/shipping-labels";
 import { AdminTable } from "@/components/admin/admin-table";
 
+export const metadata = {
+  title: "UNS Shipping Manager - Admin",
+};
+
 export default async function AdminPage() {
   try {
     await requireAdminProfile();

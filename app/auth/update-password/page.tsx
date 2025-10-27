@@ -1,5 +1,9 @@
 import { UpdatePasswordForm } from "@/components/update-password-form";
 
+export const metadata = {
+  title: "UNS Shipping Manager - Update Password",
+};
+
 export default function Page() {
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">

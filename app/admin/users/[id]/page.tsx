@@ -8,7 +8,7 @@ import { getShippingLabel } from "@/lib/supabase/shipping-labels";
 import { User, UserPen } from "lucide-react";
 
 export const metadata = {
-  title: "UNS Shipping Manager - Users",
+  title: "UNS Shipping Manager - Admin | Users",
 };
 
 export default async function UserPage({

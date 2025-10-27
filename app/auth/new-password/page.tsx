@@ -10,6 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 
+export const metadata = {
+  title: "UNS Shipping Manager - New Password",
+};
+
 export default function NewPasswordPage() {
   const router = useRouter();
   const [password, setPassword] = useState("");

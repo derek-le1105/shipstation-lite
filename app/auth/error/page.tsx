@@ -1,5 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+export const metadata = {
+  title: "UNS Shipping Manager - Error",
+};
+
 export default async function Page({
   searchParams,
 }: {

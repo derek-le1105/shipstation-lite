@@ -8,12 +8,12 @@ import { listAddresses, type AddressRecord } from "@/lib/supabase/addresses";
 import { listShippingLabelsForUser } from "@/lib/supabase/shipping-labels";
 import {
   listCarriers,
-  listServices,
   type ShipStationCarrier,
   type ShipStationService,
 } from "@/lib/shipstation/client";
 import { CreateLabelForm } from "@/components/shipping/create-label-form";
 import { LabelHistory } from "@/components/dashboard/label-history";
+import { FEDEX_SERVICES } from "@/lib/shipstation/fedex";
 
 type CarrierMetadata = {
   carrier: ShipStationCarrier | null;
@@ -70,31 +70,9 @@ function AddressList({
   );
 }
 
-// function getSnapshotName(snapshot: ShipStationAddressSnapshot) {
-//   if (!snapshot) return "N/A";
-//   if (
-//     snapshot.name &&
-//     typeof snapshot.name === "string" &&
-//     snapshot.name.length > 0
-//   ) {
-//     return snapshot.name;
-//   }
-//   if (
-//     snapshot.company &&
-//     typeof snapshot.company === "string" &&
-//     snapshot.company.length > 0
-//   ) {
-//     return snapshot.company;
-//   }
-//   if (
-//     snapshot.street1 &&
-//     typeof snapshot.street1 === "string" &&
-//     snapshot.street1.length > 0
-//   ) {
-//     return snapshot.street1;
-//   }
-//   return "N/A";
-// }
+export const metadata = {
+  title: "UNS Shipping Manager - Dashboard",
+};
 
 export default async function DashboardPage() {
   const profile = await getCurrentProfile();
@@ -120,7 +98,7 @@ export default async function DashboardPage() {
 
     if (carriers.length > 0) {
       const carrier = carriers[0]!;
-      const [services] = await Promise.all([listServices(carrier.code)]);
+      const services = FEDEX_SERVICES;
       metadata = {
         carrier,
         services,

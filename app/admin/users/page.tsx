@@ -7,6 +7,10 @@ import { listProfiles } from "@/lib/supabase/profiles";
 import { UserPlus } from "lucide-react";
 import { redirect } from "next/navigation";
 
+export const metadata = {
+  title: "UNS Shipping Manager - Admin | Users",
+};
+
 export default async function AdminUsersPage() {
   try {
     await requireAdminProfile();
