@@ -5,7 +5,8 @@ import { printLabels } from "@/lib/utils";
 import { Printer } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
-import { Badge } from "../ui/badge";
+import { FEDEX_SERVICES, generateTrackingLink } from "@/lib/shipstation/fedex";
+import { StatusBadge } from "../dashboard/status-badge";
 
 export function AdminTable({ labels }: { labels: ShippingLabelWithProfile[] }) {
   if (labels.length === 0) {
@@ -23,7 +24,8 @@ export function AdminTable({ labels }: { labels: ShippingLabelWithProfile[] }) {
           <tr>
             <th className="px-4 py-3 text-left">Created</th>
             <th className="px-4 py-3 text-left">User</th>
-            <th className="px-4 py-3 text-left">Carrier</th>
+            <th className="px-4 py-3 text-left">Status</th>
+            {/* <th className="px-4 py-3 text-left">Carrier</th> */}
             <th className="px-4 py-3 text-left">Service</th>
             <th className="px-4 py-3 text-left">Tracking</th>
             <th className="px-4 py-3 text-right">Cost</th>
@@ -43,16 +45,33 @@ export function AdminTable({ labels }: { labels: ShippingLabelWithProfile[] }) {
                       label.profiles?.email ??
                       "Unknown"}
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs truncate text-muted-foreground">
                     {label.profiles?.email ?? "No email"}
                   </span>
                 </div>
               </td>
               <td className="px-4 py-3">
-                <Badge variant="secondary">{label.carrier_code}</Badge>
+                <StatusBadge voided={label.voided} />
               </td>
-              <td className="px-4 py-3">{label.service_code}</td>
-              <td className="px-4 py-3">{label.tracking_number ?? "—"}</td>
+              {/* <td className="px-4 py-3">
+                <Badge variant="secondary">{label.carrier_code}</Badge>
+              </td> */}
+              <td className="px-4 py-3">
+                {
+                  FEDEX_SERVICES.find(
+                    (service) => service.code === label.service_code
+                  )?.name
+                }
+              </td>
+              <td className="px-4 py-3 underline">
+                {label.tracking_number ? (
+                  <a href={generateTrackingLink(label.tracking_number)}>
+                    {label.tracking_number}
+                  </a>
+                ) : (
+                  "—"
+                )}
+              </td>
               <td className="px-4 py-3 text-right">
                 {label.shipment_cost
                   ? `$${label.shipment_cost.toFixed(2)}`
@@ -63,6 +82,7 @@ export function AdminTable({ labels }: { labels: ShippingLabelWithProfile[] }) {
                   <Button
                     size="sm"
                     className="w-full md:w-auto"
+                    disabled={!label.label_data_base64 || label.voided}
                     onClick={async () => {
                       try {
                         await printLabels([label.label_data_base64!]);

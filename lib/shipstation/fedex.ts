@@ -51,3 +51,7 @@ export const FEDEX_SERVICES: ShipStationService[] = [
     international: false,
   },
 ];
+
+export function generateTrackingLink(trackingNumber: string) {
+  return `https://www.fedex.com/fedextrack/?trknbr=${trackingNumber}`;
+}

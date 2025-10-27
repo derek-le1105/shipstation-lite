@@ -18,6 +18,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { voidShippingLabelAction } from "@/lib/actions/shipping";
 import { toast } from "sonner";
 import { printLabels } from "@/lib/utils";
+import { StatusBadge } from "./status-badge";
 
 export function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -286,23 +287,5 @@ function VoidButton({ disabled }: { disabled: boolean }) {
         "Void Label"
       )}
     </Button>
-  );
-}
-
-function StatusBadge({ voided }: { voided: boolean }) {
-  return voided ? (
-    <Badge
-      variant="outline"
-      className="text-xs border-destructive/40 text-destructive"
-    >
-      Voided
-    </Badge>
-  ) : (
-    <Badge
-      variant="outline"
-      className="text-xs border-emerald-500/40 text-emerald-600"
-    >
-      Active
-    </Badge>
   );
 }
