@@ -34,18 +34,30 @@ export function NavUser({
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger asChild className="max-w-56">
             <SidebarMenuButton
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarFallback className="rounded-lg">
+                  {user.name?.[0]?.toUpperCase() ?? "U"}
+                </AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
-                <span className="truncate text-xs">{user.email}</span>
+              <div className="grid min-w-0 flex-1 basis-0 overflow-hidden text-left text-sm leading-tight">
+                <span
+                  className="block w-full truncate font-medium"
+                  title={user.name}
+                >
+                  {user.name}
+                </span>
+                <span
+                  className="block w-full truncate text-xs"
+                  title={user.email}
+                >
+                  {user.email}
+                </span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -57,14 +69,26 @@ export function NavUser({
             sideOffset={4}
           >
             <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+              <div className="flex min-w-0 items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarFallback className="rounded-lg">
+                    {user.name?.[0]?.toUpperCase() ?? "U"}
+                  </AvatarFallback>
                 </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
-                  <span className="truncate text-xs">{user.email}</span>
+                <div className="grid min-w-0 flex-1 basis-0 overflow-hidden text-left text-sm leading-tight">
+                  <span
+                    className="block w-full truncate font-medium"
+                    title={user.name}
+                  >
+                    {user.name}
+                  </span>
+                  <span
+                    className="block w-full truncate text-xs"
+                    title={user.email}
+                  >
+                    {user.email}
+                  </span>
                 </div>
               </div>
             </DropdownMenuLabel>
