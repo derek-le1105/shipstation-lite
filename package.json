@@ -4,7 +4,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "supabase-gen": "npx supabase gen types typescript --project-id xmjuzvrsligwyuvpzzzk > lib/supabase/supabase.types.ts"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.10",
