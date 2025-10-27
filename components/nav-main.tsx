@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
-import { ChevronRight, type LucideIcon } from "lucide-react"
+import { ChevronRight, Flag, type LucideIcon } from "lucide-react";
 
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+} from "@/components/ui/collapsible";
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -17,22 +17,32 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
+import { isDeploymentDevelopment } from "@/lib/utils";
 
 export function NavMain({
   items,
 }: {
   items: {
-    title: string
-    url: string
-    icon: LucideIcon
-    isActive?: boolean
+    title: string;
+    url: string;
+    icon: LucideIcon;
+    isActive?: boolean;
     items?: {
-      title: string
-      url: string
-    }[]
-  }[]
+      title: string;
+      url: string;
+      enabled: boolean;
+    }[];
+  }[];
 }) {
+  const hasSubItems = (item: (typeof items)[number]) => {
+    return item.items?.length;
+  };
+
+  const hasEnabledSubItems = (item: (typeof items)[number]) => {
+    return item.items?.some((subItem) => subItem.enabled);
+  };
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
@@ -46,7 +56,8 @@ export function NavMain({
                   <span>{item.title}</span>
                 </a>
               </SidebarMenuButton>
-              {item.items?.length ? (
+              {(hasSubItems(item) && hasEnabledSubItems(item)) ||
+              isDeploymentDevelopment() ? (
                 <>
                   <CollapsibleTrigger asChild>
                     <SidebarMenuAction className="data-[state=open]:rotate-90">
@@ -56,15 +67,27 @@ export function NavMain({
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenuSub>
-                      {item.items?.map((subItem) => (
-                        <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton asChild>
-                            <a href={subItem.url}>
-                              <span>{subItem.title}</span>
-                            </a>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
+                      {item.items
+                        ?.filter(
+                          (subItem) =>
+                            subItem.enabled || isDeploymentDevelopment()
+                        )
+                        .map((subItem) => (
+                          <SidebarMenuSubItem key={subItem.title}>
+                            <SidebarMenuSubButton asChild>
+                              <a
+                                href={subItem.url}
+                                className="flex justify-between items-center w-full"
+                              >
+                                <span>{subItem.title}</span>
+                                {isDeploymentDevelopment() &&
+                                  !subItem.enabled && (
+                                    <Flag className="text-orange-500" />
+                                  )}
+                              </a>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
                     </SidebarMenuSub>
                   </CollapsibleContent>
                 </>
@@ -74,5 +97,5 @@ export function NavMain({
         ))}
       </SidebarMenu>
     </SidebarGroup>
-  )
+  );
 }

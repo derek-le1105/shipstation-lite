@@ -23,8 +23,9 @@ const NAV_MAIN = [
       {
         title: "Labels",
         url: "/dashboard/labels",
+        enabled: false,
       },
-      { title: "Address", url: "/dashboard/address" },
+      { title: "Addresses", url: "/dashboard/addresses", enabled: true },
     ],
   },
   {
@@ -32,7 +33,7 @@ const NAV_MAIN = [
     url: "/admin",
     icon: Shield,
     isActive: false,
-    items: [{ title: "Users", url: "/admin/users" }],
+    items: [{ title: "Users", url: "/admin/users", enabled: true }],
   },
 ];
 

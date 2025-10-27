@@ -104,3 +104,46 @@ export async function getAddressById(
 
   return address;
 }
+
+export async function updateAddress(
+  id: string,
+  userId: string,
+  input: AddressInput,
+  client?: ServerSupabaseClient,
+): Promise<AddressRecord> {
+  const supabase = await getClient(client);
+
+  const { data, error } = await supabase
+    .from("addresses")
+    .update({
+      ...input,
+    })
+    .eq("id", id)
+    .eq("user_id", userId)
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as AddressRecord;
+}
+
+export async function deleteAddress(
+  id: string,
+  userId: string,
+  client?: ServerSupabaseClient,
+): Promise<void> {
+  const supabase = await getClient(client);
+
+  const { error } = await supabase
+    .from("addresses")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", userId);
+
+  if (error) {
+    throw error;
+  }
+}

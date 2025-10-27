@@ -44,8 +44,8 @@ export default function UserMenu({ user }: { user: JwtPayload }) {
           </span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <span onClick={logout} className="flex items-center">
+        <DropdownMenuItem onClick={logout}>
+          <span className="flex items-center">
             <LogOut className="mr-2 h-4 w-4" />
             Logout
           </span>

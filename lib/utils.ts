@@ -57,3 +57,7 @@ export function formatUpcharge(value: number, unit: "dollars" | "percent") {
       }).format(value)
     : `${value?.toFixed(2)}%`;
 }
+
+export function isDeploymentDevelopment() {
+  return process.env.NEXT_PUBLIC_DEPLOYMENT === "development";
+}

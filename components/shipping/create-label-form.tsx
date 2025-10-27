@@ -655,7 +655,30 @@ export function CreateLabelForm({
               </SelectContent>
             </Select>
           </div>
-          <div className="grid" />
+          <div className="grid gap-2">
+            <Label htmlFor="confirmation">Confirmation</Label>
+            <Select
+              name="confirmation"
+              disabled={isPending}
+              defaultValue="delivery"
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue
+                  defaultValue="delivery"
+                  placeholder="Select confirmation"
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="delivery">Delivery</SelectItem>
+                <SelectItem value="signature">Signature</SelectItem>
+                <SelectItem value="adult_signature">Adult Signature</SelectItem>
+                <SelectItem value="direct_signature">
+                  Direct Signature
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="grid gap-2">
             <Label>Price</Label>
             {priceContent}
