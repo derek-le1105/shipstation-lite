@@ -24,6 +24,7 @@ const NAV_MAIN = [
         title: "Labels",
         url: "/dashboard/labels",
       },
+      { title: "Address", url: "/dashboard/address" },
     ],
   },
   {

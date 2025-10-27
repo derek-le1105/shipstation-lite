@@ -32,6 +32,13 @@ import { Fieldset } from "../ui/fieldset";
 import { AddressSection } from "./address-section";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import { UserProfile } from "@/lib/auth";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 const getServiceCode = (service: ShipStationService) => service.code ?? "";
 
@@ -423,38 +430,6 @@ export function CreateLabelForm({
     });
   };
 
-  const carrierOptions = useMemo(() => {
-    if (carriers.length === 0)
-      return <option value="">No carriers configured</option>;
-    return carriers.map((carrier) => (
-      <option key={carrier.code} value={carrier.code}>
-        {carrier.name}
-      </option>
-    ));
-  }, [carriers]);
-
-  const hasServiceChoices = useMemo(
-    () => services.some((service) => getServiceCode(service).length > 0),
-    [services]
-  );
-
-  const serviceOptions = useMemo(() => {
-    if (!hasServiceChoices) {
-      return <option value="">No services available</option>;
-    }
-    return services
-      .filter((service) => getServiceCode(service).length > 0)
-      .map((service) => {
-        const value = getServiceCode(service);
-        const key = `${service.carrierCode}-${value}`;
-        return (
-          <option key={key} value={value}>
-            {service.name}
-          </option>
-        );
-      });
-  }, [hasServiceChoices, services]);
-
   const selectedRate = useMemo(() => {
     if (rateState.status !== "success") {
       return null;
@@ -552,33 +527,49 @@ export function CreateLabelForm({
         <div className="grid gap-4 md:grid-cols-2">
           <div className="grid gap-2">
             <Label htmlFor="carrier">Carrier</Label>
-            <select
-              id="carrier"
+            <Select
               name="carrierCode"
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              disabled={isPending}
               value={selectedCarrier}
-              onChange={(event) => setSelectedCarrier(event.target.value)}
-              required
-              disabled={carriers.length === 0 || isPending}
+              onValueChange={(value) => setSelectedCarrier(value)}
             >
-              {carrierOptions}
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a carrier" />
+              </SelectTrigger>
+              <SelectContent>
+                {carriers.map((carrier) => (
+                  <SelectItem key={carrier.code} value={carrier.code}>
+                    {carrier.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="serviceCode">Service</Label>
-            <select
-              id="serviceCode"
+            <Select
               name="serviceCode"
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              disabled={isPending}
               value={selectedService}
-              onChange={(event) => {
-                setSelectedService(event.target.value);
-              }}
-              required
-              disabled={isPending || !hasServiceChoices}
+              onValueChange={(value) => setSelectedService(value)}
             >
-              {serviceOptions}
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a service" />
+              </SelectTrigger>
+              <SelectContent>
+                {services
+                  .filter((service) => getServiceCode(service).length > 0)
+                  .map((service) => {
+                    const value = getServiceCode(service);
+                    const key = `${service.carrierCode}-${value}`;
+                    return (
+                      <SelectItem key={key} value={value}>
+                        {service.name}
+                      </SelectItem>
+                    );
+                  })}
+              </SelectContent>
+            </Select>
           </div>
         </div>
         <div className="grid gap-4 md:grid-cols-4">
@@ -620,16 +611,19 @@ export function CreateLabelForm({
           </div>
           <div className="grid gap-2">
             <Label htmlFor="dimensions-unit">Dimension unit</Label>
-            <select
-              id="dimensions-unit"
+            <Select
               name="dimensions.unit"
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              defaultValue="inches"
               disabled={isPending}
+              defaultValue="inches"
             >
-              <option value="inches">Inches</option>
-              <option value="centimeters">Centimeters</option>
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue defaultValue="inches" placeholder="Select unit" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="inches">Inches</SelectItem>
+                <SelectItem value="centimeters">Centimeters</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="weight-value">Weight</Label>
@@ -646,17 +640,20 @@ export function CreateLabelForm({
           </div>
           <div className="grid gap-2">
             <Label htmlFor="weight-unit">Weight unit</Label>
-            <select
-              id="weight-unit"
+            <Select
               name="weight.unit"
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              defaultValue="pounds"
               disabled={isPending}
+              defaultValue="pounds"
             >
-              <option value="pounds">Pounds</option>
-              <option value="ounces">Ounces</option>
-              <option value="grams">Grams</option>
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue defaultValue="pounds" placeholder="Select unit" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pounds">Pounds</SelectItem>
+                <SelectItem value="ounces">Ounces</SelectItem>
+                <SelectItem value="grams">Grams</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid" />
           <div className="grid gap-2">

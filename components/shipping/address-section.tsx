@@ -3,6 +3,13 @@ import { Label } from "@/components/ui/label";
 import { AddressMode } from "./types";
 import { AddressRecord } from "@/lib/supabase/addresses";
 import { Fieldset } from "../ui/fieldset";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 export function AddressSection({
   prefix,
@@ -29,8 +36,8 @@ export function AddressSection({
       }
     >
       <div className="flex flex-wrap gap-4 text-sm">
-        <label className="flex items-center gap-2">
-          <input
+        <Label className="flex items-center gap-2">
+          <Input
             type="radio"
             name={`${prefix}.mode`}
             value="saved"
@@ -40,9 +47,9 @@ export function AddressSection({
             className="h-4 w-4"
           />
           Use saved address
-        </label>
-        <label className="flex items-center gap-2">
-          <input
+        </Label>
+        <Label className="flex items-center gap-2">
+          <Input
             type="radio"
             name={`${prefix}.mode`}
             value="new"
@@ -52,33 +59,36 @@ export function AddressSection({
             className="h-4 w-4"
           />
           Enter new address
-        </label>
+        </Label>
       </div>
 
       {mode === "saved" ? (
         <div className="grid gap-2">
           <Label htmlFor={`${prefix}-addressId`}>Select address</Label>
-          <select
-            id={`${prefix}-addressId`}
+          <Select
             name={`${prefix}.addressId`}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
             disabled={addresses.length === 0 || pending}
             required={addresses.length > 0}
             defaultValue={addresses[0]?.id ?? ""}
           >
-            {addresses.length === 0 ? (
-              <option value="">No saved addresses available</option>
-            ) : (
-              addresses.map((address) => (
-                <option key={address.id} value={address.id}>
-                  {address.label ??
-                    address.contact_name ??
-                    address.address_line1 ??
-                    ""}
-                </option>
-              ))
-            )}
-          </select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select an address" />
+            </SelectTrigger>
+            <SelectContent>
+              {addresses.length === 0 ? (
+                <SelectItem value="">No saved addresses available</SelectItem>
+              ) : (
+                addresses.map((address) => (
+                  <SelectItem key={address.id} value={address.id}>
+                    {address.label ??
+                      address.contact_name ??
+                      address.address_line1 ??
+                      ""}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
