@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, SquareTerminal } from "lucide-react";
+import { Home, Send, Shield } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
@@ -17,7 +17,7 @@ const NAV_MAIN = [
   {
     title: "Dashboard",
     url: "/dashboard",
-    icon: SquareTerminal,
+    icon: Home,
     isActive: true,
     items: [
       {
@@ -29,40 +29,19 @@ const NAV_MAIN = [
   {
     title: "Admin",
     url: "/admin",
-    icon: SquareTerminal,
+    icon: Shield,
     isActive: false,
     items: [{ title: "Users", url: "/admin/users" }],
   },
 ];
 
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+const NAV_SECONDARY = [
+  {
+    title: "Feedback",
+    url: "#",
+    icon: Send,
   },
-  navMain: [
-    {
-      title: "Dashboard",
-      url: "/dashboard",
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: "Labels",
-          url: "/dashboard/labels",
-        },
-      ],
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Feedback",
-      url: "#",
-      icon: Send,
-    },
-  ],
-};
+];
 
 export function AppSidebar({ profile }: { profile: UserProfile }) {
   const navMain = useMemo(() => {
@@ -86,7 +65,7 @@ export function AppSidebar({ profile }: { profile: UserProfile }) {
     <Sidebar className="top-[var(--header-height)] !h-[calc(100svh-var(--header-height))]">
       <SidebarContent>
         <NavMain items={navMain} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <NavSecondary items={NAV_SECONDARY} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />
