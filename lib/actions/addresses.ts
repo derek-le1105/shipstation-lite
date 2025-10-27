@@ -186,6 +186,7 @@ export async function deleteAddressAction(
       addressId: idRaw,
     };
   } catch (error) {
+    console.log(error);
     return handleError(error, "Unable to delete address.");
   }
 }
