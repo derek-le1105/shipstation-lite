@@ -19,6 +19,7 @@ import { voidShippingLabelAction } from "@/lib/actions/shipping";
 import { toast } from "sonner";
 import { printLabels } from "@/lib/utils";
 import { StatusBadge } from "./status-badge";
+import { FEDEX_SERVICES } from "@/lib/shipstation/fedex";
 
 export function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -63,7 +64,11 @@ export function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="secondary">{label.carrier_code}</Badge>
                     <span className="font-semibold truncate max-w-[18rem]">
-                      {label.service_code}
+                      {
+                        FEDEX_SERVICES.find(
+                          (service) => service.code === label.service_code
+                        )?.name
+                      }
                     </span>
                     <StatusBadge voided={label.voided} />
                     <span className="text-muted-foreground ml-auto md:ml-0">
@@ -202,25 +207,24 @@ export function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
                     </>
                   ) : null}
 
-                  {label.label_data_base64 ? (
-                    <Button
-                      size="sm"
-                      className="w-full md:w-auto"
-                      onClick={async () => {
-                        try {
-                          await printLabels([label.label_data_base64!]);
-                        } catch (e) {
-                          toast.error(
-                            e instanceof Error
-                              ? e.message
-                              : "Unable to print label"
-                          );
-                        }
-                      }}
-                    >
-                      <Printer className="mr-2 h-4 w-4" /> Print
-                    </Button>
-                  ) : null}
+                  <Button
+                    size="sm"
+                    className="w-full md:w-auto"
+                    disabled={!label.label_data_base64 || label.voided}
+                    onClick={async () => {
+                      try {
+                        await printLabels([label.label_data_base64!]);
+                      } catch (e) {
+                        toast.error(
+                          e instanceof Error
+                            ? e.message
+                            : "Unable to print label"
+                        );
+                      }
+                    }}
+                  >
+                    <Printer className="mr-2 h-4 w-4" /> Print
+                  </Button>
 
                   <form
                     key={label.id}
