@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, type LucideIcon } from "lucide-react";
+import { ChevronRight, Flag, type LucideIcon } from "lucide-react";
 
 import {
   Collapsible,
@@ -18,6 +18,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
+import { isDeploymentDevelopment } from "@/lib/utils";
 
 export function NavMain({
   items,
@@ -41,6 +42,7 @@ export function NavMain({
   const hasEnabledSubItems = (item: (typeof items)[number]) => {
     return item.items?.some((subItem) => subItem.enabled);
   };
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
@@ -54,7 +56,8 @@ export function NavMain({
                   <span>{item.title}</span>
                 </a>
               </SidebarMenuButton>
-              {hasSubItems(item) && hasEnabledSubItems(item) ? (
+              {(hasSubItems(item) && hasEnabledSubItems(item)) ||
+              isDeploymentDevelopment() ? (
                 <>
                   <CollapsibleTrigger asChild>
                     <SidebarMenuAction className="data-[state=open]:rotate-90">
@@ -65,12 +68,22 @@ export function NavMain({
                   <CollapsibleContent>
                     <SidebarMenuSub>
                       {item.items
-                        ?.filter((subItem) => subItem.enabled)
+                        ?.filter(
+                          (subItem) =>
+                            subItem.enabled || isDeploymentDevelopment()
+                        )
                         .map((subItem) => (
                           <SidebarMenuSubItem key={subItem.title}>
                             <SidebarMenuSubButton asChild>
-                              <a href={subItem.url}>
+                              <a
+                                href={subItem.url}
+                                className="flex justify-between items-center w-full"
+                              >
                                 <span>{subItem.title}</span>
+                                {isDeploymentDevelopment() &&
+                                  !subItem.enabled && (
+                                    <Flag className="text-orange-500" />
+                                  )}
                               </a>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>
