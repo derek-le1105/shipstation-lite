@@ -26,6 +26,7 @@ const NAV_MAIN = [
         enabled: false,
       },
       { title: "Addresses", url: "/dashboard/addresses", enabled: true },
+      { title: "Packages", url: "/dashboard/packages", enabled: false },
     ],
   },
   {
