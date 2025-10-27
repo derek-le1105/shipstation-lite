@@ -3,6 +3,12 @@ import Link from "next/link";
 import { AuthButton } from "@/components/auth-button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { getCurrentProfile } from "@/lib/auth";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
 
 export default async function DashboardLayout({
   children,
@@ -12,40 +18,50 @@ export default async function DashboardLayout({
   const profile = await getCurrentProfile();
 
   return (
-    <main className="min-h-screen flex flex-col items-center bg-background text-foreground">
-      <div className="flex-1 w-full flex flex-col items-center">
-        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16 bg-card/30 backdrop-blur">
-          <div className="w-full max-w-6xl flex justify-between items-center p-3 px-6 text-sm">
-            <div className="flex gap-6 items-center font-semibold">
-              {profile ? (
-                <div className="flex items-center gap-4 text-muted-foreground">
-                  <Link
-                    href="/dashboard"
-                    className="hover:text-foreground transition-colors"
-                  >
-                    Dashboard
-                  </Link>
-                  {profile.role === "admin" ? (
+    <div className="[--header-height:4rem]">
+      <SidebarProvider className="flex flex-col">
+        <header className="bg-background sticky top-0 z-50 flex w-full items-center border-b">
+          <div className="flex h-16 w-full justify-center">
+            <div className="flex w-full max-w-6xl items-center justify-between px-6 text-sm">
+              <div className="flex items-center gap-4">
+                <SidebarTrigger className="-ml-1" />
+                {profile ? (
+                  <nav className="flex items-center gap-6 font-semibold text-muted-foreground">
                     <Link
-                      href="/admin"
+                      href="/dashboard"
                       className="hover:text-foreground transition-colors"
                     >
-                      Admin
+                      Dashboard
                     </Link>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-            <div className="flex items-center gap-4">
-              <ThemeSwitcher />
-              <AuthButton />
+                    {profile.role === "admin" ? (
+                      <Link
+                        href="/admin"
+                        className="hover:text-foreground transition-colors"
+                      >
+                        Admin
+                      </Link>
+                    ) : null}
+                  </nav>
+                ) : null}
+              </div>
+              <div className="flex items-center gap-4">
+                <ThemeSwitcher />
+                <AuthButton />
+              </div>
             </div>
           </div>
-        </nav>
-        <div className="flex-1 flex flex-col gap-10 w-full max-w-6xl p-6">
-          {children}
+        </header>
+        <div className="flex flex-1">
+          <AppSidebar />
+          <SidebarInset>
+            <div className="flex flex-1 w-full justify-center">
+              <div className="flex w-full max-w-6xl flex-1 flex-col gap-10 p-6">
+                {children}
+              </div>
+            </div>
+          </SidebarInset>
         </div>
-      </div>
-    </main>
+      </SidebarProvider>
+    </div>
   );
 }
