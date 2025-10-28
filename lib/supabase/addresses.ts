@@ -23,7 +23,9 @@ export type AddressRecord = {
 
 export type AddressInput = Omit<AddressRecord, "id" | "user_id" | "created_at">;
 
-async function getClient(client?: ServerSupabaseClient): Promise<ServerSupabaseClient> {
+async function getClient(
+  client?: ServerSupabaseClient
+): Promise<ServerSupabaseClient> {
   if (client) return client;
   return createClient();
 }
@@ -31,13 +33,17 @@ async function getClient(client?: ServerSupabaseClient): Promise<ServerSupabaseC
 export async function listAddresses(
   userId: string,
   kind?: AddressRecord["address_kind"],
-  client?: ServerSupabaseClient,
+  client?: ServerSupabaseClient
 ): Promise<AddressRecord[]> {
   const supabase = await getClient(client);
 
-  let query = supabase.from("addresses").select("*").eq("user_id", userId).order("created_at", {
-    ascending: false,
-  });
+  let query = supabase
+    .from("addresses")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", {
+      ascending: false,
+    });
 
   if (kind) {
     query = query.eq("address_kind", kind);
@@ -55,7 +61,7 @@ export async function listAddresses(
 export async function createAddress(
   userId: string,
   input: AddressInput,
-  client?: ServerSupabaseClient,
+  client?: ServerSupabaseClient
 ): Promise<AddressRecord> {
   const supabase = await getClient(client);
 
@@ -78,7 +84,7 @@ export async function createAddress(
 export async function getAddressById(
   id: string,
   userId: string,
-  client?: ServerSupabaseClient,
+  client?: ServerSupabaseClient
 ): Promise<AddressRecord | null> {
   const supabase = await getClient(client);
 
@@ -109,7 +115,7 @@ export async function updateAddress(
   id: string,
   userId: string,
   input: AddressInput,
-  client?: ServerSupabaseClient,
+  client?: ServerSupabaseClient
 ): Promise<AddressRecord> {
   const supabase = await getClient(client);
 
@@ -133,7 +139,7 @@ export async function updateAddress(
 export async function deleteAddress(
   id: string,
   userId: string,
-  client?: ServerSupabaseClient,
+  client?: ServerSupabaseClient
 ): Promise<void> {
   const supabase = await getClient(client);
 

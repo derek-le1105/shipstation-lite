@@ -73,33 +73,48 @@ export type Database = {
       }
       packages: {
         Row: {
-          dimension_units: Database["public"]["Enums"]["package_dimension_units"]
+          carrier_code: string | null
+          created_at: string
+          dimension_unit: Database["public"]["Enums"]["package_dimension_units"]
           height: number
-          id: number
+          id: string
           length: number
+          nickname: string | null
+          service_code: string | null
+          updated_at: string | null
           user_id: string
           weight: number
-          weight_unit: string
+          weight_unit: Database["public"]["Enums"]["package_weight_units"]
           width: number
         }
         Insert: {
-          dimension_units: Database["public"]["Enums"]["package_dimension_units"]
+          carrier_code?: string | null
+          created_at?: string
+          dimension_unit: Database["public"]["Enums"]["package_dimension_units"]
           height: number
-          id?: number
+          id?: string
           length: number
+          nickname?: string | null
+          service_code?: string | null
+          updated_at?: string | null
           user_id: string
           weight: number
-          weight_unit: string
+          weight_unit: Database["public"]["Enums"]["package_weight_units"]
           width: number
         }
         Update: {
-          dimension_units?: Database["public"]["Enums"]["package_dimension_units"]
+          carrier_code?: string | null
+          created_at?: string
+          dimension_unit?: Database["public"]["Enums"]["package_dimension_units"]
           height?: number
-          id?: number
+          id?: string
           length?: number
+          nickname?: string | null
+          service_code?: string | null
+          updated_at?: string | null
           user_id?: string
           weight?: number
-          weight_unit?: string
+          weight_unit?: Database["public"]["Enums"]["package_weight_units"]
           width?: number
         }
         Relationships: []
@@ -251,6 +266,7 @@ export type Database = {
     }
     Enums: {
       package_dimension_units: "inches" | "centimeters"
+      package_weight_units: "pounds" | "ounces" | "grams"
       upcharging_unit: "dollars" | "percent"
       user_roles: "user" | "admin"
     }
@@ -381,6 +397,7 @@ export const Constants = {
   public: {
     Enums: {
       package_dimension_units: ["inches", "centimeters"],
+      package_weight_units: ["pounds", "ounces", "grams"],
       upcharging_unit: ["dollars", "percent"],
       user_roles: ["user", "admin"],
     },
