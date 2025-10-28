@@ -23,10 +23,10 @@ const NAV_MAIN = [
       {
         title: "Labels",
         url: "/dashboard/labels",
-        enabled: false,
+        enabled: true,
       },
       { title: "Addresses", url: "/dashboard/addresses", enabled: true },
-      { title: "Packages", url: "/dashboard/packages", enabled: false },
+      { title: "Packages", url: "/dashboard/packages", enabled: true },
     ],
   },
   {
