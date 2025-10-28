@@ -34,8 +34,8 @@ export type ShippingLabelRecord = {
   confirmation: string | null;
   shipment_cost: number | null;
   insurance_cost: number | null;
-  upcharged_shipment_cost: number;
-  upcharged_insurance_cost: number;
+  total_shipment_cost: number;
+  total_insurance_cost: number;
   tracking_number: string | null;
   label_data_base64: string;
   created_at: string;
@@ -57,6 +57,42 @@ export type ShippingLabelWithProfile = ShippingLabelRecord & {
     full_name: string | null;
     role: string | null;
   };
+};
+
+const SHIPPING_LABEL_COLUMNS = [
+  "id",
+  "user_id",
+  "from_address_id",
+  "to_address_id",
+  "ship_from_snapshot",
+  "ship_to_snapshot",
+  "carrier_code",
+  "service_code",
+  "package_code",
+  "length",
+  "width",
+  "height",
+  "units",
+  "weight_value",
+  "weight_unit",
+  "confirmation",
+  "shipment_cost",
+  "insurance_cost",
+  "total_shipment_cost",
+  "total_insurance_cost",
+  "tracking_number",
+  "label_data_base64",
+  "created_at",
+  "shipment_id",
+  "voided",
+  "voided_at",
+] as const satisfies ReadonlyArray<keyof ShippingLabelRecord>;
+
+type ListShippingLabelsOptions<
+  Exclude extends keyof ShippingLabelRecord = never
+> = {
+  client?: ServerSupabaseClient;
+  excludeColumns?: Exclude[];
 };
 
 async function getClient(
@@ -108,15 +144,50 @@ export async function getShippingLabel(
   return data as ShippingLabelRecord | null;
 }
 
-export async function listShippingLabelsForUser(
+export async function listShippingLabelsForUser<
+  Exclude extends keyof ShippingLabelRecord = never
+>(
   userId: string,
-  client?: ServerSupabaseClient
-): Promise<ShippingLabelRecord[]> {
+  clientOrOptions?: ServerSupabaseClient | ListShippingLabelsOptions<Exclude>,
+  maybeOptions?: ListShippingLabelsOptions<Exclude>
+): Promise<Array<Omit<ShippingLabelRecord, Exclude>>> {
+  const isSupabaseClient = (
+    candidate: unknown
+  ): candidate is ServerSupabaseClient =>
+    typeof candidate === "object" &&
+    candidate !== null &&
+    "from" in candidate &&
+    typeof (candidate as { from?: unknown }).from === "function";
+
+  const options = (() => {
+    if (isSupabaseClient(clientOrOptions)) {
+      return maybeOptions ?? { client: clientOrOptions };
+    }
+    return clientOrOptions;
+  })();
+
+  const client =
+    options?.client ??
+    (isSupabaseClient(clientOrOptions) ? clientOrOptions : undefined);
+  const excludeColumns = options?.excludeColumns ?? [];
+
   const supabase = await getClient(client);
+
+  const excludeSet = new Set<keyof ShippingLabelRecord>(
+    excludeColumns as (keyof ShippingLabelRecord)[]
+  );
+  const selectedColumns =
+    excludeColumns.length > 0
+      ? SHIPPING_LABEL_COLUMNS.filter((column) => !excludeSet.has(column))
+      : undefined;
 
   const { data, error } = await supabase
     .from("shipping_labels")
-    .select("*")
+    .select(
+      selectedColumns && selectedColumns.length > 0
+        ? selectedColumns.join(",")
+        : "*"
+    )
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
@@ -124,7 +195,21 @@ export async function listShippingLabelsForUser(
     throw error;
   }
 
-  return (data ?? []) as ShippingLabelRecord[];
+  const records = (data ?? []) as Array<Partial<ShippingLabelRecord>>;
+
+  if (excludeColumns.length === 0) {
+    return records as Array<Omit<ShippingLabelRecord, Exclude>>;
+  }
+
+  return records.map((record) => {
+    const filteredRecord: Partial<ShippingLabelRecord> = {
+      ...(record as ShippingLabelRecord),
+    };
+    for (const column of excludeColumns) {
+      delete filteredRecord[column];
+    }
+    return filteredRecord as Omit<ShippingLabelRecord, Exclude>;
+  });
 }
 
 export async function listAllShippingLabels(

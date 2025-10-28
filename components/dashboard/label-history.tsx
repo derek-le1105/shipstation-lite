@@ -111,7 +111,7 @@ export function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
                       {Intl.NumberFormat("en-US", {
                         style: "currency",
                         currency: "USD",
-                      }).format(label.upcharged_shipment_cost ?? 0)}
+                      }).format(label.total_shipment_cost ?? 0)}
                     </span>
                     <span>Shipment ID: {label.shipment_id}</span>
                   </div>

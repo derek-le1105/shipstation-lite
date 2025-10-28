@@ -1,6 +1,8 @@
 import { clsx, type ClassValue } from "clsx";
 import { PDFDocument } from "pdf-lib";
 import { twMerge } from "tailwind-merge";
+import Papa from "papaparse";
+import * as XLSX from "xlsx";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -60,4 +62,72 @@ export function formatUpcharge(value: number, unit: "dollars" | "percent") {
 
 export function isDeploymentDevelopment() {
   return process.env.NEXT_PUBLIC_DEPLOYMENT === "development";
+}
+
+export function formatPhoneNumber(phoneNumber: string) {
+  // Remove all non-digit characters
+  const cleaned = ("" + phoneNumber).replace(/\D/g, "");
+  const match = cleaned.match(/^1?(\d{3})(\d{3})(\d{4})$/);
+  if (match) {
+    return `(${match[1]}) ${match[2]}-${match[3]}`;
+  }
+  return phoneNumber;
+}
+
+export function exportToCSV<T>(dataToExport: T[]) {
+  const csv = Papa.unparse(dataToExport, {
+    header: true,
+  });
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+
+  link.setAttribute("href", url);
+  link.setAttribute(
+    "download",
+    `labels-export-${new Date().toISOString().split("T")[0]}.csv`
+  );
+  link.style.visibility = "hidden";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+export function exportToExcel<T>(dataToExport: T[]) {
+  const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+  const workbook = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Payments");
+
+  const cols = [
+    { wch: 10 },
+    { wch: 20 },
+    { wch: 15 },
+    { wch: 25 },
+    { wch: 15 },
+  ];
+
+  worksheet["!cols"] = cols;
+
+  XLSX.writeFile(
+    workbook,
+    `labels-export-${new Date().toISOString().split("T")[0]}.xlsx`
+  );
+}
+
+export function exportToJson<T>(dataToExport: T[]) {
+  const json = JSON.stringify(dataToExport, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+
+  link.setAttribute("href", url);
+  link.setAttribute(
+    "download",
+    `labels-export-${new Date().toISOString().split("T")[0]}.json`
+  );
+  link.style.visibility = "hidden";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
