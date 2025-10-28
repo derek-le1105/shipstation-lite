@@ -19,6 +19,7 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { isDeploymentDevelopment } from "@/lib/utils";
+import Link from "next/link";
 
 export function NavMain({
   items,
@@ -51,10 +52,10 @@ export function NavMain({
           <Collapsible key={item.title} asChild defaultOpen={item.isActive}>
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip={item.title}>
-                <a href={item.url}>
+                <Link href={item.url}>
                   <item.icon />
                   <span>{item.title}</span>
-                </a>
+                </Link>
               </SidebarMenuButton>
               {(hasSubItems(item) && hasEnabledSubItems(item)) ||
               isDeploymentDevelopment() ? (
@@ -75,7 +76,7 @@ export function NavMain({
                         .map((subItem) => (
                           <SidebarMenuSubItem key={subItem.title}>
                             <SidebarMenuSubButton asChild>
-                              <a
+                              <Link
                                 href={subItem.url}
                                 className="flex justify-between items-center w-full"
                               >
@@ -84,7 +85,7 @@ export function NavMain({
                                   !subItem.enabled && (
                                     <Flag className="text-orange-500" />
                                   )}
-                              </a>
+                              </Link>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>
                         ))}
