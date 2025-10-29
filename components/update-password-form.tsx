@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 export function UpdatePasswordForm({
   className,
@@ -22,6 +23,7 @@ export function UpdatePasswordForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const handleForgotPassword = async (e: React.FormEvent) => {
@@ -58,11 +60,34 @@ export function UpdatePasswordForm({
                 <Label htmlFor="password">New password</Label>
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="New password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  endAdornment={
+                    showPassword ? (
+                      <button
+                        type="button"
+                        aria-label="Hide password"
+                        onClick={() => setShowPassword(false)}
+                        className="bg-transparent border-none p-0 m-0 cursor-pointer"
+                        tabIndex={0}
+                      >
+                        <EyeOff />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        aria-label="Show password"
+                        onClick={() => setShowPassword(true)}
+                        className="bg-transparent border-none p-0 m-0 cursor-pointer"
+                        tabIndex={0}
+                      >
+                        <Eye />
+                      </button>
+                    )
+                  }
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}

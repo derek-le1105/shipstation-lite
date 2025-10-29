@@ -15,6 +15,8 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
 
 export function LoginForm({
   className,
@@ -25,6 +27,7 @@ export function LoginForm({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,10 +41,11 @@ export function LoginForm({
         password,
       });
       if (error) throw error;
-      // Update this route to redirect to an authenticated route. The user already has an active session.
+      toast.success("Logged in successfully");
       router.push("/dashboard");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
+      toast.error(error instanceof Error ? error.message : "An error occurred");
     } finally {
       setIsLoading(false);
     }
@@ -82,10 +86,33 @@ export function LoginForm({
                 </div>
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  endAdornment={
+                    showPassword ? (
+                      <button
+                        type="button"
+                        aria-label="Hide password"
+                        onClick={() => setShowPassword(false)}
+                        className="p-0 bg-transparent border-none cursor-pointer"
+                        tabIndex={0}
+                      >
+                        <EyeOff />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        aria-label="Show password"
+                        onClick={() => setShowPassword(true)}
+                        className="p-0 bg-transparent border-none cursor-pointer"
+                        tabIndex={0}
+                      >
+                        <Eye />
+                      </button>
+                    )
+                  }
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}

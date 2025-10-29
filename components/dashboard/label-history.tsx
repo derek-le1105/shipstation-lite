@@ -142,7 +142,7 @@ export function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
                         <h4 className="text-xs uppercase text-muted-foreground">
                           Ship from
                         </h4>
-                        <p className="text-sm break-words">
+                        <p className="text-sm wrap-break-word">
                           {label.ship_from_snapshot?.name ?? "N/A"}
                         </p>
                       </div>
@@ -150,7 +150,7 @@ export function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
                         <h4 className="text-xs uppercase text-muted-foreground">
                           Ship to
                         </h4>
-                        <p className="text-sm break-words">
+                        <p className="text-sm wrap-break-word">
                           {label.ship_to_snapshot?.name ?? "N/A"}
                         </p>
                       </div>
