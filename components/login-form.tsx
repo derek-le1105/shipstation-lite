@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 export function LoginForm({
   className,
@@ -25,6 +26,7 @@ export function LoginForm({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,10 +84,23 @@ export function LoginForm({
                 </div>
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  endAdornment={
+                    showPassword ? (
+                      <EyeOff
+                        className="cursor-pointer"
+                        onClick={() => setShowPassword(false)}
+                      />
+                    ) : (
+                      <Eye
+                        className="cursor-pointer"
+                        onClick={() => setShowPassword(true)}
+                      />
+                    )
+                  }
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}

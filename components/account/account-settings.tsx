@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 import type { UserProfile } from "@/lib/auth";
+import { Eye, EyeOff } from "lucide-react";
 
 type AccountSettingsProps = {
   profile: UserProfile;
@@ -32,6 +33,7 @@ export function AccountSettings({ profile }: AccountSettingsProps) {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordPending, setPasswordPending] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleProfileSubmit = async (
     event: React.FormEvent<HTMLFormElement>
@@ -184,9 +186,6 @@ export function AccountSettings({ profile }: AccountSettingsProps) {
               <Button type="submit" disabled={profilePending}>
                 {profilePending ? "Saving…" : "Save changes"}
               </Button>
-              <p className="text-xs text-muted-foreground">
-                Tip: leave blank if you prefer to stay anonymous.
-              </p>
             </div>
           </form>
         </CardContent>
@@ -240,12 +239,25 @@ export function AccountSettings({ profile }: AccountSettingsProps) {
               <Input
                 id="new_password"
                 name="new_password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={newPassword}
                 onChange={(event) => setNewPassword(event.target.value)}
                 disabled={passwordPending}
                 minLength={8}
                 autoComplete="new-password"
+                endAdornment={
+                  showPassword ? (
+                    <EyeOff
+                      className="cursor-pointer"
+                      onClick={() => setShowPassword(false)}
+                    />
+                  ) : (
+                    <Eye
+                      className="cursor-pointer"
+                      onClick={() => setShowPassword(true)}
+                    />
+                  )
+                }
               />
             </div>
             <div className="grid gap-2">
@@ -253,12 +265,25 @@ export function AccountSettings({ profile }: AccountSettingsProps) {
               <Input
                 id="confirm_password"
                 name="confirm_password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 disabled={passwordPending}
                 minLength={8}
                 autoComplete="new-password"
+                endAdornment={
+                  showPassword ? (
+                    <EyeOff
+                      className="cursor-pointer"
+                      onClick={() => setShowPassword(false)}
+                    />
+                  ) : (
+                    <Eye
+                      className="cursor-pointer"
+                      onClick={() => setShowPassword(true)}
+                    />
+                  )
+                }
               />
             </div>
             <div className="flex items-center gap-3">
