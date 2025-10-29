@@ -247,15 +247,23 @@ export function AccountSettings({ profile }: AccountSettingsProps) {
                 autoComplete="new-password"
                 endAdornment={
                   showPassword ? (
-                    <EyeOff
-                      className="cursor-pointer"
+                    <button
+                      type="button"
+                      aria-label="Hide password"
+                      className="cursor-pointer bg-transparent border-none p-0"
                       onClick={() => setShowPassword(false)}
-                    />
+                    >
+                      <EyeOff />
+                    </button>
                   ) : (
-                    <Eye
-                      className="cursor-pointer"
+                    <button
+                      type="button"
+                      aria-label="Show password"
+                      className="cursor-pointer bg-transparent border-none p-0"
                       onClick={() => setShowPassword(true)}
-                    />
+                    >
+                      <Eye />
+                    </button>
                   )
                 }
               />

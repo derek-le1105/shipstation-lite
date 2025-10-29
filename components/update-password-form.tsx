@@ -67,15 +67,25 @@ export function UpdatePasswordForm({
                   onChange={(e) => setPassword(e.target.value)}
                   endAdornment={
                     showPassword ? (
-                      <EyeOff
-                        className="cursor-pointer"
+                      <button
+                        type="button"
+                        aria-label="Hide password"
                         onClick={() => setShowPassword(false)}
-                      />
+                        className="bg-transparent border-none p-0 m-0 cursor-pointer"
+                        tabIndex={0}
+                      >
+                        <EyeOff />
+                      </button>
                     ) : (
-                      <Eye
-                        className="cursor-pointer"
+                      <button
+                        type="button"
+                        aria-label="Show password"
                         onClick={() => setShowPassword(true)}
-                      />
+                        className="bg-transparent border-none p-0 m-0 cursor-pointer"
+                        tabIndex={0}
+                      >
+                        <Eye />
+                      </button>
                     )
                   }
                 />
