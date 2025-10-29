@@ -1,18 +1,13 @@
 import Link from "next/link";
 import { Button } from "./ui/button";
-import { createClient } from "@/lib/supabase/server";
-import UserMenu from "./user-menu";
+import UserMenu from "./user-dropdown";
+import { getCurrentProfile } from "@/lib/auth";
 export async function AuthButton() {
-  const supabase = await createClient();
+  const profile = await getCurrentProfile();
 
-  // You can also use getUser() which will be slower.
-  const { data } = await supabase.auth.getClaims();
-
-  const user = data?.claims;
-
-  return user ? (
+  return profile ? (
     <div className="flex items-center gap-4">
-      <UserMenu user={user} />
+      <UserMenu user={profile} />
     </div>
   ) : (
     <div className="flex gap-2">

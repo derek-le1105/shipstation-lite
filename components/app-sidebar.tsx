@@ -1,10 +1,10 @@
 "use client";
 
-import { Home, Send, Shield } from "lucide-react";
+import { Home, Send, Shield, type LucideIcon } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
-import { NavUser } from "@/components/nav-user";
+import { NavUser } from "@/components/user-dropdown";
 import {
   Sidebar,
   SidebarContent,
@@ -13,19 +13,62 @@ import {
 import { UserProfile } from "@/lib/auth";
 import { useMemo } from "react";
 
-const NAV_MAIN = [
+export interface Navigation {
+  /**
+   * The title of the navigation item.
+   */
+  title: string;
+
+  /**
+   * The URL of the navigation item.
+   */
+  url: string;
+
+  /**
+   * The icon of the navigation item.
+   */
+  icon: LucideIcon;
+
+  /**
+   * Whether the navigation container is collapsed or expanded.
+   */
+  isActive: boolean;
+
+  /**
+   * Whether the navigation item is enabled or disabled.
+   */
+  isEnabled: boolean;
+
+  /**
+   * Restricts the item to users with the given role.
+   */
+  requiredRole?: UserProfile["role"];
+
+  /**
+   * The sub-items of the navigation item.
+   */
+  items: {
+    title: string;
+    url: string;
+    enabled?: boolean;
+  }[];
+}
+
+const NAV_MAIN: Navigation[] = [
   {
     title: "Dashboard",
     url: "/dashboard",
     icon: Home,
     isActive: true,
+    isEnabled: true,
     items: [
       {
         title: "Labels",
         url: "/dashboard/labels",
-        enabled: false,
+        enabled: true,
       },
       { title: "Addresses", url: "/dashboard/addresses", enabled: true },
+      { title: "Packages", url: "/dashboard/packages", enabled: true },
     ],
   },
   {
@@ -33,6 +76,8 @@ const NAV_MAIN = [
     url: "/admin",
     icon: Shield,
     isActive: false,
+    isEnabled: true,
+    requiredRole: "admin",
     items: [{ title: "Users", url: "/admin/users", enabled: true }],
   },
 ];
@@ -47,13 +92,11 @@ const NAV_SECONDARY = [
 
 export function AppSidebar({ profile }: { profile: UserProfile }) {
   const navMain = useMemo(() => {
-    return NAV_MAIN.map((item) => {
-      if (item.title === "Admin")
-        return { ...item, isActive: profile.role === "admin" };
-
-      return item;
+    return NAV_MAIN.filter((item) => {
+      if (!item.requiredRole) return true;
+      return item.requiredRole === profile.role;
     });
-  }, [profile]);
+  }, [profile.role]);
 
   const user = useMemo(
     () => ({
@@ -64,7 +107,7 @@ export function AppSidebar({ profile }: { profile: UserProfile }) {
     [profile]
   );
   return (
-    <Sidebar className="top-[var(--header-height)] !h-[calc(100svh-var(--header-height))]">
+    <Sidebar className="top-(--header-height) h-[calc(100svh-var(--header-height))]!">
       <SidebarContent>
         <NavMain items={navMain} />
         <NavSecondary items={NAV_SECONDARY} className="mt-auto" />

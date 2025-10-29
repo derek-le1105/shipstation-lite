@@ -61,25 +61,29 @@ export function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
                 className="border rounded-md p-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between"
               >
                 <div className="flex min-w-0 flex-1 flex-col gap-2 text-sm">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="secondary">{label.carrier_code}</Badge>
-                    <span className="font-semibold truncate max-w-[18rem]">
-                      {
-                        FEDEX_SERVICES.find(
-                          (service) => service.code === label.service_code
-                        )?.name
-                      }
-                    </span>
-                    <StatusBadge voided={label.voided} />
-                    <span className="text-muted-foreground ml-auto md:ml-0">
-                      {created.toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
+                  <div className="flex flex-col gap-2 md:flex-row md:gap-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant="secondary">{label.carrier_code}</Badge>
+                      <span className="font-semibold truncate max-w-[18rem] ">
+                        {
+                          FEDEX_SERVICES.find(
+                            (service) => service.code === label.service_code
+                          )?.name
+                        }
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <StatusBadge voided={label.voided} />
+                      <span className="text-muted-foreground md:ml-0">
+                        {created.toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
                   </div>
 
                   {label.tracking_number ? (
@@ -111,7 +115,7 @@ export function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
                       {Intl.NumberFormat("en-US", {
                         style: "currency",
                         currency: "USD",
-                      }).format(label.upcharged_shipment_cost ?? 0)}
+                      }).format(label.total_shipment_cost ?? 0)}
                     </span>
                     <span>Shipment ID: {label.shipment_id}</span>
                   </div>
@@ -169,7 +173,7 @@ export function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
                   ) : null}
                 </div>
 
-                <div className="flex shrink-0 items-center gap-2 md:flex-col md:items-end">
+                <div className="grid md:items-center gap-2 mt-4 md:mt-0 md:flex md:flex-col md:gap-2">
                   {label.tracking_number ? (
                     <>
                       <Button
