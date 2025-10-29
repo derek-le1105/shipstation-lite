@@ -65,7 +65,7 @@ export function AppSidebar({ profile }: { profile: UserProfile }) {
     [profile]
   );
   return (
-    <Sidebar className="top-[var(--header-height)] !h-[calc(100svh-var(--header-height))]">
+    <Sidebar className="top-(--header-height) h-[calc(100svh-var(--header-height))]!">
       <SidebarContent>
         <NavMain items={navMain} />
         <NavSecondary items={NAV_SECONDARY} className="mt-auto" />
