@@ -144,6 +144,29 @@ export async function getShippingLabel(
   return data as ShippingLabelRecord | null;
 }
 
+export async function getShippingLabelById(
+  userId: string,
+  labelId: string,
+  client?: ServerSupabaseClient
+): Promise<ShippingLabelRecord | null> {
+  const supabase = await getClient(client);
+  const { data, error } = await supabase
+    .from("shipping_labels")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("id", labelId)
+    .maybeSingle();
+
+  if (error) {
+    if (error.code === "PGRST116") {
+      return null;
+    }
+    throw error;
+  }
+
+  return (data as ShippingLabelRecord | null) ?? null;
+}
+
 export async function listShippingLabelsForUser<
   Exclude extends keyof ShippingLabelRecord = never
 >(

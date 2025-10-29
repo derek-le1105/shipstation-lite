@@ -523,7 +523,7 @@ export function CreateLabelForm({
         />
       </div>
 
-      <Fieldset title="Parcel details">
+      <Fieldset title="Package Details">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="grid gap-2">
             <Label htmlFor="carrier">Carrier</Label>

@@ -171,10 +171,10 @@ export type Database = {
           shipment_cost: number | null;
           shipment_id: number;
           to_address_id: string | null;
-          tracking_number: string | null;
-          units: Database["public"]["Enums"]["package_dimension_units"];
           total_insurance_cost: number;
           total_shipment_cost: number;
+          tracking_number: string | null;
+          units: Database["public"]["Enums"]["package_dimension_units"];
           user_id: string;
           voided: boolean;
           voided_at: string | null;
@@ -200,10 +200,10 @@ export type Database = {
           shipment_cost?: number | null;
           shipment_id: number;
           to_address_id?: string | null;
-          tracking_number?: string | null;
-          units?: Database["public"]["Enums"]["package_dimension_units"];
           total_insurance_cost?: number;
           total_shipment_cost?: number;
+          tracking_number?: string | null;
+          units?: Database["public"]["Enums"]["package_dimension_units"];
           user_id: string;
           voided: boolean;
           voided_at?: string | null;
@@ -229,10 +229,10 @@ export type Database = {
           shipment_cost?: number | null;
           shipment_id?: number;
           to_address_id?: string | null;
-          tracking_number?: string | null;
-          units?: Database["public"]["Enums"]["package_dimension_units"];
           total_insurance_cost?: number;
           total_shipment_cost?: number;
+          tracking_number?: string | null;
+          units?: Database["public"]["Enums"]["package_dimension_units"];
           user_id?: string;
           voided?: boolean;
           voided_at?: string | null;
@@ -262,6 +262,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      dreamlit_auth_admin_executor: {
+        Args: { command: string };
+        Returns: undefined;
+      };
       is_admin: { Args: never; Returns: boolean };
     };
     Enums: {
