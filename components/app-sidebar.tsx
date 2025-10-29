@@ -4,7 +4,7 @@ import { Home, Send, Shield, type LucideIcon } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
-import { NavUser } from "@/components/nav-user";
+import { NavUser } from "@/components/user-dropdown";
 import {
   Sidebar,
   SidebarContent,
