@@ -42,6 +42,7 @@ export type ShippingLabelRecord = {
   shipment_id: number;
   voided: boolean;
   voided_at: string | null;
+  order_number?: string | null;
 };
 
 type ShippingLabelInsert = Omit<

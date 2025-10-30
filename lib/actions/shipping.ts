@@ -220,10 +220,14 @@ export async function createShippingLabelAction(
 ): Promise<CreateShippingLabelState> {
   try {
     const profile = await requireUserProfile();
-
+    const upcharge = {
+      value: profile.upcharge_value,
+      unit: profile.upcharge_unit,
+    };
     const fromMode = (formData.get("from.mode") as AddressMode) ?? "new";
     const toMode = (formData.get("to.mode") as AddressMode) ?? "new";
 
+    const orderNumber = formData.get("orderNumber") as string | null;
     const carrierCode = formData.get("carrierCode");
     const serviceCode = formData.get("serviceCode");
     const packageCode = "package";
@@ -310,11 +314,11 @@ export async function createShippingLabelAction(
     });
 
     const upchargedShipmentCost = calculateUpchargeCost(
-      formData,
+      upcharge,
       labelResponse.shipmentCost
     );
     const upchargedInsuranceCost = calculateUpchargeCost(
-      formData,
+      upcharge,
       labelResponse.insuranceCost
     );
 
@@ -343,6 +347,7 @@ export async function createShippingLabelAction(
       shipment_id: labelResponse.shipmentId,
       voided: false,
       voided_at: null,
+      order_number: orderNumber,
     });
 
     revalidatePath("/dashboard");
@@ -366,15 +371,11 @@ export async function createShippingLabelAction(
   }
 }
 
-function calculateUpchargeCost(formData: FormData, totalShipmentCost: number) {
-  const upchargeValueRaw = formData.get("upcharge_value");
-  const upchargeUnitRaw = formData.get("upcharge_unit");
-  const upchargeValue =
-    typeof upchargeValueRaw === "string"
-      ? Number.parseFloat(upchargeValueRaw)
-      : 0;
-  const upchargeUnit =
-    typeof upchargeUnitRaw === "string" ? upchargeUnitRaw : "dollars";
+function calculateUpchargeCost(
+  upcharge: { value: number; unit: string },
+  totalShipmentCost: number
+) {
+  const { value: upchargeValue, unit: upchargeUnit } = upcharge;
   if (
     Number.isFinite(upchargeValue) &&
     upchargeValue > 0 &&

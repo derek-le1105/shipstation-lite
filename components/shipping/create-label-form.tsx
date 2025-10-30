@@ -423,8 +423,6 @@ export function CreateLabelForm({
   }, [debouncedRateRequest]);
 
   const onSubmit = (formData: FormData) => {
-    formData.append("upcharge_value", profile.upcharge_value.toString());
-    formData.append("upcharge_unit", profile.upcharge_unit);
     startTransition(() => {
       formAction(formData);
     });
@@ -523,8 +521,8 @@ export function CreateLabelForm({
         />
       </div>
 
-      <Fieldset title="Package Details">
-        <div className="grid gap-4 md:grid-cols-2">
+      <Fieldset title="Shipment Details">
+        <div className="grid gap-4 md:grid-cols-3">
           <div className="grid gap-2">
             <Label htmlFor="carrier">Carrier</Label>
             <Select
@@ -571,7 +569,19 @@ export function CreateLabelForm({
               </SelectContent>
             </Select>
           </div>
+          <div className="grid gap-2">
+            <Label htmlFor="serviceCode">Order Number</Label>
+            <Input
+              id="orderNumber"
+              name="orderNumber"
+              placeholder="AZ-12345"
+              disabled={isPending}
+            />
+          </div>
         </div>
+      </Fieldset>
+
+      <Fieldset title="Package Details">
         <div className="grid gap-4 md:grid-cols-4">
           <div className="grid gap-2">
             <Label htmlFor="dimensions-length">Length</Label>
