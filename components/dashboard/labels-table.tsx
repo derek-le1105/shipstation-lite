@@ -381,7 +381,7 @@ export function LabelsTable<T>({ labels }: LabelsTableProps<T>) {
           </DropdownMenu>
         </div>
       </div>
-      <div className="rounded-md border">
+      <div className="bg-card rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

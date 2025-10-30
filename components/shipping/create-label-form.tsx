@@ -9,7 +9,7 @@ import {
   useState,
   useTransition,
 } from "react";
-import { Loader2, Truck } from "lucide-react";
+import { AlertCircleIcon, Loader2, Truck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 
 const getServiceCode = (service: ShipStationService) => service.code ?? "";
 
@@ -723,9 +724,19 @@ export function CreateLabelForm({
       </Button>
 
       {formState.status === "error" ? (
-        <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-          {formState.message ?? "Could not create the label. Please try again."}
-        </div>
+        <Alert variant="destructive">
+          <AlertCircleIcon />
+          <AlertTitle>Unable to create label</AlertTitle>
+          <AlertDescription>
+            <p>
+              {formState.message ??
+                "Could not create the label. Please try again."}
+            </p>
+            <ul className="list-inside list-disc text-sm">
+              <li>Double check your address</li>
+            </ul>
+          </AlertDescription>
+        </Alert>
       ) : null}
 
       {formState.status === "success" && formState.label ? (

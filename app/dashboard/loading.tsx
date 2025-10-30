@@ -33,7 +33,15 @@ function CreateLabelFormSkeleton() {
         <SkeletonAddressFieldset title="Ship to" />
       </div>
 
-      <Fieldset title="Parcel details">
+      <Fieldset title="Package details">
+        <div className="grid gap-4 md:grid-cols-3">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      </Fieldset>
+
+      <Fieldset title="Package details">
         <div className="grid gap-4 md:grid-cols-2">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />

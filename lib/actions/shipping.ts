@@ -310,7 +310,7 @@ export async function createShippingLabelAction(
       shipTo,
       weight,
       dimensions,
-      testLabel,
+      testLabel, //as of 10/30/2025, Fedex does not support test labels via API
     });
 
     const upchargedShipmentCost = calculateUpchargeCost(
