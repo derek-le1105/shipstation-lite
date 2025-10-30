@@ -27,14 +27,7 @@ export function AddressSection({
   pending: boolean;
 }) {
   return (
-    <Fieldset
-      title={title}
-      description={
-        mode === "saved"
-          ? "Use one of your saved addresses."
-          : "Enter a new address. You can optionally save it for later."
-      }
-    >
+    <Fieldset title={title}>
       <div className="flex flex-wrap gap-4 text-sm">
         <Label className="flex items-center gap-2">
           <Input
