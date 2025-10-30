@@ -97,7 +97,7 @@ export default function UserForm({
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid md:grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label htmlFor="upcharge_value">Upcharge Value</Label>
                 <Input
