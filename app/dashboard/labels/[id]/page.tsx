@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ChevronLeft, ExternalLink } from "lucide-react";
 
 import { getCurrentProfile } from "@/lib/auth";
 import {
@@ -14,6 +14,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/dashboard/status-badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { PrintButton, VoidButton } from "@/components/util-buttons";
 
 const USD_FORMATTER = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -32,14 +38,13 @@ export default async function LabelDetailsPage({
   }
 
   const { id: labelId } = await params;
-  console.log("Label ID:", labelId); // Debugging line
   const label = await getShippingLabelById(profile.id, labelId);
-  console.log("Fetched Label:", label); // Debugging line
   if (!label) {
     notFound();
   }
 
   const createdAt = new Date(label.created_at);
+  const voidedAt = label.voided_at ? new Date(label.voided_at) : null;
   const serviceName =
     FEDEX_SERVICES.find((service) => service.code === label.service_code)
       ?.name ?? label.service_code;
@@ -59,11 +64,33 @@ export default async function LabelDetailsPage({
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary">{label.carrier_code}</Badge>
-            <StatusBadge voided={label.voided} />
+            <Tooltip>
+              <TooltipTrigger>
+                <StatusBadge voided={label.voided} />
+              </TooltipTrigger>
+              <TooltipContent>
+                {label.voided &&
+                  "Voided on " +
+                    voidedAt?.toLocaleString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+              </TooltipContent>
+            </Tooltip>
           </div>
-          <h1 className="text-2xl font-semibold">{serviceName}</h1>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" asChild>
+              <Link href="/dashboard/labels">
+                <ChevronLeft className="h-4 w-4" />
+              </Link>
+            </Button>
+            <h1 className="text-2xl font-semibold">{serviceName}</h1>
+          </div>
           <p className="text-sm text-muted-foreground">
-            Label #{label.shipment_id} • Created{" "}
+            Created{" "}
             {createdAt.toLocaleString("en-US", {
               year: "numeric",
               month: "short",
@@ -74,12 +101,8 @@ export default async function LabelDetailsPage({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" asChild>
-            <Link href="/dashboard/labels">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to labels
-            </Link>
-          </Button>
+          <VoidButton {...label} disabled={label.voided} />
+          <PrintButton {...label} />
           {trackingLink ? (
             <Button asChild>
               <a href={trackingLink} target="_blank" rel="noopener noreferrer">

@@ -2,6 +2,8 @@
 "use client";
 
 import { useState } from "react";
+import type { MouseEvent } from "react";
+import { useRouter } from "next/navigation";
 
 import {
   DownloadIcon,
@@ -13,6 +15,7 @@ import {
 import type {
   ColumnDef,
   ColumnFiltersState,
+  Row,
   SortingState,
   VisibilityState,
 } from "@tanstack/react-table";
@@ -86,13 +89,13 @@ export const columns = <T,>(): ColumnDef<T>[] => [
     enableSorting: false,
     enableHiding: false,
   },
-  //   {
-  //     accessorKey: "carrier_code",
-  //     header: "Carrier",
-  //     cell: ({ row }) => (
-  //       <div className="font-medium">{row.getValue("carrier_code")}</div>
-  //     ),
-  //   },
+  {
+    accessorKey: "shipment_id",
+    header: "Shipment ID",
+    cell: ({ row }) => (
+      <div className="font-medium">{row.getValue("shipment_id")}</div>
+    ),
+  },
   {
     accessorKey: "service_code",
     header: "Service",
@@ -165,7 +168,11 @@ export const columns = <T,>(): ColumnDef<T>[] => [
     cell: ({ row }) => {
       return (
         <div className="text-right font-medium underline">
-          <a href={generateTrackingLink(row.getValue("tracking_number"))}>
+          <a
+            href={generateTrackingLink(row.getValue("tracking_number"))}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             {row.getValue("tracking_number")}
           </a>
         </div>
@@ -251,6 +258,7 @@ interface LabelsTableProps<T> {
 }
 
 export function LabelsTable<T>({ labels }: LabelsTableProps<T>) {
+  const router = useRouter();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -303,6 +311,28 @@ export function LabelsTable<T>({ labels }: LabelsTableProps<T>) {
         break;
       default:
         break;
+    }
+  };
+
+  const handleRowClick = (
+    event: MouseEvent<HTMLTableRowElement>,
+    row: Row<T>
+  ) => {
+    if (event.defaultPrevented) return;
+
+    const target = event.target as HTMLElement | null;
+    if (
+      target?.closest(
+        'a, button, input, textarea, select, [role="button"], [role="link"], [data-prevent-row-nav]'
+      )
+    ) {
+      return;
+    }
+
+    const label = row.original as { id?: string };
+
+    if (label?.id) {
+      router.push(`/dashboard/labels/${label.id}`);
     }
   };
 
@@ -375,8 +405,10 @@ export function LabelsTable<T>({ labels }: LabelsTableProps<T>) {
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
+                  className="cursor-pointer"
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  onClick={(event) => handleRowClick(event, row)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
