@@ -101,8 +101,8 @@ export default async function LabelDetailsPage({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <VoidButton {...label} disabled={label.voided} />
-          <PrintButton {...label} />
+          <VoidButton disabled={label.voided} label={label} />
+          <PrintButton label={label} disabled={label.voided} />
           {trackingLink ? (
             <Button asChild>
               <a href={trackingLink} target="_blank" rel="noopener noreferrer">
