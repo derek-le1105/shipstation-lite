@@ -1,9 +1,8 @@
 "use client";
 
-import { Home, Send, Shield, type LucideIcon } from "lucide-react";
+import { Home, Shield, type LucideIcon } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
-import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/user-dropdown";
 import {
   Sidebar,
@@ -82,14 +81,6 @@ const NAV_MAIN: Navigation[] = [
   },
 ];
 
-const NAV_SECONDARY = [
-  {
-    title: "Feedback",
-    url: "#",
-    icon: Send,
-  },
-];
-
 export function AppSidebar({ profile }: { profile: UserProfile }) {
   const navMain = useMemo(() => {
     return NAV_MAIN.filter((item) => {
@@ -110,7 +101,7 @@ export function AppSidebar({ profile }: { profile: UserProfile }) {
     <Sidebar className="top-(--header-height) h-[calc(100svh-var(--header-height))]!">
       <SidebarContent>
         <NavMain items={navMain} />
-        <NavSecondary items={NAV_SECONDARY} className="mt-auto" />
+        {/* <NavSecondary items={NAV_SECONDARY} className="mt-auto" /> */}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />
