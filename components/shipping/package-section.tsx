@@ -1,4 +1,12 @@
-import { ReactNode } from "react";
+import {
+  Dispatch,
+  SetStateAction,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,27 +20,343 @@ import {
   SelectValue,
 } from "../ui/select";
 import { PackageRecord } from "@/lib/supabase/packages";
+import { Separator } from "../ui/separator";
+import { Loader2, Trash } from "lucide-react";
+import { useDebounce } from "@/lib/hooks/useDebounce";
+import {
+  ShipStationRate,
+  ShipstationRatesRequest,
+} from "@/lib/shipstation/client";
+import {
+  areRateRequestsEqual,
+  buildRatesRequest,
+} from "@/lib/shipping-label/utils";
+import { AddressRecord } from "@/lib/supabase/addresses";
+import { AddressMode } from "./types";
+import { useCreateLabelFormContext } from "./create-label-form";
+
+const RATE_DEBOUNCE_MS = 1500;
+const USD_FORMATTER = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});
+
+type RateState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "error"; message: string }
+  | { status: "success"; rates: ShipStationRate[] };
+
+interface PackageDetailsSectionProps {
+  isPending: boolean;
+  packages: PackageRecord[];
+  packageIds: string[];
+  setPackageIds: Dispatch<SetStateAction<string[]>>;
+  fromAddresses: AddressRecord[];
+  toAddresses: AddressRecord[];
+  fromMode: AddressMode;
+  toMode: AddressMode;
+  selectedCarrier: string | null;
+  selectedService: string | null;
+}
 
 export function PackageDetailsSection({
   isPending,
-  priceContent,
   packages,
-}: {
-  isPending: boolean;
-  priceContent: ReactNode;
-  packages: PackageRecord[];
-}) {
+  packageIds,
+  setPackageIds,
+  fromAddresses,
+  toAddresses,
+  fromMode,
+  toMode,
+  selectedCarrier,
+  selectedService,
+}: PackageDetailsSectionProps) {
+  const handlePackageRemove = (index: number) => {
+    if (packageIds.length <= 1) return; // Prevent removing the last package
+    setPackageIds((prev) => prev.filter((_, i) => i !== index));
+  };
+
   return (
     <Fieldset title="Package Details">
-      <div className="flex justify-between">
-        <span className="text-sm font-medium">Package 1</span>
+      {packageIds.map((packageId, index) => {
+        return (
+          <div key={packageId} className="flex flex-col">
+            <Package
+              isPending={isPending}
+              index={index}
+              handlePackageRemove={handlePackageRemove}
+              fromAddresses={fromAddresses}
+              toAddresses={toAddresses}
+              fromMode={fromMode}
+              toMode={toMode}
+              selectedCarrier={selectedCarrier}
+              selectedService={selectedService}
+            />
+
+            {index !== packageIds.length - 1 ? <Separator /> : null}
+          </div>
+        );
+      })}
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          onClick={() => {
+            setPackageIds((current) => [
+              ...current,
+              `package_${current.length + 1}`,
+            ]);
+          }}
+        >
+          Add Package
+        </Button>
+      </div>
+      {/* <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          id="test-label"
+          name="testLabel"
+          value="true"
+          disabled={isPending}
+        />
+        <Label htmlFor="test-label" className="text-sm text-muted-foreground">
+          Generate as a test label
+        </Label>
+      </div> */}
+    </Fieldset>
+  );
+}
+
+function Package({
+  isPending,
+  index,
+  handlePackageRemove,
+  fromAddresses,
+  toAddresses,
+  fromMode,
+  toMode,
+  selectedCarrier,
+  selectedService,
+}: {
+  isPending: boolean;
+  index: number;
+  handlePackageRemove: (index: number) => void;
+  fromAddresses: AddressRecord[];
+  toAddresses: AddressRecord[];
+  fromMode: AddressMode;
+  toMode: AddressMode;
+  selectedCarrier: string | null;
+  selectedService: string | null;
+}) {
+  const { formRef } = useCreateLabelFormContext();
+  const [rateState, setRateState] = useState<RateState>({ status: "idle" });
+
+  const [rateRequest, setRateRequest] =
+    useState<ShipstationRatesRequest | null>(null);
+  const debouncedRateRequest = useDebounce(rateRequest, RATE_DEBOUNCE_MS);
+
+  const formEventTimeoutRef = useRef<number | null>(null);
+
+  const updateRateRequest = useCallback(() => {
+    if (!formRef.current) return;
+    const formData = new FormData(formRef.current);
+    const nextRequest = buildRatesRequest(index, formData, {
+      fromAddresses,
+      toAddresses,
+      fromMode,
+      toMode,
+    });
+    setRateRequest((current) =>
+      areRateRequestsEqual(current, nextRequest) ? current : nextRequest
+    );
+  }, [fromAddresses, toAddresses, fromMode, toMode]);
+
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+
+    const handleFormChange = () => {
+      if (formEventTimeoutRef.current !== null) {
+        window.clearTimeout(formEventTimeoutRef.current);
+      }
+      formEventTimeoutRef.current = window.setTimeout(() => {
+        formEventTimeoutRef.current = null;
+        updateRateRequest();
+      }, 0);
+    };
+
+    form.addEventListener("input", handleFormChange);
+    form.addEventListener("change", handleFormChange);
+
+    return () => {
+      form.removeEventListener("input", handleFormChange);
+      form.removeEventListener("change", handleFormChange);
+      if (formEventTimeoutRef.current !== null) {
+        window.clearTimeout(formEventTimeoutRef.current);
+        formEventTimeoutRef.current = null;
+      }
+    };
+  }, [updateRateRequest]);
+
+  useEffect(() => {
+    updateRateRequest();
+  }, [updateRateRequest]);
+
+  useEffect(() => {
+    if (!debouncedRateRequest) {
+      setRateState((current) =>
+        current.status === "idle" ? current : { status: "idle" }
+      );
+      return;
+    }
+
+    let cancelled = false;
+    const controller = new AbortController();
+
+    setRateState({ status: "loading" });
+
+    const fetchRates = async () => {
+      try {
+        const response = await fetch("/api/shipstation/rates", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(debouncedRateRequest),
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          let message = "Unable to fetch rates.";
+          try {
+            const detail = (await response.json()) as { message?: string };
+            if (detail?.message) {
+              message = detail.message;
+            }
+          } catch {
+            // Ignore parse errors and keep default message.
+          }
+          if (!cancelled) {
+            setRateState({ status: "error", message });
+          }
+          return;
+        }
+
+        const data = (await response.json()) as { rates?: ShipStationRate[] };
+        if (!cancelled) {
+          setRateState({
+            status: "success",
+            rates: Array.isArray(data.rates) ? data.rates : [],
+          });
+        }
+      } catch (error) {
+        if (controller.signal.aborted || cancelled) {
+          return;
+        }
+        const message =
+          error instanceof Error ? error.message : "Unable to fetch rates.";
+        setRateState({ status: "error", message });
+      }
+    };
+
+    void fetchRates();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [debouncedRateRequest]);
+
+  const selectedRate = useMemo(() => {
+    if (rateState.status !== "success") {
+      return null;
+    }
+
+    if (!selectedCarrier || !selectedService) {
+      return null;
+    }
+    return (
+      rateState.rates.find((rate) => rate.serviceCode === selectedService) ??
+      null
+    );
+  }, [rateState, selectedCarrier, selectedService]);
+
+  const priceContent = useMemo(() => {
+    switch (rateState.status) {
+      case "loading":
+        return (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Fetching rates…
+          </div>
+        );
+      case "error":
+        return <p className="text-sm text-destructive">{rateState.message}</p>;
+      case "success": {
+        if (selectedRate) {
+          const shipmentCost = Number(selectedRate.shipmentCost ?? 0);
+          const otherCost = Number(selectedRate.otherCost ?? 0);
+          const totalCost = shipmentCost + otherCost;
+          const deliveryDays =
+            typeof selectedRate.deliveryDays === "number"
+              ? selectedRate.deliveryDays
+              : null;
+
+          return (
+            <div className="space-y-1">
+              <p className="text-lg font-semibold">
+                {USD_FORMATTER.format(totalCost)}
+              </p>
+              {deliveryDays !== null && deliveryDays >= 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  Est. delivery in {deliveryDays}{" "}
+                  {deliveryDays === 1 ? "day" : "days"}
+                </p>
+              ) : null}
+            </div>
+          );
+        }
+        if (rateState.rates.length === 0) {
+          return (
+            <p className="text-sm text-muted-foreground">
+              No rates returned for the provided details.
+            </p>
+          );
+        }
+
+        return (
+          <p className="text-sm text-muted-foreground">
+            Selected service has no available rate.
+          </p>
+        );
+      }
+      default:
+        return (
+          <p className="text-sm text-muted-foreground">
+            Enter parcel details to preview a rate.
+          </p>
+        );
+    }
+  }, [rateState, selectedRate]);
+
+  return (
+    <div className="space-y-8">
+      <div className="flex justify-between items-center">
+        <span className="text-sm font-medium">Package {index + 1}</span>
+        <Button
+          type="button"
+          onClick={() => handlePackageRemove(index)}
+          size="icon"
+          variant="destructive"
+          className="cursor-pointer"
+        >
+          <Trash />
+        </Button>
       </div>
       <div className="grid gap-4 md:grid-cols-4">
         <div className="grid gap-2">
           <Label htmlFor="dimensions-length">Length</Label>
           <Input
             id="dimensions-length"
-            name="dimensions.length"
+            name={`package-${index}.dimensions.length`}
             type="number"
             step="0.1"
             min="0"
@@ -44,7 +368,7 @@ export function PackageDetailsSection({
           <Label htmlFor="dimensions-width">Width</Label>
           <Input
             id="dimensions-width"
-            name="dimensions.width"
+            name={`package-${index}.dimensions.width`}
             type="number"
             step="0.1"
             min="0"
@@ -56,7 +380,7 @@ export function PackageDetailsSection({
           <Label htmlFor="dimensions-height">Height</Label>
           <Input
             id="dimensions-height"
-            name="dimensions.height"
+            name={`package-${index}.dimensions.height`}
             type="number"
             step="0.1"
             min="0"
@@ -67,7 +391,7 @@ export function PackageDetailsSection({
         <div className="grid gap-2">
           <Label htmlFor="dimensions-unit">Dimension unit</Label>
           <Select
-            name="dimensions.unit"
+            name={`package-${index}.dimensions.unit`}
             disabled={isPending}
             defaultValue="inches"
           >
@@ -84,7 +408,7 @@ export function PackageDetailsSection({
           <Label htmlFor="weight-value">Weight</Label>
           <Input
             id="weight-value"
-            name="weight.value"
+            name={`package-${index}.weight.value`}
             type="number"
             step="0.1"
             min="0"
@@ -95,7 +419,11 @@ export function PackageDetailsSection({
         </div>
         <div className="grid gap-2">
           <Label htmlFor="weight-unit">Weight unit</Label>
-          <Select name="weight.unit" disabled={isPending} defaultValue="pounds">
+          <Select
+            name={`package-${index}.weight.unit`}
+            disabled={isPending}
+            defaultValue="pounds"
+          >
             <SelectTrigger className="w-full">
               <SelectValue defaultValue="pounds" placeholder="Select unit" />
             </SelectTrigger>
@@ -109,7 +437,7 @@ export function PackageDetailsSection({
         <div className="grid gap-2">
           <Label htmlFor="confirmation">Confirmation</Label>
           <Select
-            name="confirmation"
+            name={`package-${index}.confirmation`}
             disabled={isPending}
             defaultValue="delivery"
           >
@@ -133,21 +461,6 @@ export function PackageDetailsSection({
           {priceContent}
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <Button type="button">Add Package</Button>
-      </div>
-      {/* <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          id="test-label"
-          name="testLabel"
-          value="true"
-          disabled={isPending}
-        />
-        <Label htmlFor="test-label" className="text-sm text-muted-foreground">
-          Generate as a test label
-        </Label>
-      </div> */}
-    </Fieldset>
+    </div>
   );
 }

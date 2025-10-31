@@ -73,6 +73,7 @@ export function resolveAddressFromForm(
 }
 
 export function buildRatesRequest(
+  index: number,
   formData: FormData,
   params: {
     fromAddresses: AddressRecord[];
@@ -102,28 +103,44 @@ export function buildRatesRequest(
     params.toMode
   );
 
+  // for (const [key, value] of formData.entries()) {
+  //   console.log(`Form field: ${key}, Value: ${value}`);
+  // }
+
   if (!fromAddress || !toAddress) return null;
 
   const weightValueRaw =
-    (formData.get("weight.value") as string | null)?.trim() ?? "";
+    (formData.get(`package-${index}.weight.value`) as string | null)?.trim() ??
+    "";
   const weightValue = Number.parseFloat(weightValueRaw);
   const weightUnit =
-    (formData.get("weight.unit") as string | null)?.trim() ?? "";
+    (formData.get(`package-${index}.weight.unit`) as string | null)?.trim() ??
+    "";
 
   if (!Number.isFinite(weightValue) || weightValue <= 0) return null;
   if (!VALID_WEIGHT_UNITS.has(weightUnit)) return null;
 
   const lengthValue = Number.parseFloat(
-    ((formData.get("dimensions.length") as string | null) ?? "").trim()
+    (
+      (formData.get(`package-${index}.dimensions.length`) as string | null) ??
+      ""
+    ).trim()
   );
   const widthValue = Number.parseFloat(
-    ((formData.get("dimensions.width") as string | null) ?? "").trim()
+    (
+      (formData.get(`package-${index}.dimensions.width`) as string | null) ?? ""
+    ).trim()
   );
   const heightValue = Number.parseFloat(
-    ((formData.get("dimensions.height") as string | null) ?? "").trim()
+    (
+      (formData.get(`package-${index}.dimensions.height`) as string | null) ??
+      ""
+    ).trim()
   );
   const dimensionUnit =
-    (formData.get("dimensions.unit") as string | null)?.trim() ?? "";
+    (
+      formData.get(`package-${index}.dimensions.unit`) as string | null
+    )?.trim() ?? "";
 
   const hasDimensions =
     Number.isFinite(lengthValue) &&
