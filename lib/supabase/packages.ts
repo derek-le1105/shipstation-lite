@@ -17,8 +17,6 @@ export type PackageRecord = {
   created_at: string;
   updated_at: string;
   nickname: string;
-  service_code: string | null;
-  carrier_code: string | null;
 };
 
 export async function listPackages(userId: string): Promise<PackageRecord[]> {

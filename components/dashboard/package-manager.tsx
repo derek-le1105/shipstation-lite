@@ -19,7 +19,6 @@ import {
   updatePackageAction,
 } from "@/lib/actions/packages";
 import { Input } from "../ui/input";
-import { FEDEX_SERVICES } from "@/lib/shipstation/fedex";
 import { Button } from "../ui/button";
 
 interface PackageManagerProps {
@@ -210,44 +209,6 @@ function PackageFields({
           defaultValue={pkg?.nickname ?? ""}
           required
         />
-      </div>
-      <div className="grid gap-2 md:col-span-2">
-        <Label htmlFor={`${idPrefix}-carrier_code`}>Carrier</Label>
-        <Select
-          defaultValue={pkg?.carrier_code ?? ""}
-          name="carrier_code"
-          required
-        >
-          <SelectTrigger id={`${idPrefix}-carrier_code`} className="w-full">
-            <SelectValue placeholder="Select Carrier" />
-          </SelectTrigger>
-          <SelectContent>
-            {[{ code: "fedex", name: "FedEx" }].map((carrier) => (
-              <SelectItem key={carrier.code} value={carrier.code}>
-                {carrier.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="grid gap-2 md:col-span-2">
-        <Label htmlFor={`${idPrefix}-service_code`}>Service</Label>
-        <Select
-          defaultValue={pkg?.service_code ?? ""}
-          name="service_code"
-          required
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select Service" />
-          </SelectTrigger>
-          <SelectContent>
-            {FEDEX_SERVICES.map((service) => (
-              <SelectItem key={service.code} value={service.code}>
-                {service.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
       <div className="grid gap-2">
         <Label htmlFor={`${idPrefix}-length`}>Length</Label>

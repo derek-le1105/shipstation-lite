@@ -73,14 +73,12 @@ export type Database = {
       };
       packages: {
         Row: {
-          carrier_code: string | null;
           created_at: string;
           dimension_unit: Database["public"]["Enums"]["package_dimension_units"];
           height: number;
           id: string;
           length: number;
           nickname: string | null;
-          service_code: string | null;
           updated_at: string | null;
           user_id: string;
           weight: number;
@@ -88,14 +86,12 @@ export type Database = {
           width: number;
         };
         Insert: {
-          carrier_code?: string | null;
           created_at?: string;
           dimension_unit: Database["public"]["Enums"]["package_dimension_units"];
           height: number;
           id?: string;
           length: number;
           nickname?: string | null;
-          service_code?: string | null;
           updated_at?: string | null;
           user_id: string;
           weight: number;
@@ -103,14 +99,12 @@ export type Database = {
           width: number;
         };
         Update: {
-          carrier_code?: string | null;
           created_at?: string;
           dimension_unit?: Database["public"]["Enums"]["package_dimension_units"];
           height?: number;
           id?: string;
           length?: number;
           nickname?: string | null;
-          service_code?: string | null;
           updated_at?: string | null;
           user_id?: string;
           weight?: number;
