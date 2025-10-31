@@ -113,7 +113,6 @@ export default async function DashboardPage() {
         ? error.message
         : "Unable to load carrier details. Verify your ShipStation API keys.";
   }
-  console.log("packages: ", savedPackages);
   return (
     <div className="space-y-10">
       <section className="grid md:grid-cols-[2fr_1fr] gap-6">
