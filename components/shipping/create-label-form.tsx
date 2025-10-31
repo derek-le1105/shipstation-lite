@@ -676,7 +676,7 @@ export function CreateLabelForm({
             {priceContent}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        {/* <div className="flex items-center gap-2">
           <input
             type="checkbox"
             id="test-label"
@@ -687,7 +687,7 @@ export function CreateLabelForm({
           <Label htmlFor="test-label" className="text-sm text-muted-foreground">
             Generate as a test label
           </Label>
-        </div>
+        </div> */}
       </Fieldset>
 
       <Button type="submit" disabled={isPending || carriers.length === 0}>

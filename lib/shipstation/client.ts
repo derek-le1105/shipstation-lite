@@ -75,7 +75,7 @@ export type CreateLabelPayload = {
     height: number;
     units: "inches" | "centimeters";
   };
-  testLabel?: boolean;
+  //testLabel?: boolean;
   externalOrderId?: string;
   insuranceOptions?: {
     insureShipment: boolean;
