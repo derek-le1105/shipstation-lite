@@ -14,6 +14,7 @@ import {
 import { CreateLabelForm } from "@/components/shipping/create-label-form";
 import { LabelHistory } from "@/components/dashboard/label-history";
 import { FEDEX_SERVICES } from "@/lib/shipstation/fedex";
+import { listPackages } from "@/lib/supabase/packages";
 
 type CarrierMetadata = {
   carrier: ShipStationCarrier | null;
@@ -80,11 +81,13 @@ export default async function DashboardPage() {
   if (!profile) {
     redirect("/auth/login");
   }
-  const [savedFromAddresses, savedToAddresses, labels] = await Promise.all([
-    listAddresses(profile.id, "ship_from"),
-    listAddresses(profile.id, "ship_to"),
-    listShippingLabelsForUser(profile.id),
-  ]);
+  const [savedFromAddresses, savedToAddresses, savedPackages, labels] =
+    await Promise.all([
+      listAddresses(profile.id, "ship_from"),
+      listAddresses(profile.id, "ship_to"),
+      listPackages(profile.id),
+      listShippingLabelsForUser(profile.id),
+    ]);
 
   let carriers: ShipStationCarrier[] = [];
   let metadata: CarrierMetadata = {
@@ -110,7 +113,7 @@ export default async function DashboardPage() {
         ? error.message
         : "Unable to load carrier details. Verify your ShipStation API keys.";
   }
-
+  console.log("packages: ", savedPackages);
   return (
     <div className="space-y-10">
       <section className="grid md:grid-cols-[2fr_1fr] gap-6">
@@ -126,6 +129,7 @@ export default async function DashboardPage() {
               toAddresses={savedToAddresses}
               carriers={carriers}
               services={metadata.services}
+              packages={savedPackages}
             />
             {carrierError ? (
               <div className="mt-4 flex items-center gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
