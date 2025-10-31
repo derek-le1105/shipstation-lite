@@ -81,10 +81,11 @@ export function PackageDetailsSection({
     <Fieldset title="Package Details">
       {packageIds.map((packageId, index) => {
         return (
-          <div key={packageId} className="flex flex-col">
+          <div key={packageId} className="flex flex-col gap-8 mb-4">
             <Package
               isPending={isPending}
               index={index}
+              packages={packages}
               handlePackageRemove={handlePackageRemove}
               fromAddresses={fromAddresses}
               toAddresses={toAddresses}
@@ -111,18 +112,6 @@ export function PackageDetailsSection({
           Add Package
         </Button>
       </div>
-      {/* <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          id="test-label"
-          name="testLabel"
-          value="true"
-          disabled={isPending}
-        />
-        <Label htmlFor="test-label" className="text-sm text-muted-foreground">
-          Generate as a test label
-        </Label>
-      </div> */}
     </Fieldset>
   );
 }
@@ -130,6 +119,7 @@ export function PackageDetailsSection({
 function Package({
   isPending,
   index,
+  packages,
   handlePackageRemove,
   fromAddresses,
   toAddresses,
@@ -140,6 +130,7 @@ function Package({
 }: {
   isPending: boolean;
   index: number;
+  packages: PackageRecord[];
   handlePackageRemove: (index: number) => void;
   fromAddresses: AddressRecord[];
   toAddresses: AddressRecord[];
@@ -148,6 +139,8 @@ function Package({
   selectedCarrier: string | null;
   selectedService: string | null;
 }) {
+  const [selectedPackageId, setSelectedPackageId] =
+    useState<string>("new-package");
   const { formRef } = useCreateLabelFormContext();
   const [rateState, setRateState] = useState<RateState>({ status: "idle" });
 
@@ -160,6 +153,38 @@ function Package({
   const updateRateRequest = useCallback(() => {
     if (!formRef.current) return;
     const formData = new FormData(formRef.current);
+    if (selectedPackageId !== "new-package") {
+      const prefix = `package-${index}.dimensions`;
+      formData.set(
+        `${prefix}.length`,
+        packages.find((p) => p.id === selectedPackageId)?.length?.toString() ||
+          ""
+      );
+      formData.set(
+        `${prefix}.width`,
+        packages.find((p) => p.id === selectedPackageId)?.width?.toString() ||
+          ""
+      );
+      formData.set(
+        `${prefix}.height`,
+        packages.find((p) => p.id === selectedPackageId)?.height?.toString() ||
+          ""
+      );
+      formData.set(
+        `${prefix}.unit`,
+        packages.find((p) => p.id === selectedPackageId)?.dimension_unit || ""
+      );
+      const weightPrefix = `package-${index}.weight`;
+      formData.set(
+        `${weightPrefix}.value`,
+        packages.find((p) => p.id === selectedPackageId)?.weight?.toString() ||
+          ""
+      );
+      formData.set(
+        `${weightPrefix}.unit`,
+        packages.find((p) => p.id === selectedPackageId)?.weight_unit || ""
+      );
+    }
     const nextRequest = buildRatesRequest(index, formData, {
       fromAddresses,
       toAddresses,
@@ -169,7 +194,16 @@ function Package({
     setRateRequest((current) =>
       areRateRequestsEqual(current, nextRequest) ? current : nextRequest
     );
-  }, [fromAddresses, toAddresses, fromMode, toMode]);
+  }, [
+    selectedPackageId,
+    packages,
+    formRef,
+    index,
+    fromAddresses,
+    toAddresses,
+    fromMode,
+    toMode,
+  ]);
 
   useEffect(() => {
     const form = formRef.current;
@@ -196,7 +230,7 @@ function Package({
         formEventTimeoutRef.current = null;
       }
     };
-  }, [updateRateRequest]);
+  }, [formRef, updateRateRequest]);
 
   useEffect(() => {
     updateRateRequest();
@@ -340,127 +374,157 @@ function Package({
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
-        <span className="text-sm font-medium">Package {index + 1}</span>
-        <Button
-          type="button"
-          onClick={() => handlePackageRemove(index)}
-          size="icon"
-          variant="destructive"
-          className="cursor-pointer"
-        >
-          <Trash />
-        </Button>
-      </div>
-      <div className="grid gap-4 md:grid-cols-4">
-        <div className="grid gap-2">
-          <Label htmlFor="dimensions-length">Length</Label>
-          <Input
-            id="dimensions-length"
-            name={`package-${index}.dimensions.length`}
-            type="number"
-            step="0.1"
-            min="0"
-            placeholder="10"
-            disabled={isPending}
-          />
+        <div className="flex items-center gap-4">
+          <span className="text-md font-medium">Package {index + 1}</span>
+          <div className="grid gap-4">
+            <Select
+              name={`package-${index}.type`}
+              value={selectedPackageId}
+              onValueChange={setSelectedPackageId}
+              disabled={isPending}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Package" />
+              </SelectTrigger>
+              <SelectContent>
+                {packages.map((pkg) => {
+                  return (
+                    <SelectItem key={pkg.id} value={pkg.id}>
+                      {`${pkg.nickname} - ${pkg.length} x ${pkg.width} x ${pkg.height} ${pkg.dimension_unit}, ${pkg.weight} ${pkg.weight_unit}`}
+                    </SelectItem>
+                  );
+                })}
+                <SelectItem value="new-package">New Package</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="grid gap-2">
-          <Label htmlFor="dimensions-width">Width</Label>
-          <Input
-            id="dimensions-width"
-            name={`package-${index}.dimensions.width`}
-            type="number"
-            step="0.1"
-            min="0"
-            placeholder="6"
-            disabled={isPending}
-          />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="dimensions-height">Height</Label>
-          <Input
-            id="dimensions-height"
-            name={`package-${index}.dimensions.height`}
-            type="number"
-            step="0.1"
-            min="0"
-            placeholder="4"
-            disabled={isPending}
-          />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="dimensions-unit">Dimension unit</Label>
-          <Select
-            name={`package-${index}.dimensions.unit`}
-            disabled={isPending}
-            defaultValue="inches"
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-md font-medium">Price:</span>
+            {priceContent}
+          </div>
+          <Button
+            type="button"
+            onClick={() => handlePackageRemove(index)}
+            size="icon"
+            variant="destructive"
+            className="cursor-pointer"
           >
-            <SelectTrigger className="w-full">
-              <SelectValue defaultValue="inches" placeholder="Select unit" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="inches">Inches</SelectItem>
-              <SelectItem value="centimeters">Centimeters</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="weight-value">Weight</Label>
-          <Input
-            id="weight-value"
-            name={`package-${index}.weight.value`}
-            type="number"
-            step="0.1"
-            min="0"
-            placeholder="16"
-            required
-            disabled={isPending}
-          />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="weight-unit">Weight unit</Label>
-          <Select
-            name={`package-${index}.weight.unit`}
-            disabled={isPending}
-            defaultValue="pounds"
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue defaultValue="pounds" placeholder="Select unit" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pounds">Pounds</SelectItem>
-              <SelectItem value="ounces">Ounces</SelectItem>
-              <SelectItem value="grams">Grams</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="confirmation">Confirmation</Label>
-          <Select
-            name={`package-${index}.confirmation`}
-            disabled={isPending}
-            defaultValue="delivery"
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue
-                defaultValue="delivery"
-                placeholder="Select confirmation"
-              />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">None</SelectItem>
-              <SelectItem value="delivery">Delivery</SelectItem>
-              <SelectItem value="signature">Signature</SelectItem>
-              <SelectItem value="adult_signature">Adult Signature</SelectItem>
-              <SelectItem value="direct_signature">Direct Signature</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid gap-2">
-          <Label>Price</Label>
-          {priceContent}
+            <Trash />
+          </Button>
         </div>
       </div>
+      {selectedPackageId === "new-package" ? (
+        <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-2">
+            <Label htmlFor="dimensions-length">Length</Label>
+            <Input
+              id="dimensions-length"
+              name={`package-${index}.dimensions.length`}
+              type="number"
+              step="0.1"
+              min="0"
+              placeholder="10"
+              disabled={isPending}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="dimensions-width">Width</Label>
+            <Input
+              id="dimensions-width"
+              name={`package-${index}.dimensions.width`}
+              type="number"
+              step="0.1"
+              min="0"
+              placeholder="6"
+              disabled={isPending}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="dimensions-height">Height</Label>
+            <Input
+              id="dimensions-height"
+              name={`package-${index}.dimensions.height`}
+              type="number"
+              step="0.1"
+              min="0"
+              placeholder="4"
+              disabled={isPending}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="dimensions-unit">Dimension unit</Label>
+            <Select
+              name={`package-${index}.dimensions.unit`}
+              disabled={isPending}
+              defaultValue="inches"
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue defaultValue="inches" placeholder="Select unit" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="inches">Inches</SelectItem>
+                <SelectItem value="centimeters">Centimeters</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="weight-value">Weight</Label>
+            <Input
+              id="weight-value"
+              name={`package-${index}.weight.value`}
+              type="number"
+              step="0.1"
+              min="0"
+              placeholder="16"
+              required
+              disabled={isPending}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="weight-unit">Weight unit</Label>
+            <Select
+              name={`package-${index}.weight.unit`}
+              disabled={isPending}
+              defaultValue="pounds"
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue defaultValue="pounds" placeholder="Select unit" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pounds">Pounds</SelectItem>
+                <SelectItem value="ounces">Ounces</SelectItem>
+                <SelectItem value="grams">Grams</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="confirmation">Confirmation</Label>
+            <Select
+              name={`package-${index}.confirmation`}
+              disabled={isPending}
+              defaultValue="delivery"
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue
+                  defaultValue="delivery"
+                  placeholder="Select confirmation"
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="delivery">Delivery</SelectItem>
+                <SelectItem value="signature">Signature</SelectItem>
+                <SelectItem value="adult_signature">Adult Signature</SelectItem>
+                <SelectItem value="direct_signature">
+                  Direct Signature
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
