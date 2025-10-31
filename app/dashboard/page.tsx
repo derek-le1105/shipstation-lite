@@ -122,7 +122,6 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <CreateLabelForm
-              profile={profile}
               fromAddresses={savedFromAddresses}
               toAddresses={savedToAddresses}
               carriers={carriers}

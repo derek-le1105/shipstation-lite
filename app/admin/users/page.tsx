@@ -2,7 +2,8 @@ import UserForm from "@/components/admin/users/user-form";
 import { UsersTable } from "@/components/admin/users/users-table";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { createUserInviteAction } from "@/lib/actions/admin-users";
-import { requireAdminProfile } from "@/lib/auth";
+import { requireAdminProfile, UserProfile } from "@/lib/auth";
+import { listUpcharges } from "@/lib/supabase/admin";
 import { listProfiles } from "@/lib/supabase/profiles";
 import { UserPlus } from "lucide-react";
 import { redirect } from "next/navigation";
@@ -19,6 +20,20 @@ export default async function AdminUsersPage() {
   }
 
   const profiles = await listProfiles();
+  const upcharges = await listUpcharges();
+
+  const profilesWithUpcharges: (UserProfile & {
+    upcharge: { value: number; unit: "dollars" | "percent" } | null;
+  })[] = profiles.map((profile) => {
+    const upcharge = upcharges.find((u) => u.user_id === profile.id);
+    return {
+      ...profile,
+      upcharge: upcharge
+        ? { value: upcharge.value, unit: upcharge.unit }
+        : null,
+    };
+  });
+
   return (
     <section>
       <Card>
@@ -27,7 +42,7 @@ export default async function AdminUsersPage() {
           <UserForm action={createUserInviteAction} icon={<UserPlus />} />
         </CardHeader>
         <CardContent>
-          <UsersTable profiles={profiles} />
+          <UsersTable profiles={profilesWithUpcharges} />
         </CardContent>
       </Card>
     </section>

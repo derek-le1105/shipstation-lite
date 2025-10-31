@@ -21,6 +21,7 @@ import {
   type ShipStationWeight,
 } from "@/lib/shipstation/client";
 import { createClient } from "../supabase/server";
+import { getUserUpcharge } from "../supabase/admin";
 
 type AddressMode = "saved" | "new";
 
@@ -220,10 +221,10 @@ export async function createShippingLabelAction(
 ): Promise<CreateShippingLabelState> {
   try {
     const profile = await requireUserProfile();
-    const upcharge = {
-      value: profile.upcharge_value,
-      unit: profile.upcharge_unit,
-    };
+    const upcharge = await getUserUpcharge(profile.id).then((data) => ({
+      value: data.value,
+      unit: data.unit,
+    }));
     const fromMode = (formData.get("from.mode") as AddressMode) ?? "new";
     const toMode = (formData.get("to.mode") as AddressMode) ?? "new";
 

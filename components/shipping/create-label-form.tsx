@@ -31,7 +31,6 @@ import { AddressMode } from "./types";
 import { Fieldset } from "../ui/fieldset";
 import { AddressSection } from "./address-section";
 import { useDebounce } from "@/lib/hooks/useDebounce";
-import { UserProfile } from "@/lib/auth";
 import {
   Select,
   SelectContent,
@@ -256,13 +255,11 @@ function areRateRequestsEqual(
 }
 
 export function CreateLabelForm({
-  profile,
   fromAddresses,
   toAddresses,
   carriers,
   services,
 }: {
-  profile: UserProfile;
   fromAddresses: AddressRecord[];
   toAddresses: AddressRecord[];
   carriers: ShipStationCarrier[];
@@ -383,26 +380,10 @@ export function CreateLabelForm({
         }
 
         const data = (await response.json()) as { rates?: ShipStationRate[] };
-        const updatedRates = {
-          ...data,
-          rates: data.rates?.map((rate) => {
-            const upchargePercent =
-              profile.upcharge_unit === "percent" ? profile.upcharge_value : 0;
-            return {
-              ...rate,
-              shipmentCost: rate.shipmentCost
-                ? Number(rate.shipmentCost) * (1 + upchargePercent / 100)
-                : rate.shipmentCost,
-              otherCost: rate.otherCost
-                ? Number(rate.otherCost) * (1 + upchargePercent / 100)
-                : rate.otherCost,
-            };
-          }),
-        };
         if (!cancelled) {
           setRateState({
             status: "success",
-            rates: Array.isArray(updatedRates.rates) ? updatedRates.rates : [],
+            rates: Array.isArray(data.rates) ? data.rates : [],
           });
         }
       } catch (error) {

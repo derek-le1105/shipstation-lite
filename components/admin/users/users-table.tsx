@@ -1,7 +1,13 @@
 import { UserProfile } from "@/lib/auth";
-import { formatUpcharge } from "@/lib/utils";
+import { formatDollarPercent } from "@/lib/utils";
 
-export function UsersTable({ profiles }: { profiles: UserProfile[] }) {
+export function UsersTable({
+  profiles,
+}: {
+  profiles: (UserProfile & {
+    upcharge: { value: number; unit: "dollars" | "percent" } | null;
+  })[];
+}) {
   return (
     <div className="overflow-x-auto rounded-md border border-border">
       <table className="w-full text-sm">
@@ -35,12 +41,16 @@ export function UsersTable({ profiles }: { profiles: UserProfile[] }) {
                 <span className="font-medium">{profile.role}</span>
               </td>
               <td className="px-4 py-3 text-center">
-                <span className="font-medium">
-                  {formatUpcharge(
-                    profile.upcharge_value,
-                    profile.upcharge_unit
-                  )}
-                </span>
+                {profile?.upcharge ? (
+                  <span className="font-medium">
+                    {formatDollarPercent(
+                      profile?.upcharge?.value,
+                      profile?.upcharge?.unit
+                    )}
+                  </span>
+                ) : (
+                  "N/A"
+                )}
               </td>
               <td className="px-4 py-3">
                 <a
