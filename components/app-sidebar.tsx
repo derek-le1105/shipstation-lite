@@ -74,7 +74,7 @@ const NAV_MAIN: Navigation[] = [
     title: "Admin",
     url: "/admin",
     icon: Shield,
-    isActive: false,
+    isActive: true,
     isEnabled: true,
     requiredRole: "admin",
     items: [{ title: "Users", url: "/admin/users", enabled: true }],

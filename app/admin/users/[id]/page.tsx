@@ -42,6 +42,7 @@ export default async function UserPage({
               <UserForm
                 action={updateProfileAction}
                 user={user}
+                upcharge={userUpcharge}
                 icon={<UserPen />}
               />
             </CardTitle>
