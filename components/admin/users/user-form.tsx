@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 import { UserProfile } from "@/lib/auth";
+import { UserUpcharge } from "@/lib/supabase/admin";
 
 /**
  * A form component for creating or editing a user.
@@ -31,10 +32,12 @@ import { UserProfile } from "@/lib/auth";
 export default function UserForm({
   action,
   user,
+  upcharge,
   icon,
 }: {
   action: (_prev: UserState, formData: FormData) => Promise<UserState>;
   user?: UserProfile;
+  upcharge?: UserUpcharge;
   icon?: React.ReactNode;
 }) {
   const [state, formAction, actionPending] = useActionState<
@@ -104,14 +107,14 @@ export default function UserForm({
                   id="upcharge_value"
                   name="upcharge_value"
                   type="number"
-                  defaultValue={user?.upcharge_value ?? 0}
+                  defaultValue={upcharge?.value ?? 0}
                 />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="upcharge_unit">Upcharge Unit</Label>
                 <Select
                   name="upcharge_unit"
-                  defaultValue={user?.upcharge_unit ?? "dollars"}
+                  defaultValue={upcharge?.unit ?? "dollars"}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a unit"></SelectValue>

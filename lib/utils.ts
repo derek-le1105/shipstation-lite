@@ -51,7 +51,10 @@ export const printLabels = async (pdfValues: string[]) => {
   }
 };
 
-export function formatUpcharge(value: number, unit: "dollars" | "percent") {
+export function formatDollarPercent(
+  value: number,
+  unit: "dollars" | "percent"
+) {
   return unit === "dollars"
     ? Intl.NumberFormat("en-US", {
         style: "currency",

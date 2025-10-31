@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdminProfile } from "../auth";
-import { createClient } from "../supabase/server";
 import { UserState } from "./admin-users";
+import { createAdminClient, upsertUserUpcharge } from "../supabase/admin";
 
 export async function updateProfileAction(
   _prev: UserState,
@@ -20,19 +20,26 @@ export async function updateProfileAction(
   const upcharge_value = Number(formData.get("upcharge_value"));
   const upcharge_unit = formData.get("upcharge_unit") as "dollars" | "percent";
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("profiles")
     .update({
       email,
       full_name,
       role,
-      upcharge_value,
-      upcharge_unit,
     })
     .eq("id", userId)
     .select("*")
     .single();
+
+  const updatedCharge = await upsertUserUpcharge(
+    userId,
+    upcharge_unit,
+    upcharge_value
+  );
+
+  if (updatedCharge.error) throw updatedCharge.error;
+
   if (error) throw error;
   revalidatePath("/admin/users");
   return {

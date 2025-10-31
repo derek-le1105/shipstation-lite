@@ -8,8 +8,6 @@ export type UserProfile = {
   role: "user" | "admin";
   created_at: string;
   updated_at: string;
-  upcharge_value: number;
-  upcharge_unit: "dollars" | "percent";
 };
 
 async function ensureProfileRecord(

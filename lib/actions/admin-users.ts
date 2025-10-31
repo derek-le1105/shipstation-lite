@@ -53,7 +53,6 @@ export async function createUserInviteAction(
         ? `${process.env.VERCEL_URL}`
         : "http://localhost:3000");
     const redirectTo = `${baseUrl}/auth/callback`;
-    console.log("redirectTo:", redirectTo);
     // Send an invite so the user sets their own password.
     const inviteRes = await admin.auth.admin.inviteUserByEmail(email, {
       data: full_name ? { full_name } : undefined,

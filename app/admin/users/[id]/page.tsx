@@ -3,6 +3,7 @@ import UserInformation from "@/components/admin/users/user/user-information";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import PageCrumbs from "@/components/ui/page-crumbs";
 import { updateProfileAction } from "@/lib/actions/profiles";
+import { getUserUpcharge } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getShippingLabel } from "@/lib/supabase/shipping-labels";
 import { User, UserPen } from "lucide-react";
@@ -18,6 +19,7 @@ export default async function UserPage({
 }) {
   const { id } = await params;
   const user = await getUser(id);
+  const userUpcharge = await getUserUpcharge(user.id);
   const mostRecentLabel = await getShippingLabel(id);
   return (
     <div className="space-y-6">
@@ -40,12 +42,13 @@ export default async function UserPage({
               <UserForm
                 action={updateProfileAction}
                 user={user}
+                upcharge={userUpcharge}
                 icon={<UserPen />}
               />
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <UserInformation user={user} />
+            <UserInformation user={user} upcharge={userUpcharge} />
           </CardContent>
         </Card>
       </section>
