@@ -50,7 +50,6 @@ export async function POST(request: NextRequest) {
     const updatedRates = rates.map((rate) => ({
       ...rate,
       shipmentCost: calculateUpchargeCost(upcharge, rate.shipmentCost),
-      otherCost: calculateUpchargeCost(upcharge, rate.otherCost),
     }));
     return NextResponse.json({ rates: updatedRates });
   } catch (error) {

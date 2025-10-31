@@ -36,8 +36,20 @@ export async function getUserUpcharge(userId: string): Promise<UserUpcharge> {
     .from("user_upcharges")
     .select("*")
     .eq("user_id", userId)
-    .single();
-  if (error) throw error;
+    .maybeSingle();
+  if (error) {
+    console.error("Error fetching user upcharge:", error);
+    throw error;
+  }
+  if (!data) {
+    return {
+      user_id: userId,
+      unit: "dollars",
+      value: 0,
+      created_at: "",
+      updated_at: "",
+    };
+  }
   return data;
 }
 
@@ -47,11 +59,12 @@ export async function upsertUserUpcharge(
   value: number
 ) {
   const supabase = createAdminClient();
-  const { error } = await supabase
+  const upsert = await supabase
     .schema("private")
     .from("user_upcharges")
     .upsert({ user_id: userId, unit, value }, { onConflict: "user_id" });
-  if (error) throw error;
+  if (upsert.error) throw upsert.error;
+  return upsert;
 }
 
 export async function listUpcharges(): Promise<UserUpcharge[]> {
