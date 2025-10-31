@@ -30,6 +30,7 @@ import {
 import {
   areRateRequestsEqual,
   buildRatesRequest,
+  savePackageToFormData,
 } from "@/lib/shipping-label/utils";
 import { AddressRecord } from "@/lib/supabase/addresses";
 import { AddressMode } from "./types";
@@ -154,36 +155,9 @@ function Package({
     if (!formRef.current) return;
     const formData = new FormData(formRef.current);
     if (selectedPackageId !== "new-package") {
-      const prefix = `package-${index}.dimensions`;
-      formData.set(
-        `${prefix}.length`,
-        packages.find((p) => p.id === selectedPackageId)?.length?.toString() ||
-          ""
-      );
-      formData.set(
-        `${prefix}.width`,
-        packages.find((p) => p.id === selectedPackageId)?.width?.toString() ||
-          ""
-      );
-      formData.set(
-        `${prefix}.height`,
-        packages.find((p) => p.id === selectedPackageId)?.height?.toString() ||
-          ""
-      );
-      formData.set(
-        `${prefix}.unit`,
-        packages.find((p) => p.id === selectedPackageId)?.dimension_unit || ""
-      );
-      const weightPrefix = `package-${index}.weight`;
-      formData.set(
-        `${weightPrefix}.value`,
-        packages.find((p) => p.id === selectedPackageId)?.weight?.toString() ||
-          ""
-      );
-      formData.set(
-        `${weightPrefix}.unit`,
-        packages.find((p) => p.id === selectedPackageId)?.weight_unit || ""
-      );
+      const currPackage = packages.find((p) => p.id === selectedPackageId);
+      if (!currPackage) throw new Error("Selected package not found");
+      savePackageToFormData(formData, index, currPackage);
     }
     const nextRequest = buildRatesRequest(index, formData, {
       fromAddresses,
@@ -365,7 +339,7 @@ function Package({
       default:
         return (
           <p className="text-sm text-muted-foreground">
-            Enter parcel details to preview a rate.
+            Enter package details to preview a rate.
           </p>
         );
     }
@@ -522,6 +496,23 @@ function Package({
                 </SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="grid gap-2">
+            <div className="flex items-center gap-2 md:col-span-2">
+              <input
+                type="checkbox"
+                id={`package-${index}.save`}
+                name={`package-${index}.save`}
+                value="true"
+                disabled={isPending}
+              />
+              <Label
+                htmlFor={`package-${index}.save`}
+                className="text-sm text-muted-foreground"
+              >
+                Save this package
+              </Label>
+            </div>
           </div>
         </div>
       ) : null}

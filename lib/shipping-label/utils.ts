@@ -1,6 +1,7 @@
 import type { ShipstationRatesRequest } from "@/lib/shipstation/client";
 import type { AddressRecord } from "@/lib/supabase/addresses";
 import { AddressMode } from "@/components/shipping/types";
+import { PackageRecord } from "../supabase/packages";
 
 type RateDimensions = ShipstationRatesRequest["dimensions"];
 
@@ -219,4 +220,33 @@ export function areRateRequestsEqual(
     previous.residential === next.residential &&
     (previous.confirmation ?? "") === (next.confirmation ?? "")
   );
+}
+
+export function savePackageToFormData(
+  formData: FormData,
+  index: number,
+  packageRecord: PackageRecord
+) {
+  formData.set(`package-${index}.id`, packageRecord.id);
+  formData.set(
+    `package-${index}.dimensions.length`,
+    packageRecord.length.toString()
+  );
+  formData.set(
+    `package-${index}.dimensions.width`,
+    packageRecord.width.toString()
+  );
+  formData.set(
+    `package-${index}.dimensions.height`,
+    packageRecord.height.toString()
+  );
+  formData.set(
+    `package-${index}.weight.value`,
+    packageRecord.weight.toString()
+  );
+  formData.set(
+    `package-${index}.dimensions.unit`,
+    packageRecord.dimension_unit
+  );
+  formData.set(`package-${index}.weight.unit`, packageRecord.weight_unit);
 }
