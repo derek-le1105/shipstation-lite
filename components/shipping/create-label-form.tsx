@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ReactNode,
   useActionState,
   useCallback,
   useEffect,
@@ -39,8 +40,10 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
-
-const getServiceCode = (service: ShipStationService) => service.code ?? "";
+import {
+  areRateRequestsEqual,
+  buildRatesRequest,
+} from "@/lib/shipping-label/utils";
 
 const RATE_DEBOUNCE_MS = 1500;
 
@@ -50,209 +53,10 @@ type RateState =
   | { status: "error"; message: string }
   | { status: "success"; rates: ShipStationRate[] };
 
-type RateDimensions = ShipstationRatesRequest["dimensions"];
-
-type RateAddress = {
-  city: string;
-  state: string;
-  postalCode: string;
-  country: string;
-  residential?: boolean;
-};
-
 const USD_FORMATTER = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
 });
-
-const VALID_WEIGHT_UNITS = new Set(["ounces", "pounds", "grams"]);
-const VALID_DIMENSION_UNITS = new Set(["inches", "centimeters"]);
-
-function parseCheckboxValue(value: FormDataEntryValue | null) {
-  if (!value) return false;
-  return value === "true" || value === "on" || value === "1";
-}
-
-function resolveAddressFromForm(
-  formData: FormData,
-  prefix: "from" | "to",
-  savedAddresses: AddressRecord[],
-  fallbackMode: AddressMode
-): RateAddress | null {
-  const modeValue =
-    (formData.get(`${prefix}.mode`) as AddressMode | null) ?? fallbackMode;
-
-  if (modeValue === "saved") {
-    const addressId = formData.get(`${prefix}.addressId`);
-    if (!addressId) return null;
-
-    const address = savedAddresses.find((item) => item.id === addressId);
-    if (!address) return null;
-
-    const { city, state, postal_code, country, is_residential } = address;
-
-    if (!city || !state || !postal_code || !country) {
-      return null;
-    }
-
-    return {
-      city: city.trim(),
-      state: state.trim(),
-      postalCode: postal_code.trim(),
-      country: country.trim(),
-      residential: is_residential,
-    };
-  }
-
-  const city = (formData.get(`${prefix}.city`) as string | null)?.trim() ?? "";
-  const state =
-    (formData.get(`${prefix}.state`) as string | null)?.trim() ?? "";
-  const postalCode =
-    (formData.get(`${prefix}.postal_code`) as string | null)?.trim() ?? "";
-  const country =
-    (formData.get(`${prefix}.country`) as string | null)?.trim() ?? "";
-
-  if (!city || !state || !postalCode || !country) {
-    return null;
-  }
-
-  return {
-    city,
-    state,
-    postalCode,
-    country,
-    residential: parseCheckboxValue(formData.get(`${prefix}.is_residential`)),
-  };
-}
-
-function buildRatesRequest(
-  formData: FormData,
-  params: {
-    fromAddresses: AddressRecord[];
-    toAddresses: AddressRecord[];
-    fromMode: AddressMode;
-    toMode: AddressMode;
-  }
-): ShipstationRatesRequest | null {
-  const carrierCode =
-    (formData.get("carrierCode") as string | null)?.trim() ?? "";
-  if (!carrierCode) return null;
-
-  const serviceCode =
-    (formData.get("serviceCode") as string | null)?.trim() ?? "";
-  if (!serviceCode) return null;
-
-  const fromAddress = resolveAddressFromForm(
-    formData,
-    "from",
-    params.fromAddresses,
-    params.fromMode
-  );
-  const toAddress = resolveAddressFromForm(
-    formData,
-    "to",
-    params.toAddresses,
-    params.toMode
-  );
-
-  if (!fromAddress || !toAddress) return null;
-
-  const weightValueRaw =
-    (formData.get("weight.value") as string | null)?.trim() ?? "";
-  const weightValue = Number.parseFloat(weightValueRaw);
-  const weightUnit =
-    (formData.get("weight.unit") as string | null)?.trim() ?? "";
-
-  if (!Number.isFinite(weightValue) || weightValue <= 0) return null;
-  if (!VALID_WEIGHT_UNITS.has(weightUnit)) return null;
-
-  const lengthValue = Number.parseFloat(
-    ((formData.get("dimensions.length") as string | null) ?? "").trim()
-  );
-  const widthValue = Number.parseFloat(
-    ((formData.get("dimensions.width") as string | null) ?? "").trim()
-  );
-  const heightValue = Number.parseFloat(
-    ((formData.get("dimensions.height") as string | null) ?? "").trim()
-  );
-  const dimensionUnit =
-    (formData.get("dimensions.unit") as string | null)?.trim() ?? "";
-
-  const hasDimensions =
-    Number.isFinite(lengthValue) &&
-    Number.isFinite(widthValue) &&
-    Number.isFinite(heightValue) &&
-    lengthValue > 0 &&
-    widthValue > 0 &&
-    heightValue > 0 &&
-    VALID_DIMENSION_UNITS.has(dimensionUnit);
-
-  const dimensions: RateDimensions = hasDimensions
-    ? {
-        length: lengthValue,
-        width: widthValue,
-        height: heightValue,
-        units: dimensionUnit as NonNullable<RateDimensions>["units"],
-      }
-    : undefined;
-
-  return {
-    carrierCode,
-    serviceCode,
-    packageCode: "package",
-    fromPostalCode: fromAddress.postalCode,
-    fromCity: fromAddress.city,
-    fromState: fromAddress.state,
-    toPostalCode: toAddress.postalCode,
-    toCountry: toAddress.country.toUpperCase(),
-    toCity: toAddress.city,
-    toState: toAddress.state,
-    weight: {
-      value: weightValue,
-      units: weightUnit as ShipstationRatesRequest["weight"]["units"],
-    },
-    dimensions,
-    residential: toAddress.residential ?? undefined,
-  };
-}
-
-function compareDimensions(a: RateDimensions, b: RateDimensions): boolean {
-  if (!a && !b) return true;
-  if (!a || !b) return false;
-  return (
-    a.length === b.length &&
-    a.width === b.width &&
-    a.height === b.height &&
-    a.units === b.units
-  );
-}
-
-function areRateRequestsEqual(
-  previous: ShipstationRatesRequest | null,
-  next: ShipstationRatesRequest | null
-): boolean {
-  if (previous === next) return true;
-  if (!previous || !next) return false;
-
-  return (
-    previous.carrierCode === next.carrierCode &&
-    (previous.serviceCode ?? "") === (next.serviceCode ?? "") &&
-    (previous.packageCode ?? "") === (next.packageCode ?? "") &&
-    previous.fromPostalCode === next.fromPostalCode &&
-    (previous.fromCity ?? "") === (next.fromCity ?? "") &&
-    (previous.fromState ?? "") === (next.fromState ?? "") &&
-    (previous.fromWarehouseId ?? "") === (next.fromWarehouseId ?? "") &&
-    (previous.toState ?? "") === (next.toState ?? "") &&
-    previous.toCountry === next.toCountry &&
-    previous.toPostalCode === next.toPostalCode &&
-    (previous.toCity ?? "") === (next.toCity ?? "") &&
-    previous.weight.value === next.weight.value &&
-    previous.weight.units === next.weight.units &&
-    compareDimensions(previous.dimensions, next.dimensions) &&
-    previous.residential === next.residential &&
-    (previous.confirmation ?? "") === (next.confirmation ?? "")
-  );
-}
 
 export function CreateLabelForm({
   fromAddresses,
@@ -503,192 +307,20 @@ export function CreateLabelForm({
         />
       </div>
 
-      <Fieldset title="Shipment Details">
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="grid gap-2">
-            <Label htmlFor="carrier">Carrier</Label>
-            <Select
-              name="carrierCode"
-              disabled={isPending}
-              value={selectedCarrier}
-              onValueChange={(value) => setSelectedCarrier(value)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a carrier" />
-              </SelectTrigger>
-              <SelectContent>
-                {carriers.map((carrier) => (
-                  <SelectItem key={carrier.code} value={carrier.code}>
-                    {carrier.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="serviceCode">Service</Label>
-            <Select
-              name="serviceCode"
-              disabled={isPending}
-              value={selectedService}
-              onValueChange={(value) => setSelectedService(value)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a service" />
-              </SelectTrigger>
-              <SelectContent>
-                {services
-                  .filter((service) => getServiceCode(service).length > 0)
-                  .map((service) => {
-                    const value = getServiceCode(service);
-                    const key = `${service.carrierCode}-${value}`;
-                    return (
-                      <SelectItem key={key} value={value}>
-                        {service.name}
-                      </SelectItem>
-                    );
-                  })}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="serviceCode">Order Number</Label>
-            <Input
-              id="orderNumber"
-              name="orderNumber"
-              placeholder="AZ-12345"
-              disabled={isPending}
-            />
-          </div>
-        </div>
-      </Fieldset>
+      <ShipmentDetailsSection
+        isPending={isPending}
+        selectedCarrier={selectedCarrier}
+        selectedService={selectedService}
+        carriers={carriers}
+        services={services}
+        setSelectedCarrier={setSelectedCarrier}
+        setSelectedService={setSelectedService}
+      />
 
-      <Fieldset title="Package Details">
-        <div className="grid gap-4 md:grid-cols-4">
-          <div className="grid gap-2">
-            <Label htmlFor="dimensions-length">Length</Label>
-            <Input
-              id="dimensions-length"
-              name="dimensions.length"
-              type="number"
-              step="0.1"
-              min="0"
-              placeholder="10"
-              disabled={isPending}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="dimensions-width">Width</Label>
-            <Input
-              id="dimensions-width"
-              name="dimensions.width"
-              type="number"
-              step="0.1"
-              min="0"
-              placeholder="6"
-              disabled={isPending}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="dimensions-height">Height</Label>
-            <Input
-              id="dimensions-height"
-              name="dimensions.height"
-              type="number"
-              step="0.1"
-              min="0"
-              placeholder="4"
-              disabled={isPending}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="dimensions-unit">Dimension unit</Label>
-            <Select
-              name="dimensions.unit"
-              disabled={isPending}
-              defaultValue="inches"
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue defaultValue="inches" placeholder="Select unit" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="inches">Inches</SelectItem>
-                <SelectItem value="centimeters">Centimeters</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="weight-value">Weight</Label>
-            <Input
-              id="weight-value"
-              name="weight.value"
-              type="number"
-              step="0.1"
-              min="0"
-              placeholder="16"
-              required
-              disabled={isPending}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="weight-unit">Weight unit</Label>
-            <Select
-              name="weight.unit"
-              disabled={isPending}
-              defaultValue="pounds"
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue defaultValue="pounds" placeholder="Select unit" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pounds">Pounds</SelectItem>
-                <SelectItem value="ounces">Ounces</SelectItem>
-                <SelectItem value="grams">Grams</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="confirmation">Confirmation</Label>
-            <Select
-              name="confirmation"
-              disabled={isPending}
-              defaultValue="delivery"
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue
-                  defaultValue="delivery"
-                  placeholder="Select confirmation"
-                />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">None</SelectItem>
-                <SelectItem value="delivery">Delivery</SelectItem>
-                <SelectItem value="signature">Signature</SelectItem>
-                <SelectItem value="adult_signature">Adult Signature</SelectItem>
-                <SelectItem value="direct_signature">
-                  Direct Signature
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label>Price</Label>
-            {priceContent}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="test-label"
-            name="testLabel"
-            value="true"
-            disabled={isPending}
-          />
-          <Label htmlFor="test-label" className="text-sm text-muted-foreground">
-            Generate as a test label
-          </Label>
-        </div>
-      </Fieldset>
+      <PackageDetailsSection
+        isPending={isPending}
+        priceContent={priceContent}
+      />
 
       <Button type="submit" disabled={isPending || carriers.length === 0}>
         {isPending ? (
@@ -720,30 +352,249 @@ export function CreateLabelForm({
         </Alert>
       ) : null}
 
-      {formState.status === "success" && formState.label ? (
-        <div className="flex items-center justify-between rounded-md border border-emerald-500/40 bg-emerald-500/10 p-4 text-sm text-emerald-700">
-          <div className="flex flex-col">
-            <p className="font-semibold">Label created successfully.</p>
-            {formState.label.tracking_number ? (
-              <p>Tracking number: {formState.label.tracking_number}</p>
-            ) : null}
-          </div>
-
-          {formState.label.label_data_base64 ? (
-            <Button
-              variant="ghost"
-              className="border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 hover:border-emerald-500/60 hover:text-emerald-800"
-              onClick={async () => {
-                if (formState.label?.label_data_base64)
-                  await printLabels([formState.label.label_data_base64]);
-                else toast.error("No label data available to print.");
-              }}
-            >
-              Print
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
+      <FormResponseMessage formState={formState} />
     </form>
   );
+}
+
+function ShipmentDetailsSection({
+  isPending,
+  selectedCarrier,
+  selectedService,
+  carriers,
+  services,
+  setSelectedCarrier,
+  setSelectedService,
+}: {
+  isPending: boolean;
+  selectedCarrier: string;
+  selectedService: string;
+  carriers: ShipStationCarrier[];
+  services: ShipStationService[];
+  setSelectedCarrier: (code: string) => void;
+  setSelectedService: (code: string) => void;
+}) {
+  return (
+    <Fieldset title="Shipment Details">
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-2">
+          <Label htmlFor="carrier">Carrier</Label>
+          <Select
+            name="carrierCode"
+            disabled={isPending}
+            value={selectedCarrier}
+            onValueChange={(value) => setSelectedCarrier(value)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a carrier" />
+            </SelectTrigger>
+            <SelectContent>
+              {carriers.map((carrier) => (
+                <SelectItem key={carrier.code} value={carrier.code}>
+                  {carrier.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="serviceCode">Service</Label>
+          <Select
+            name="serviceCode"
+            disabled={isPending}
+            value={selectedService}
+            onValueChange={(value) => setSelectedService(value)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a service" />
+            </SelectTrigger>
+            <SelectContent>
+              {services
+                .filter((service) => service.code.length > 0)
+                .map((service) => {
+                  const value = service.code;
+                  const key = `${service.carrierCode}-${value}`;
+                  return (
+                    <SelectItem key={key} value={value}>
+                      {service.name}
+                    </SelectItem>
+                  );
+                })}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="serviceCode">Order Number</Label>
+          <Input
+            id="orderNumber"
+            name="orderNumber"
+            placeholder="AZ-12345"
+            disabled={isPending}
+          />
+        </div>
+      </div>
+    </Fieldset>
+  );
+}
+
+function PackageDetailsSection({
+  isPending,
+  priceContent,
+}: {
+  isPending: boolean;
+  priceContent: ReactNode;
+}) {
+  return (
+    <Fieldset title="Package Details">
+      <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-2">
+          <Label htmlFor="dimensions-length">Length</Label>
+          <Input
+            id="dimensions-length"
+            name="dimensions.length"
+            type="number"
+            step="0.1"
+            min="0"
+            placeholder="10"
+            disabled={isPending}
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="dimensions-width">Width</Label>
+          <Input
+            id="dimensions-width"
+            name="dimensions.width"
+            type="number"
+            step="0.1"
+            min="0"
+            placeholder="6"
+            disabled={isPending}
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="dimensions-height">Height</Label>
+          <Input
+            id="dimensions-height"
+            name="dimensions.height"
+            type="number"
+            step="0.1"
+            min="0"
+            placeholder="4"
+            disabled={isPending}
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="dimensions-unit">Dimension unit</Label>
+          <Select
+            name="dimensions.unit"
+            disabled={isPending}
+            defaultValue="inches"
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue defaultValue="inches" placeholder="Select unit" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="inches">Inches</SelectItem>
+              <SelectItem value="centimeters">Centimeters</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="weight-value">Weight</Label>
+          <Input
+            id="weight-value"
+            name="weight.value"
+            type="number"
+            step="0.1"
+            min="0"
+            placeholder="16"
+            required
+            disabled={isPending}
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="weight-unit">Weight unit</Label>
+          <Select name="weight.unit" disabled={isPending} defaultValue="pounds">
+            <SelectTrigger className="w-full">
+              <SelectValue defaultValue="pounds" placeholder="Select unit" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="pounds">Pounds</SelectItem>
+              <SelectItem value="ounces">Ounces</SelectItem>
+              <SelectItem value="grams">Grams</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="confirmation">Confirmation</Label>
+          <Select
+            name="confirmation"
+            disabled={isPending}
+            defaultValue="delivery"
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue
+                defaultValue="delivery"
+                placeholder="Select confirmation"
+              />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              <SelectItem value="delivery">Delivery</SelectItem>
+              <SelectItem value="signature">Signature</SelectItem>
+              <SelectItem value="adult_signature">Adult Signature</SelectItem>
+              <SelectItem value="direct_signature">Direct Signature</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-2">
+          <Label>Price</Label>
+          {priceContent}
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          id="test-label"
+          name="testLabel"
+          value="true"
+          disabled={isPending}
+        />
+        <Label htmlFor="test-label" className="text-sm text-muted-foreground">
+          Generate as a test label
+        </Label>
+      </div>
+    </Fieldset>
+  );
+}
+
+function FormResponseMessage({
+  formState,
+}: {
+  formState: CreateShippingLabelState;
+}) {
+  return formState.status === "success" && formState.label ? (
+    <div className="flex items-center justify-between rounded-md border border-emerald-500/40 bg-emerald-500/10 p-4 text-sm text-emerald-700">
+      <div className="flex flex-col">
+        <p className="font-semibold">Label created successfully.</p>
+        {formState.label.tracking_number ? (
+          <p>Tracking number: {formState.label.tracking_number}</p>
+        ) : null}
+      </div>
+
+      {formState.label.label_data_base64 ? (
+        <Button
+          variant="ghost"
+          className="border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 hover:border-emerald-500/60 hover:text-emerald-800"
+          onClick={async () => {
+            if (formState.label?.label_data_base64)
+              await printLabels([formState.label.label_data_base64]);
+            else toast.error("No label data available to print.");
+          }}
+        >
+          Print
+        </Button>
+      ) : null}
+    </div>
+  ) : null;
 }
