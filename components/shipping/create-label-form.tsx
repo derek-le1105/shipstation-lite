@@ -552,7 +552,7 @@ function PackageDetailsSection({
           {priceContent}
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      {/* <div className="flex items-center gap-2">
         <input
           type="checkbox"
           id="test-label"
@@ -563,7 +563,7 @@ function PackageDetailsSection({
         <Label htmlFor="test-label" className="text-sm text-muted-foreground">
           Generate as a test label
         </Label>
-      </div>
+      </div> */}
     </Fieldset>
   );
 }

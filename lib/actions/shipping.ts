@@ -233,7 +233,7 @@ export async function createShippingLabelAction(
     const serviceCode = formData.get("serviceCode");
     const packageCode = "package";
     const confirmation = "delivery";
-    const testLabel = formData.get("testLabel") === "true";
+    //const testLabel = formData.get("testLabel") === "true";
 
     if (typeof carrierCode !== "string" || carrierCode.trim().length === 0) {
       throw new Error("Carrier code is required.");
@@ -311,7 +311,7 @@ export async function createShippingLabelAction(
       shipTo,
       weight,
       dimensions,
-      testLabel, //as of 10/30/2025, Fedex does not support test labels via API
+      //testLabel, //as of 10/30/2025, Fedex does not support test labels via API
     });
 
     const upchargedShipmentCost = calculateUpchargeCost(
