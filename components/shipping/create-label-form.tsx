@@ -85,7 +85,6 @@ export function CreateLabelForm({
   const [selectedCarrier, setSelectedCarrier] = useState<string>(
     carriers[0]?.code ?? ""
   );
-  const [packageIds, setPackageIds] = useState(["package_1"]);
   const [selectedService, setSelectedService] = useState<string>("fedex_2day");
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -138,8 +137,6 @@ export function CreateLabelForm({
         <PackageDetailsSection
           isPending={isPending}
           packages={packages}
-          packageIds={packageIds}
-          setPackageIds={setPackageIds}
           fromAddresses={fromAddresses}
           toAddresses={toAddresses}
           fromMode={fromMode}

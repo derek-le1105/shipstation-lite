@@ -1,12 +1,4 @@
-import {
-  Dispatch,
-  SetStateAction,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,8 +43,6 @@ type RateState =
 interface PackageDetailsSectionProps {
   isPending: boolean;
   packages: PackageRecord[];
-  packageIds: string[];
-  setPackageIds: Dispatch<SetStateAction<string[]>>;
   fromAddresses: AddressRecord[];
   toAddresses: AddressRecord[];
   fromMode: AddressMode;
@@ -64,8 +54,6 @@ interface PackageDetailsSectionProps {
 export function PackageDetailsSection({
   isPending,
   packages,
-  packageIds,
-  setPackageIds,
   fromAddresses,
   toAddresses,
   fromMode,
@@ -73,6 +61,7 @@ export function PackageDetailsSection({
   selectedCarrier,
   selectedService,
 }: PackageDetailsSectionProps) {
+  const [packageIds, setPackageIds] = useState(["package_1"]);
   const handlePackageRemove = (index: number) => {
     if (packageIds.length <= 1) return; // Prevent removing the last package
     setPackageIds((prev) => prev.filter((_, i) => i !== index));
@@ -104,10 +93,7 @@ export function PackageDetailsSection({
         <Button
           type="button"
           onClick={() => {
-            setPackageIds((current) => [
-              ...current,
-              `package_${current.length + 1}`,
-            ]);
+            setPackageIds((current) => [...current, crypto.randomUUID()]);
           }}
         >
           Add Package
@@ -157,6 +143,8 @@ function Package({
     if (selectedPackageId !== "new-package") {
       const currPackage = packages.find((p) => p.id === selectedPackageId);
       if (!currPackage) throw new Error("Selected package not found");
+
+      //set package details to form data for rate request building
       savePackageToFormData(formData, index, currPackage);
     }
     const nextRequest = buildRatesRequest(index, formData, {
@@ -352,11 +340,15 @@ function Package({
           <span className="text-md font-medium">Package {index + 1}</span>
           <div className="grid gap-4">
             <Select
-              name={`package-${index}.type`}
               value={selectedPackageId}
               onValueChange={setSelectedPackageId}
               disabled={isPending}
             >
+              <input
+                type="hidden"
+                name={`package-${index}.id`}
+                value={selectedPackageId}
+              />
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select Package" />
               </SelectTrigger>
