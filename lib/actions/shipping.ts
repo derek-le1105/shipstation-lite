@@ -286,10 +286,6 @@ export async function createShippingLabelAction(
             upcharge,
             labelResponse.shipmentCost
           );
-          const upchargedInsuranceCost = calculateUpchargeCost(
-            upcharge,
-            labelResponse.insuranceCost
-          );
 
           try {
             const savedLabel = await insertShippingLabel({
@@ -311,7 +307,7 @@ export async function createShippingLabelAction(
               shipment_cost: labelResponse.shipmentCost ?? null,
               insurance_cost: labelResponse.insuranceCost ?? null,
               total_shipment_cost: upchargedShipmentCost,
-              total_insurance_cost: upchargedInsuranceCost,
+              total_insurance_cost: labelResponse.insuranceCost ?? null,
               tracking_number: labelResponse.trackingNumber ?? null,
               label_data_base64: labelResponse.labelData ?? null,
               shipment_id: labelResponse.shipmentId,
