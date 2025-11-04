@@ -238,14 +238,10 @@ export async function voidShippingLabelAction(formData: FormData) {
   revalidatePath("/dashboard");
 }
 
-//TODO: implement multiple shipping label feature from formData
 export async function createShippingLabelAction(
   _: CreateShippingLabelState,
   formData: FormData
 ): Promise<CreateShippingLabelState> {
-  console.log("createShippingLabelAction called");
-  console.log("formData entries:", Array.from(formData.entries()));
-  // return { status: "idle" };
   try {
     const profile = await requireUserProfile();
     const upcharge = await getUserUpcharge(profile.id).then((data) => ({
@@ -286,7 +282,6 @@ export async function createShippingLabelAction(
             weight,
             dimensions,
           });
-          console.log(`labelResponse[${index}]:`, labelResponse?.shipmentId);
           const upchargedShipmentCost = calculateUpchargeCost(
             upcharge,
             labelResponse.shipmentCost
@@ -387,10 +382,6 @@ export async function createShippingLabelAction(
 
     revalidatePath("/dashboard");
 
-    // const firstSuccess = items.find((it) => it.ok) as
-    //   | { savedLabel: ShippingLabelRecord; shipStationLabel: ShipStationLabel }
-    //   | undefined;
-
     return {
       status, // "success" | "partial" | "error"
       message:
@@ -400,9 +391,6 @@ export async function createShippingLabelAction(
           ? `${successCount}/${total} labels created.`
           : "No labels were created.",
       items,
-      // keep these for current UI; safe if undefined when no success
-      // label: firstSuccess?.savedLabel,
-      // shipStationLabel: firstSuccess?.shipStationLabel,
     };
   } catch (error) {
     const message =
