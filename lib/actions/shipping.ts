@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { requireUserProfile } from "@/lib/auth";
+import { requireUserProfile, UserProfile } from "@/lib/auth";
 import {
   createAddress,
   getAddressById,
@@ -22,8 +22,12 @@ import {
 } from "@/lib/shipstation/client";
 import { createClient } from "../supabase/server";
 import { getUserUpcharge } from "../supabase/admin";
+import { getPackageById } from "../supabase/packages";
 
 type AddressMode = "saved" | "new";
+
+const PACKAGE_CODE = "package";
+const CONFIRMATION = "delivery";
 
 const REQUIRED_ADDRESS_FIELDS = [
   "contact_name",
@@ -105,9 +109,9 @@ function inputToShipStationAddress(input: AddressInput): ShipStationAddress {
   };
 }
 
-function parseWeight(formData: FormData): ShipStationWeight {
-  const valueRaw = formData.get("weight.value");
-  const unitRaw = formData.get("weight.unit");
+function parseWeight(formData: FormData, prefix: string): ShipStationWeight {
+  const valueRaw = formData.get(`${prefix}.weight.value`);
+  const unitRaw = formData.get(`${prefix}.weight.unit`);
 
   if (typeof valueRaw !== "string" || typeof unitRaw !== "string") {
     throw new Error("Weight value and unit are required.");
@@ -130,7 +134,10 @@ function parseWeight(formData: FormData): ShipStationWeight {
   };
 }
 
-function parseDimensions(formData: FormData): {
+function parseDimensions(
+  formData: FormData,
+  prefix: string
+): {
   length: number;
   width: number;
   height: number;
@@ -141,7 +148,7 @@ function parseDimensions(formData: FormData): {
     "dimensions.width",
     "dimensions.height",
   ].some((key) => {
-    const value = formData.get(key);
+    const value = formData.get(`${prefix}.${key}`);
     return typeof value === "string" && value.trim().length > 0;
   });
 
@@ -150,15 +157,16 @@ function parseDimensions(formData: FormData): {
   }
 
   const length = Number.parseFloat(
-    (formData.get("dimensions.length") as string) ?? "0"
+    (formData.get(`${prefix}.dimensions.length`) as string) ?? "0"
   );
   const width = Number.parseFloat(
-    (formData.get("dimensions.width") as string) ?? "0"
+    (formData.get(`${prefix}.dimensions.width`) as string) ?? "0"
   );
   const height = Number.parseFloat(
-    (formData.get("dimensions.height") as string) ?? "0"
+    (formData.get(`${prefix}.dimensions.height`) as string) ?? "0"
   );
-  const units = (formData.get("dimensions.unit") as string) ?? "inches";
+  const units =
+    (formData.get(`${prefix}.dimensions.unit`) as string) ?? "inches";
 
   if (
     !Number.isFinite(length) ||
@@ -176,11 +184,25 @@ function parseDimensions(formData: FormData): {
   };
 }
 
+export type CreateShippingItemResult =
+  | {
+      index: number;
+      ok: true;
+      savedLabel: ShippingLabelRecord;
+      shipStationLabel: ShipStationLabel;
+    }
+  | {
+      index: number;
+      ok: false;
+      error: string;
+      savedLabel: undefined;
+      shipStationLabel: undefined;
+    };
+
 export type CreateShippingLabelState = {
-  status: "idle" | "success" | "error";
+  status: "idle" | "success" | "error" | "partial";
   message?: string;
-  label?: ShippingLabelRecord;
-  shipStationLabel?: ShipStationLabel;
+  items?: CreateShippingItemResult[];
 };
 
 export async function voidShippingLabelAction(formData: FormData) {
@@ -221,6 +243,9 @@ export async function createShippingLabelAction(
   _: CreateShippingLabelState,
   formData: FormData
 ): Promise<CreateShippingLabelState> {
+  console.log("createShippingLabelAction called");
+  console.log("formData entries:", Array.from(formData.entries()));
+  // return { status: "idle" };
   try {
     const profile = await requireUserProfile();
     const upcharge = await getUserUpcharge(profile.id).then((data) => ({
@@ -231,135 +256,153 @@ export async function createShippingLabelAction(
     const toMode = (formData.get("to.mode") as AddressMode) ?? "new";
 
     const orderNumber = formData.get("orderNumber") as string | null;
-    const carrierCode = formData.get("carrierCode");
-    const serviceCode = formData.get("serviceCode");
-    const packageCode = "package";
-    const confirmation = "delivery";
-    //const testLabel = formData.get("testLabel") === "true";
+    const carrierCode = getCarrierCode(formData);
+    const serviceCode = getServiceCode(formData);
 
-    if (typeof carrierCode !== "string" || carrierCode.trim().length === 0) {
-      throw new Error("Carrier code is required.");
-    }
+    const { shipAddress: shipFrom, addressRecord: fromAddressRecord } =
+      await processAddressMode(fromMode, "from", formData, profile);
+    const { shipAddress: shipTo, addressRecord: toAddressRecord } =
+      await processAddressMode(toMode, "to", formData, profile);
 
-    if (typeof serviceCode !== "string" || serviceCode.trim().length === 0) {
-      throw new Error("Service code is required.");
-    }
+    const packagesCount = Number(formData.get("packages.count")) || 1;
 
-    let fromAddressRecord: AddressRecord | null = null;
-    let toAddressRecord: AddressRecord | null = null;
+    const settled = await Promise.allSettled<CreateShippingItemResult>(
+      [...Array(packagesCount)].map(async (_, index) => {
+        const prefix = `package-${index}`;
+        try {
+          const { weight, dimensions } = await processPackageMode(
+            prefix,
+            formData,
+            profile
+          );
 
-    let shipFrom: ShipStationAddress;
-    let shipTo: ShipStationAddress;
+          const labelResponse = await createLabel({
+            carrierCode,
+            serviceCode,
+            packageCode: PACKAGE_CODE,
+            confirmation: CONFIRMATION,
+            shipFrom,
+            shipTo,
+            weight,
+            dimensions,
+          });
+          console.log(`labelResponse[${index}]:`, labelResponse?.shipmentId);
+          const upchargedShipmentCost = calculateUpchargeCost(
+            upcharge,
+            labelResponse.shipmentCost
+          );
+          const upchargedInsuranceCost = calculateUpchargeCost(
+            upcharge,
+            labelResponse.insuranceCost
+          );
 
-    if (fromMode === "saved") {
-      const fromId = formData.get("from.addressId");
-      if (typeof fromId !== "string" || fromId.trim().length === 0) {
-        throw new Error("A saved sender address must be selected.");
-      }
+          try {
+            const savedLabel = await insertShippingLabel({
+              user_id: profile.id,
+              from_address_id: fromAddressRecord?.id ?? null,
+              to_address_id: toAddressRecord?.id ?? null,
+              ship_from_snapshot: shipFrom,
+              ship_to_snapshot: shipTo,
+              length: dimensions.length,
+              width: dimensions.width,
+              height: dimensions.height,
+              units: dimensions.units,
+              weight_value: weight.value,
+              weight_unit: weight.units,
+              carrier_code: labelResponse.carrierCode,
+              service_code: labelResponse.serviceCode,
+              package_code: labelResponse.packageCode ?? null,
+              confirmation: labelResponse.confirmation ?? null,
+              shipment_cost: labelResponse.shipmentCost ?? null,
+              insurance_cost: labelResponse.insuranceCost ?? null,
+              total_shipment_cost: upchargedShipmentCost,
+              total_insurance_cost: upchargedInsuranceCost,
+              tracking_number: labelResponse.trackingNumber ?? null,
+              label_data_base64: labelResponse.labelData ?? null,
+              shipment_id: labelResponse.shipmentId,
+              voided: false,
+              voided_at: null,
+              order_number: orderNumber,
+            });
 
-      fromAddressRecord = await getAddressById(fromId, profile.id);
-      if (!fromAddressRecord) {
-        throw new Error("Sender address not found.");
-      }
+            return {
+              index,
+              ok: true as const,
+              savedLabel,
+              shipStationLabel: labelResponse,
+            };
+          } catch (dbErr) {
+            // best-effort rollback of the carrier label if DB insert fails
+            try {
+              if (Number.isFinite(labelResponse.shipmentId)) {
+                await voidLabel(labelResponse.shipmentId);
+              }
+            } catch (voidErr) {
+              console.log("voidLabel after DB failure failed:", voidErr);
+            }
+            throw new Error(
+              dbErr instanceof Error
+                ? dbErr.message
+                : "Failed to save shipping label."
+            );
+          }
+        } catch (err) {
+          const message =
+            err instanceof Error
+              ? err.message
+              : "Unable to create label for this package.";
+          // Throw to be captured by allSettled
+          throw {
+            index,
+            message,
+            savedLabel: undefined,
+            shipStationLabel: undefined,
+          };
+        }
+      })
+    );
 
-      shipFrom = recordToShipStationAddress(fromAddressRecord);
-    } else {
-      const input = parseAddressInput(formData, "from", "ship_from");
-      shipFrom = inputToShipStationAddress(input);
-
-      const shouldSave = formData.get("from.save") === "true";
-      if (shouldSave) {
-        fromAddressRecord = await createAddress(profile.id, input);
-      }
-    }
-
-    if (toMode === "saved") {
-      const toId = formData.get("to.addressId");
-      if (typeof toId !== "string" || toId.trim().length === 0) {
-        throw new Error("A saved destination address must be selected.");
-      }
-
-      toAddressRecord = await getAddressById(toId, profile.id);
-      if (!toAddressRecord) {
-        throw new Error("Destination address not found.");
-      }
-
-      shipTo = recordToShipStationAddress(toAddressRecord);
-    } else {
-      const input = parseAddressInput(formData, "to", "ship_to");
-      shipTo = inputToShipStationAddress(input);
-
-      const shouldSave = formData.get("to.save") === "true";
-      if (shouldSave) {
-        toAddressRecord = await createAddress(profile.id, input);
-      }
-    }
-
-    const weight = parseWeight(formData);
-    const dimensions = parseDimensions(formData);
-
-    const labelResponse = await createLabel({
-      carrierCode: carrierCode.trim(),
-      serviceCode: serviceCode.trim(),
-      packageCode:
-        typeof packageCode === "string" && packageCode.trim().length > 0
-          ? packageCode.trim()
-          : undefined,
-      confirmation:
-        typeof confirmation === "string" && confirmation.trim().length > 0
-          ? confirmation.trim()
-          : undefined,
-      shipFrom,
-      shipTo,
-      weight,
-      dimensions,
-      //testLabel, //as of 10/30/2025, Fedex does not support test labels via API
+    const items = settled.map((r, i) => {
+      if (r.status === "fulfilled") return r.value;
+      const reason = r.reason ?? {};
+      return {
+        index: typeof reason.index === "number" ? reason.index : i,
+        ok: false as const,
+        error:
+          typeof reason.message === "string" ? reason.message : "Unknown error",
+        savedLabel: undefined,
+        shipStationLabel: undefined,
+      };
     });
 
-    const upchargedShipmentCost = calculateUpchargeCost(
-      upcharge,
-      labelResponse.shipmentCost
-    );
-    const upchargedInsuranceCost = calculateUpchargeCost(
-      upcharge,
-      labelResponse.insuranceCost
-    );
+    const successCount = items.filter((it) => it.ok).length;
+    const total = items.length;
 
-    const savedLabel = await insertShippingLabel({
-      user_id: profile.id,
-      from_address_id: fromAddressRecord?.id ?? null,
-      to_address_id: toAddressRecord?.id ?? null,
-      ship_from_snapshot: shipFrom,
-      ship_to_snapshot: shipTo,
-      length: dimensions.length,
-      width: dimensions.width,
-      height: dimensions.height,
-      units: dimensions.units,
-      weight_value: weight.value,
-      weight_unit: weight.units,
-      carrier_code: labelResponse.carrierCode,
-      service_code: labelResponse.serviceCode,
-      package_code: labelResponse.packageCode ?? null,
-      confirmation: labelResponse.confirmation ?? null,
-      shipment_cost: labelResponse.shipmentCost ?? null,
-      insurance_cost: labelResponse.insuranceCost ?? null,
-      total_shipment_cost: upchargedShipmentCost,
-      total_insurance_cost: upchargedInsuranceCost,
-      tracking_number: labelResponse.trackingNumber ?? null,
-      label_data_base64: labelResponse.labelData ?? null,
-      shipment_id: labelResponse.shipmentId,
-      voided: false,
-      voided_at: null,
-      order_number: orderNumber,
-    });
+    const status =
+      successCount === 0
+        ? "error"
+        : successCount === total
+        ? "success"
+        : "partial";
 
     revalidatePath("/dashboard");
 
+    // const firstSuccess = items.find((it) => it.ok) as
+    //   | { savedLabel: ShippingLabelRecord; shipStationLabel: ShipStationLabel }
+    //   | undefined;
+
     return {
-      status: "success",
-      message: "Shipping label created successfully.",
-      label: savedLabel,
-      shipStationLabel: labelResponse,
+      status, // "success" | "partial" | "error"
+      message:
+        status === "success"
+          ? "All labels created successfully."
+          : status === "partial"
+          ? `${successCount}/${total} labels created.`
+          : "No labels were created.",
+      items,
+      // keep these for current UI; safe if undefined when no success
+      // label: firstSuccess?.savedLabel,
+      // shipStationLabel: firstSuccess?.shipStationLabel,
     };
   } catch (error) {
     const message =
@@ -391,4 +434,84 @@ function calculateUpchargeCost(
     }
   }
   return totalShipmentCost;
+}
+
+async function processAddressMode(
+  mode: AddressMode,
+  prefix: "from" | "to",
+  formData: FormData,
+  profile: UserProfile
+) {
+  let shipAddress: ShipStationAddress;
+  let addressRecord: AddressRecord | null = null;
+  if (mode === "saved") {
+    const addressId = formData.get(`${prefix}.addressId`);
+    if (typeof addressId !== "string" || addressId.trim().length === 0) {
+      throw new Error("A saved sender address must be selected.");
+    }
+
+    addressRecord = await getAddressById(addressId, profile.id);
+    if (!addressRecord) {
+      throw new Error("Sender address not found.");
+    }
+
+    shipAddress = recordToShipStationAddress(addressRecord);
+  } else {
+    const input = parseAddressInput(formData, prefix, `ship_${prefix}`);
+    shipAddress = inputToShipStationAddress(input);
+
+    const shouldSave = formData.get(`${prefix}.save`) === "true";
+    if (shouldSave) {
+      addressRecord = await createAddress(profile.id, input);
+    }
+  }
+  return { shipAddress, addressRecord };
+}
+
+async function processPackageMode(
+  prefix: string,
+  formData: FormData,
+  profile: UserProfile
+) {
+  if (formData.get(`${prefix}.id`) === "new-package") {
+    const weight = parseWeight(formData, prefix);
+    const dimensions = parseDimensions(formData, prefix);
+    return { weight, dimensions };
+  } else {
+    const packageId = formData.get(`${prefix}.id`);
+    if (typeof packageId !== "string" || packageId.trim().length === 0) {
+      throw new Error("Package ID is required.");
+    }
+    const savedPackage = await getPackageById(packageId, profile.id);
+    if (!savedPackage) {
+      throw new Error("Package not found.");
+    }
+    const weight = {
+      value: savedPackage.weight,
+      units: savedPackage.weight_unit,
+    } as ShipStationWeight;
+    const dimensions = {
+      length: savedPackage.length,
+      width: savedPackage.width,
+      height: savedPackage.height,
+      units: savedPackage.dimension_unit,
+    };
+    return { weight, dimensions };
+  }
+}
+
+function getCarrierCode(formData: FormData): string {
+  const carrierCode = formData.get("carrierCode");
+  if (typeof carrierCode !== "string" || carrierCode.trim().length === 0) {
+    throw new Error("Carrier code is required.");
+  }
+  return carrierCode.trim();
+}
+
+function getServiceCode(formData: FormData): string {
+  const serviceCode = formData.get("serviceCode");
+  if (typeof serviceCode !== "string" || serviceCode.trim().length === 0) {
+    throw new Error("Service code is required.");
+  }
+  return serviceCode.trim();
 }

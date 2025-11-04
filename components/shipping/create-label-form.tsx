@@ -266,28 +266,40 @@ function FormResponseMessage({
 }: {
   formState: CreateShippingLabelState;
 }) {
-  return formState.status === "success" && formState.label ? (
-    <div className="flex items-center justify-between rounded-md border border-emerald-500/40 bg-emerald-500/10 p-4 text-sm text-emerald-700">
-      <div className="flex flex-col">
-        <p className="font-semibold">Label created successfully.</p>
-        {formState.label.tracking_number ? (
-          <p>Tracking number: {formState.label.tracking_number}</p>
-        ) : null}
-      </div>
+  return formState.status === "success" && formState.items ? (
+    <div className="flex flex-col gap-2">
+      {formState.items.length > 0 &&
+        formState.items.map((item) => {
+          if (item.savedLabel && item.shipStationLabel) {
+            return (
+              <div
+                key={`label-${item.index}`}
+                className="flex items-center justify-between rounded-md border border-emerald-500/40 bg-emerald-500/10 p-4 text-sm text-emerald-700"
+              >
+                <div className="flex flex-col">
+                  <p className="font-semibold">Label created successfully.</p>
+                  {item?.savedLabel.tracking_number ? (
+                    <p>Tracking number: {item.savedLabel.tracking_number}</p>
+                  ) : null}
+                </div>
 
-      {formState.label.label_data_base64 ? (
-        <Button
-          variant="ghost"
-          className="border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 hover:border-emerald-500/60 hover:text-emerald-800"
-          onClick={async () => {
-            if (formState.label?.label_data_base64)
-              await printLabels([formState.label.label_data_base64]);
-            else toast.error("No label data available to print.");
-          }}
-        >
-          Print
-        </Button>
-      ) : null}
+                {item?.savedLabel.label_data_base64 ? (
+                  <Button
+                    variant="ghost"
+                    className="border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 hover:border-emerald-500/60 hover:text-emerald-800"
+                    onClick={async () => {
+                      if (item?.savedLabel?.label_data_base64)
+                        await printLabels([item.savedLabel.label_data_base64]);
+                      else toast.error("No label data available to print.");
+                    }}
+                  >
+                    Print
+                  </Button>
+                ) : null}
+              </div>
+            );
+          }
+        })}
     </div>
   ) : null;
 }
