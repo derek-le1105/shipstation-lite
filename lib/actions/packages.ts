@@ -32,8 +32,6 @@ function parsePackageInput(formData: FormData): PackageInput {
     weight: getNumber("weight"),
     weight_unit: formData.get("weight_unit") as "pounds" | "ounces" | "grams",
     nickname: formData.get("nickname") as string,
-    service_code: formData.get("service_code") as string | null,
-    carrier_code: formData.get("carrier_code") as string | null,
   };
 }
 
@@ -54,7 +52,6 @@ export async function createPackageAction(
   try {
     const profile = await requireUserProfile();
     const input = parsePackageInput(formData);
-    console.log("input:", input);
     const pkg = await createPackage(profile.id, input);
     revalidatePath("/dashboard/packages");
     return {

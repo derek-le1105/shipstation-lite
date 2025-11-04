@@ -40,6 +40,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (payload.residential && payload.serviceCode === "fedex_ground")
+    return NextResponse.json(
+      {
+        message:
+          "FedEx Ground does not support residential addresses.\n Please use FedEx Home Delivery or switch to a commercial address.",
+      },
+      { status: 400 }
+    );
+
   try {
     const rates = await getRates(payload);
     const userUpcharge = await getUserUpcharge(profile.id);
