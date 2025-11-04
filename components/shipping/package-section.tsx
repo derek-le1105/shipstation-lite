@@ -336,10 +336,10 @@ function Package({
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-4">
+        <div className="flex items-center gap-4 min-w-0">
           <span className="text-md font-medium">Package {index + 1}</span>
-          <div className="grid gap-4">
+          <div className="grid gap-4 flex-1 min-w-0">
             <Select
               value={selectedPackageId}
               onValueChange={setSelectedPackageId}
@@ -366,7 +366,7 @@ function Package({
             </Select>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col md:flex-row items-center md:justify-end gap-4">
           <div className="flex items-center gap-2">
             <span className="text-md font-medium">Price:</span>
             {priceContent}
@@ -376,9 +376,10 @@ function Package({
             onClick={() => handlePackageRemove(index)}
             size="icon"
             variant="destructive"
-            className="cursor-pointer"
+            className="cursor-pointer w-full md:w-auto"
+            disabled={isPending || index === 0}
           >
-            <Trash />
+            <Trash /> Delete
           </Button>
         </div>
       </div>
