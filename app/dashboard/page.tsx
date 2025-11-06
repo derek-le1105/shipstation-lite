@@ -6,11 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { getCurrentProfile } from "@/lib/auth";
 import { listAddresses, type AddressRecord } from "@/lib/supabase/addresses";
 import { listShippingLabelsForUser } from "@/lib/supabase/shipping-labels";
+import { listCarriers } from "@/lib/shipstation/client";
 import {
-  listCarriers,
   type ShipStationCarrier,
   type ShipStationService,
-} from "@/lib/shipstation/client";
+} from "@/lib/shipstation/types";
 import { CreateLabelForm } from "@/components/shipping/create-label-form";
 import { LabelHistory } from "@/components/dashboard/label-history";
 import { FEDEX_SERVICES } from "@/lib/shipstation/fedex";

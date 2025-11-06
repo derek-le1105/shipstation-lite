@@ -17,8 +17,8 @@ import { Loader2, Trash } from "lucide-react";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import {
   ShipStationRate,
-  ShipstationRatesRequest,
-} from "@/lib/shipstation/client";
+  ShipStationRatesRequest,
+} from "@/lib/shipstation/types";
 import {
   areRateRequestsEqual,
   buildRatesRequest,
@@ -84,6 +84,7 @@ export function PackageDetailsSection({
               toMode={toMode}
               selectedCarrier={selectedCarrier}
               selectedService={selectedService}
+              allowDelete={packageIds.length > 1}
             />
 
             {index !== packageIds.length - 1 ? <Separator /> : null}
@@ -115,6 +116,7 @@ function Package({
   toMode,
   selectedCarrier,
   selectedService,
+  allowDelete = false,
 }: {
   isPending: boolean;
   index: number;
@@ -126,6 +128,7 @@ function Package({
   toMode: AddressMode;
   selectedCarrier: string | null;
   selectedService: string | null;
+  allowDelete?: boolean;
 }) {
   const [selectedPackageId, setSelectedPackageId] =
     useState<string>("new-package");
@@ -133,7 +136,7 @@ function Package({
   const [rateState, setRateState] = useState<RateState>({ status: "idle" });
 
   const [rateRequest, setRateRequest] =
-    useState<ShipstationRatesRequest | null>(null);
+    useState<ShipStationRatesRequest | null>(null);
   const debouncedRateRequest = useDebounce(rateRequest, RATE_DEBOUNCE_MS);
 
   const formEventTimeoutRef = useRef<number | null>(null);
@@ -337,7 +340,7 @@ function Package({
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-4">
-        <div className="flex items-center gap-4 min-w-0">
+        <div className="flex flex-col md:flex-row items-center gap-4 min-w-0">
           <span className="text-md font-medium">Package {index + 1}</span>
           <div className="grid gap-4 flex-1 min-w-0">
             <Select
@@ -371,16 +374,17 @@ function Package({
             <span className="text-md font-medium">Price:</span>
             {priceContent}
           </div>
-          <Button
-            type="button"
-            onClick={() => handlePackageRemove(index)}
-            size="icon"
-            variant="destructive"
-            className="cursor-pointer w-full md:w-auto"
-            disabled={isPending || index === 0}
-          >
-            <Trash /> Delete
-          </Button>
+          {allowDelete && (
+            <Button
+              type="button"
+              onClick={() => handlePackageRemove(index)}
+              variant="destructive"
+              className="w-full md:w-auto"
+              disabled={isPending}
+            >
+              <Trash /> <span>Delete</span>
+            </Button>
+          )}
         </div>
       </div>
       {selectedPackageId === "new-package" ? (

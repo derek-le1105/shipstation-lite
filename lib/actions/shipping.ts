@@ -15,11 +15,19 @@ import {
 } from "@/lib/supabase/shipping-labels";
 import {
   createLabel,
+  createLabelForOrder,
+  createOrder,
+  listOrders,
   voidLabel,
+} from "@/lib/shipstation/client";
+import {
+  CreateOrderPayload,
+  ShipStationOrder,
+  ShipStationOrderLabel,
   type ShipStationAddress,
   type ShipStationLabel,
   type ShipStationWeight,
-} from "@/lib/shipstation/client";
+} from "@/lib/shipstation/types";
 import { createClient } from "../supabase/server";
 import { getUserUpcharge } from "../supabase/admin";
 import { getPackageById } from "../supabase/packages";
@@ -189,7 +197,7 @@ export type CreateShippingItemResult =
       index: number;
       ok: true;
       savedLabel: ShippingLabelRecord;
-      shipStationLabel: ShipStationLabel;
+      shipStationLabel: ShipStationLabel | ShipStationOrderLabel;
     }
   | {
       index: number;
@@ -222,6 +230,7 @@ export async function voidShippingLabelAction(formData: FormData) {
 
   if (!row.voided) {
     const { approved, message } = await voidLabel(shipmentId);
+    console.log(`voidLabel response for ${shipmentId}:`, { approved, message });
     if (!approved)
       throw new Error(message || "Unable to void label at this time.");
 
@@ -262,26 +271,58 @@ export async function createShippingLabelAction(
 
     const packagesCount = Number(formData.get("packages.count")) || 1;
 
+    let createOrderResponse: ShipStationOrder | null = null;
+    if (orderNumber) {
+      createOrderResponse = await createShipStationOrder({
+        orderNumber,
+        shipTo,
+        billTo: shipTo,
+        orderDate: new Date().toISOString(),
+        orderStatus: "awaiting_shipment",
+      });
+      console.log("Created order in ShipStation:", createOrderResponse.orderId);
+      if (!createOrderResponse) {
+        throw new Error("Failed to create order in ShipStation.");
+      }
+    }
+
     const settled = await Promise.allSettled<CreateShippingItemResult>(
       [...Array(packagesCount)].map(async (_, index) => {
         const prefix = `package-${index}`;
         try {
+          let labelResponse: ShipStationLabel | ShipStationOrderLabel;
           const { weight, dimensions } = await processPackageMode(
             prefix,
             formData,
             profile
           );
 
-          const labelResponse = await createLabel({
-            carrierCode,
-            serviceCode,
-            packageCode: PACKAGE_CODE,
-            confirmation: CONFIRMATION,
-            shipFrom,
-            shipTo,
-            weight,
-            dimensions,
-          });
+          if (orderNumber && createOrderResponse) {
+            labelResponse = await createLabelForOrder({
+              orderId: createOrderResponse.orderId,
+              carrierCode,
+              serviceCode,
+              packageCode: PACKAGE_CODE,
+              confirmation: CONFIRMATION,
+              shipDate: new Date().toISOString(),
+              weight,
+              dimensions,
+              testLabel: false,
+            });
+            console.log("Label response for order:", labelResponse.shipmentId);
+          } else {
+            labelResponse = await createLabel({
+              carrierCode,
+              serviceCode,
+              packageCode: PACKAGE_CODE,
+              confirmation: CONFIRMATION,
+              shipFrom,
+              shipTo,
+              weight,
+              dimensions,
+            });
+          }
+
           const upchargedShipmentCost = calculateUpchargeCost(
             upcharge,
             labelResponse.shipmentCost
@@ -300,14 +341,14 @@ export async function createShippingLabelAction(
               units: dimensions.units,
               weight_value: weight.value,
               weight_unit: weight.units,
-              carrier_code: labelResponse.carrierCode,
-              service_code: labelResponse.serviceCode,
-              package_code: labelResponse.packageCode ?? null,
-              confirmation: labelResponse.confirmation ?? null,
+              carrier_code: carrierCode,
+              service_code: serviceCode,
+              package_code: "package",
+              confirmation: CONFIRMATION,
               shipment_cost: labelResponse.shipmentCost ?? null,
               insurance_cost: labelResponse.insuranceCost ?? null,
               total_shipment_cost: upchargedShipmentCost,
-              total_insurance_cost: labelResponse.insuranceCost ?? null,
+              total_insurance_cost: labelResponse.insuranceCost ?? 0,
               tracking_number: labelResponse.trackingNumber ?? null,
               label_data_base64: labelResponse.labelData ?? null,
               shipment_id: labelResponse.shipmentId,
@@ -399,6 +440,24 @@ export async function createShippingLabelAction(
       message,
     };
   }
+}
+
+async function createShipStationOrder(payload: CreateOrderPayload) {
+  const { orderNumber } = payload;
+
+  const existingOrders = await listOrders({ orderNumber });
+  console.log("Number of existing orders found:", existingOrders.total);
+
+  if (existingOrders.total > 0) {
+    const valid = existingOrders.orders.filter(
+      (order) => order.orderStatus !== "cancelled"
+    );
+    if (valid.length > 0) {
+      console.log("Using existing ShipStation order:", valid[0].orderId);
+      return valid[0];
+    }
+  }
+  return createOrder(payload);
 }
 
 function calculateUpchargeCost(

@@ -1,11 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { requireUserProfile } from "@/lib/auth";
-import {
-  getRates,
-  type ShipstationRatesRequest,
-} from "@/lib/shipstation/client";
+import { getRates } from "@/lib/shipstation/client";
 import { getUserUpcharge } from "@/lib/supabase/admin";
+import { ShipStationRatesRequest } from "@/lib/shipstation/types";
 
 export async function POST(request: NextRequest) {
   let profile = null;
@@ -15,10 +13,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
-  let payload: ShipstationRatesRequest;
+  let payload: ShipStationRatesRequest;
 
   try {
-    payload = (await request.json()) as ShipstationRatesRequest;
+    payload = (await request.json()) as ShipStationRatesRequest;
   } catch {
     return NextResponse.json(
       { message: "Invalid request body." },

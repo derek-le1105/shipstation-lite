@@ -18,7 +18,7 @@ import type { AddressRecord } from "@/lib/supabase/addresses";
 import type {
   ShipStationCarrier,
   ShipStationService,
-} from "@/lib/shipstation/client";
+} from "@/lib/shipstation/types";
 import {
   createShippingLabelAction,
   type CreateShippingLabelState,

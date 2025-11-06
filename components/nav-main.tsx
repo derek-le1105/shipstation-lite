@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronRight } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 import {
   Collapsible,
@@ -24,16 +25,32 @@ interface NavMainProps {
 }
 
 export function NavMain({ items }: NavMainProps) {
+  const pathname = usePathname();
+
+  const isTopActive = (url: string) => {
+    if (!pathname) return false;
+    return pathname === url || pathname.startsWith(`${url}/`);
+  };
+
+  const isSubActive = (url: string) => pathname === url;
+
   return (
     <SidebarGroup>
       <SidebarMenu>
         {items
           .filter((item) => item.isEnabled)
           .map((item) => (
-            <Collapsible key={item.title} asChild defaultOpen={item.isActive}>
+            <Collapsible key={item.title} asChild defaultOpen={true}>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip={item.title}>
-                  <a href={item.url}>
+                <SidebarMenuButton
+                  asChild
+                  tooltip={item.title}
+                  isActive={isTopActive(item.url)}
+                >
+                  <a
+                    href={item.url}
+                    aria-current={isTopActive(item.url) ? "page" : undefined}
+                  >
                     <item.icon />
                     <span>{item.title}</span>
                   </a>
@@ -50,8 +67,16 @@ export function NavMain({ items }: NavMainProps) {
                       <SidebarMenuSub>
                         {item.items?.map((subItem) => (
                           <SidebarMenuSubItem key={subItem.title}>
-                            <SidebarMenuSubButton asChild>
-                              <a href={subItem.url}>
+                            <SidebarMenuSubButton
+                              asChild
+                              isActive={isSubActive(subItem.url)}
+                            >
+                              <a
+                                href={subItem.url}
+                                aria-current={
+                                  isSubActive(subItem.url) ? "page" : undefined
+                                }
+                              >
                                 <span>{subItem.title}</span>
                               </a>
                             </SidebarMenuSubButton>
