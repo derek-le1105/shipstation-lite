@@ -17,6 +17,7 @@ export type AddressRecord = {
   postal_code: string;
   country: string;
   is_residential: boolean;
+  is_validated: boolean;
   address_kind: "ship_from" | "ship_to";
   created_at: string;
 };

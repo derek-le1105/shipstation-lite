@@ -86,6 +86,7 @@ function parseAddressInput(
     postal_code: getString("postal_code")!,
     country: getString("country") ?? "US",
     is_residential: parseCheckbox(formData.get("is_residential")),
+    is_validated: parseCheckbox(formData.get("is_validated")),
     address_kind: kind,
   };
 }
@@ -107,11 +108,11 @@ export async function createAddressAction(
   _prev: AddressMutationState,
   formData: FormData
 ): Promise<AddressMutationState> {
+  console.log(Array.from(formData.entries()));
   try {
     const profile = await requireUserProfile();
     const kind = parseAddressKind(formData.get("address_kind"));
     const input = parseAddressInput(formData, kind);
-
     const address = await createAddress(profile.id, input);
     revalidateAddressPaths();
 
