@@ -7,6 +7,11 @@ import type {
   ShipstationVoidLabelResponse as VoidLabelResponse,
   ShipStationRate as Rate,
   CreateLabelPayload,
+  CreateOrderPayload,
+  ShipStationOrder,
+  CreateLabelForOrderPayload,
+  ShipStationOrderLabel as OrderLabel,
+  ListOrdersResponse,
 } from "./types";
 
 const DEFAULT_API_BASE = "https://ssapi.shipstation.com";
@@ -81,17 +86,31 @@ async function shipStationRequest<TResponse>(
   return (await response.json()) as TResponse;
 }
 
-export async function createorder(payload: unknown): Promise<unknown> {
-  return shipStationRequest<unknown>("/orders/createorder", {
+export async function listOrders(
+  params?: Record<string, string | number>
+): Promise<ListOrdersResponse> {
+  const searchParams = params
+    ? new URLSearchParams(
+        Object.entries(params).map(([key, value]) => [key, String(value)])
+      ).toString()
+    : "";
+  const path = searchParams ? `/orders?${searchParams}` : "/orders";
+  return shipStationRequest<ListOrdersResponse>(path, { method: "GET" });
+}
+
+export async function createOrder(
+  payload: CreateOrderPayload
+): Promise<ShipStationOrder> {
+  return shipStationRequest<ShipStationOrder>("/orders/createorder", {
     method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
 export async function createLabelForOrder(
-  payload: CreateLabelPayload
-): Promise<Label> {
-  return shipStationRequest<Label>("/shipments/createlabelfororder", {
+  payload: CreateLabelForOrderPayload
+): Promise<OrderLabel> {
+  return shipStationRequest<OrderLabel>("/orders/createlabelfororder", {
     method: "POST",
     body: JSON.stringify(payload),
   });

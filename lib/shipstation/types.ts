@@ -51,26 +51,20 @@ export type ShipStationDimensions = {
   units: "inches" | "centimeters";
 };
 
-export type CreateLabelPayload = {
-  carrierCode: string;
-  serviceCode: string;
-  packageCode?: string;
-  confirmation?: string;
-  shipFrom: ShipStationAddress;
-  shipTo: ShipStationAddress;
-  weight: ShipStationWeight;
-  dimensions?: {
-    length: number;
-    width: number;
-    height: number;
-    units: "inches" | "centimeters";
-  };
-  //testLabel?: boolean;
-  externalOrderId?: string;
-  insuranceOptions?: {
-    insureShipment: boolean;
-    insuredValue: number;
-  };
+export type ListOrdersResponse = {
+  orders: ShipStationOrder[];
+  total: number;
+  page: number;
+  pages: number;
+};
+
+export type ShipStationOrderLabel = {
+  shipmentId: number;
+  shipmentCost: number;
+  insuranceCost: number;
+  trackingNumber: string;
+  labelData: string;
+  formData: null;
 };
 
 export type ShipStationLabel = {
@@ -209,6 +203,105 @@ export type CreateOrderPayload = {
   advancedOptions?: unknown;
   tagIds?: number[];
 };
+
+export type CreateLabelForOrderPayload = {
+  orderId: number;
+  carrierCode: string;
+  serviceCode: string;
+  packageCode: string;
+  confirmation: DeliveryConfirmation;
+  shipDate: string;
+  weight?: ShipStationWeight;
+  dimensions?: ShipStationDimensions;
+  insuranceOptions?: InsuranceOptions;
+  internationalOptions?: InternationalOptions;
+  advancedOptions?: AdvancedOptions;
+  testLabel: boolean;
+};
+
+export type CreateLabelPayload = {
+  carrierCode: string;
+  serviceCode: string;
+  packageCode?: string;
+  confirmation?: string;
+  shipFrom: ShipStationAddress;
+  shipTo: ShipStationAddress;
+  weight: ShipStationWeight;
+  dimensions?: {
+    length: number;
+    width: number;
+    height: number;
+    units: "inches" | "centimeters";
+  };
+  //testLabel?: boolean;
+  externalOrderId?: string;
+  insuranceOptions?: {
+    insureShipment: boolean;
+    insuredValue: number;
+  };
+};
+
+export type ShipStationOrder = {
+  orderId: number;
+  orderNumber: string;
+  orderKey: string;
+  orderDate: string;
+  createDate: string;
+  modifyDate: string;
+  paymentDate: string;
+  shipByDate: string;
+  orderStatus: string;
+  customerId: null;
+  customerUsername: string;
+  customerEmail: string;
+  billTo: ShipStationAddress;
+  shipTo: ShipStationAddress;
+  items: ShipStationOrderItem[];
+  orderTotal: number;
+  amountPaid: number;
+  taxAmount: number;
+  shippingAmount: number;
+  customerNotes: string;
+  internalNotes: string;
+  gift: boolean;
+  giftMessage: string;
+  paymentMethod: string;
+  requestedShippingService: string;
+  carrierCode: string;
+  serviceCode: string;
+  packageCode: string;
+  confirmation: string;
+  shipDate: string;
+  holdUntilDate: null;
+  weight: ShipStationWeight;
+  dimensions: ShipStationDimensions;
+  insuranceOptions: InsuranceOptions;
+  internationalOptions: InternationalOptions;
+  advancedOptions: AdvancedOptions;
+  tagIds: null;
+  userId: null;
+  externallyFulfilled: boolean;
+  externallyFulfilledBy: null;
+};
+
+interface AdvancedOptions {
+  warehouseId: number;
+  nonMachinable: boolean;
+  saturdayDelivery: boolean;
+  containsAlcohol: boolean;
+  mergedOrSplit: boolean;
+  mergedIds: unknown[];
+  parentId: null;
+  storeId: number;
+  customField1: string;
+  customField2: string;
+  customField3: string;
+  source: string;
+  billToParty: null;
+  billToAccount: null;
+  billToPostalCode: null;
+  billToCountryCode: null;
+}
 
 export type ShipStationOrderItem = {
   orderItemId: number;
