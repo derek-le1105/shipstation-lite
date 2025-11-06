@@ -340,7 +340,7 @@ function Package({
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-4">
-        <div className="flex items-center gap-4 min-w-0">
+        <div className="flex flex-col md:flex-row items-center gap-4 min-w-0">
           <span className="text-md font-medium">Package {index + 1}</span>
           <div className="grid gap-4 flex-1 min-w-0">
             <Select
