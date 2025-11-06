@@ -27,6 +27,7 @@ export type Database = {
           email: string | null;
           id: string;
           is_residential: boolean;
+          is_validated: boolean;
           label: string | null;
           phone: string | null;
           postal_code: string;
@@ -45,6 +46,7 @@ export type Database = {
           email?: string | null;
           id?: string;
           is_residential?: boolean;
+          is_validated?: boolean;
           label?: string | null;
           phone?: string | null;
           postal_code: string;
@@ -63,6 +65,7 @@ export type Database = {
           email?: string | null;
           id?: string;
           is_residential?: boolean;
+          is_validated?: boolean;
           label?: string | null;
           phone?: string | null;
           postal_code?: string;

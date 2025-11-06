@@ -83,6 +83,7 @@ function parseAddressInput(
     postal_code: postal!,
     country: get("country") ?? "US",
     is_residential: get("is_residential") === "true",
+    is_validated: get("is_validated") === "true",
     address_kind: kind,
   };
 }
@@ -348,7 +349,7 @@ export async function createShippingLabelAction(
               shipment_cost: labelResponse.shipmentCost ?? null,
               insurance_cost: labelResponse.insuranceCost ?? null,
               total_shipment_cost: upchargedShipmentCost,
-              total_insurance_cost: labelResponse.insuranceCost ?? 0,
+              total_insurance_cost: labelResponse.insuranceCost ?? null,
               tracking_number: labelResponse.trackingNumber ?? null,
               label_data_base64: labelResponse.labelData ?? null,
               shipment_id: labelResponse.shipmentId,
