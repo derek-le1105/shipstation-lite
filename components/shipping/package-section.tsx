@@ -382,7 +382,7 @@ function Package({
               className="w-full md:w-auto"
               disabled={isPending}
             >
-              <Trash /> <span>Delete</span>
+              <Trash /> Delete
             </Button>
           )}
         </div>
