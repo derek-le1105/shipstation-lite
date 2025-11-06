@@ -379,7 +379,7 @@ function Package({
               type="button"
               onClick={() => handlePackageRemove(index)}
               variant="destructive"
-              className="cursor-pointer w-full md:w-auto"
+              className="w-full md:w-auto"
               disabled={isPending}
             >
               <Trash /> <span>Delete</span>
