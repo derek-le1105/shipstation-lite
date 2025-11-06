@@ -84,6 +84,7 @@ export function PackageDetailsSection({
               toMode={toMode}
               selectedCarrier={selectedCarrier}
               selectedService={selectedService}
+              allowDelete={packageIds.length > 1}
             />
 
             {index !== packageIds.length - 1 ? <Separator /> : null}
@@ -115,6 +116,7 @@ function Package({
   toMode,
   selectedCarrier,
   selectedService,
+  allowDelete = false,
 }: {
   isPending: boolean;
   index: number;
@@ -126,6 +128,7 @@ function Package({
   toMode: AddressMode;
   selectedCarrier: string | null;
   selectedService: string | null;
+  allowDelete?: boolean;
 }) {
   const [selectedPackageId, setSelectedPackageId] =
     useState<string>("new-package");
@@ -371,16 +374,17 @@ function Package({
             <span className="text-md font-medium">Price:</span>
             {priceContent}
           </div>
-          <Button
-            type="button"
-            onClick={() => handlePackageRemove(index)}
-            size="icon"
-            variant="destructive"
-            className="cursor-pointer w-full md:w-auto"
-            disabled={isPending || index === 0}
-          >
-            <Trash /> Delete
-          </Button>
+          {allowDelete && (
+            <Button
+              type="button"
+              onClick={() => handlePackageRemove(index)}
+              variant="destructive"
+              className="cursor-pointer w-full md:w-auto"
+              disabled={isPending}
+            >
+              <Trash /> <span>Delete</span>
+            </Button>
+          )}
         </div>
       </div>
       {selectedPackageId === "new-package" ? (
