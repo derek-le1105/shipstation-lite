@@ -1,9 +1,9 @@
-import type { ShipstationRatesRequest } from "@/lib/shipstation/client";
+import type { ShipStationRatesRequest } from "@/lib/shipstation/types";
 import type { AddressRecord } from "@/lib/supabase/addresses";
 import { AddressMode } from "@/components/shipping/types";
 import { PackageRecord } from "../supabase/packages";
 
-type RateDimensions = ShipstationRatesRequest["dimensions"];
+type RateDimensions = ShipStationRatesRequest["dimensions"];
 
 type RateAddress = {
   city: string;
@@ -82,7 +82,7 @@ export function buildRatesRequest(
     fromMode: AddressMode;
     toMode: AddressMode;
   }
-): ShipstationRatesRequest | null {
+): ShipStationRatesRequest | null {
   const carrierCode =
     (formData.get("carrierCode") as string | null)?.trim() ?? "";
   if (!carrierCode) return null;
@@ -174,7 +174,7 @@ export function buildRatesRequest(
     toState: toAddress.state,
     weight: {
       value: weightValue,
-      units: weightUnit as ShipstationRatesRequest["weight"]["units"],
+      units: weightUnit as ShipStationRatesRequest["weight"]["units"],
     },
     dimensions,
     residential: toAddress.residential ?? undefined,
@@ -196,8 +196,8 @@ export function compareDimensions(
 }
 
 export function areRateRequestsEqual(
-  previous: ShipstationRatesRequest | null,
-  next: ShipstationRatesRequest | null
+  previous: ShipStationRatesRequest | null,
+  next: ShipStationRatesRequest | null
 ): boolean {
   if (previous === next) return true;
   if (!previous || !next) return false;

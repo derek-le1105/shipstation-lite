@@ -1,4 +1,4 @@
-import { ShipStationService } from "./client";
+import { ShipStationService } from "./types";
 
 export const FEDEX_SERVICES: ShipStationService[] = [
   {

@@ -1,3 +1,14 @@
+import type {
+  ShipStationRatesRequest as RatesRequest,
+  ShipStationLabel as Label,
+  ShipStationCarrier as Carrier,
+  ShipStationService as Service,
+  ShipStationPackage as Package,
+  ShipstationVoidLabelResponse as VoidLabelResponse,
+  ShipStationRate as Rate,
+  CreateLabelPayload,
+} from "./types";
+
 const DEFAULT_API_BASE = "https://ssapi.shipstation.com";
 
 export const SUPPORTED_SERVICES = [
@@ -9,161 +20,6 @@ export const SUPPORTED_SERVICES = [
   "fedex_priority_overnight",
   "fedex_first_overnight",
 ];
-
-export type ShipstationRatesRequest = {
-  carrierCode: string;
-  serviceCode?: string;
-  packageCode?: string;
-  fromPostalCode: string;
-  fromCity?: string;
-  fromState?: string;
-  fromWarehouseId?: string;
-  toState?: string; //required from UPS carrier
-  toCountry: string;
-  toPostalCode: string;
-  toCity?: string;
-  weight: ShipStationWeight;
-  dimensions?: ShipStationDimensions;
-  confirmation?:
-    | "none"
-    | "delivery"
-    | "signature"
-    | "adult_signature"
-    | "direct_signature";
-  residential?: boolean;
-};
-
-export type ShipStationAddress = {
-  name: string;
-  company?: string | null;
-  street1: string;
-  street2?: string | null;
-  street3?: string | null;
-  city: string;
-  state: string;
-  postalCode: string;
-  country: string;
-  phone?: string | null;
-  residential?: boolean;
-  addressVerified?: boolean;
-};
-
-export type ShipStationWeight = {
-  value: number;
-  units: "ounces" | "pounds" | "grams";
-  WeightUnits?: number;
-};
-
-export type ShipStationDimensions = {
-  length: number;
-  width: number;
-  height: number;
-  units: "inches" | "centimeters";
-};
-
-export type CreateLabelPayload = {
-  carrierCode: string;
-  serviceCode: string;
-  packageCode?: string;
-  confirmation?: string;
-  shipFrom: ShipStationAddress;
-  shipTo: ShipStationAddress;
-  weight: ShipStationWeight;
-  dimensions?: {
-    length: number;
-    width: number;
-    height: number;
-    units: "inches" | "centimeters";
-  };
-  //testLabel?: boolean;
-  externalOrderId?: string;
-  insuranceOptions?: {
-    insureShipment: boolean;
-    insuredValue: number;
-  };
-};
-
-export type ShipStationLabel = {
-  shipmentId: number;
-  orderId?: number;
-  orderKey?: string;
-  userId?: number;
-  customerEmail?: string;
-  orderNumber?: string;
-  createDate?: string;
-  shipDate?: string;
-  shipmentCost: number;
-  insuranceCost: number;
-  trackingNumber?: string;
-  isReturnLabel: boolean;
-  batchNumber?: number;
-  carrierCode: string;
-  serviceCode: string;
-  packageCode: string;
-  confirmation: string;
-  warehouseId?: number;
-  voided?: boolean;
-  voidDate?: string;
-  marketplaceNotified?: boolean;
-  notifyErrorMessage?: string;
-  shipTo: ShipStationAddress;
-  weight: ShipStationWeight;
-  dimensions?: {
-    length: number;
-    width: number;
-    height: number;
-    units: "inches" | "centimeters";
-  };
-  insuranceOptions?: unknown;
-  advancedOptions?: unknown;
-  shipmentItems?: unknown[];
-  labelData?: string;
-};
-
-export type ShipStationCarrier = {
-  code: string;
-  name: string;
-  accountName?: string;
-  accountNumber?: string;
-  requiresFundedAccount?: boolean;
-};
-
-export type ShipStationService = {
-  carrierCode: string;
-  code: string;
-  name: string;
-  domestic: boolean;
-  international: boolean;
-};
-
-export type ShipStationPackage = {
-  carrierCode: string;
-  packageCode: string;
-  name: string;
-  dimensionsRequired: boolean;
-  domestic: boolean;
-  international: boolean;
-  code?: string;
-};
-
-export type ShipstationVoidLabelResponse = {
-  approved: boolean;
-  message?: string;
-};
-
-export type ShipStationRate = {
-  carrierCode: string;
-  serviceCode: string;
-  serviceName: string;
-  shipmentCost: number;
-  otherCost?: number;
-  deliveryDays?: number | null;
-  guaranteedService?: boolean;
-  packageType?: string | null;
-  confirmation?: string | null;
-  residential?: boolean;
-  errorMessages?: string[];
-};
 
 function getConfig() {
   const apiKey = process.env.SHIPSTATION_API_KEY;
@@ -225,28 +81,40 @@ async function shipStationRequest<TResponse>(
   return (await response.json()) as TResponse;
 }
 
-export async function createLabel(
-  payload: CreateLabelPayload
-): Promise<ShipStationLabel> {
-  return shipStationRequest<ShipStationLabel>("/shipments/createlabel", {
+export async function createorder(payload: unknown): Promise<unknown> {
+  return shipStationRequest<unknown>("/orders/createorder", {
     method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
-export async function getRates(
-  request: ShipstationRatesRequest
-): Promise<ShipStationRate[]> {
-  return shipStationRequest<ShipStationRate[]>("/shipments/getrates", {
+export async function createLabelForOrder(
+  payload: CreateLabelPayload
+): Promise<Label> {
+  return shipStationRequest<Label>("/shipments/createlabelfororder", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function createLabel(payload: CreateLabelPayload): Promise<Label> {
+  return shipStationRequest<Label>("/shipments/createlabel", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getRates(request: RatesRequest): Promise<Rate[]> {
+  return shipStationRequest<Rate[]>("/shipments/getrates", {
     method: "POST",
     body: JSON.stringify(request),
   });
 }
 
-export async function listCarriers(): Promise<ShipStationCarrier[]> {
-  const carrierRequest = shipStationRequest<ShipStationCarrier[]>(
-    "/carriers"
-  ).then((data) => data.filter((carrier) => carrier.code === "fedex"));
+export async function listCarriers(): Promise<Carrier[]> {
+  const carrierRequest = shipStationRequest<Carrier[]>("/carriers").then(
+    (data) => data.filter((carrier) => carrier.code === "fedex")
+  );
   return carrierRequest;
 }
 
@@ -255,13 +123,11 @@ export async function listCarriers(): Promise<ShipStationCarrier[]> {
  * 10/22 -> Reduced to only FedEx Carriers as shown in listCarriers
  * Filter for only select services
  * @param carrierCode The code of the carrier to list services for
- * @returns A promise that resolves to an array of ShipStationService objects
+ * @returns A promise that resolves to an array of Service objects
  */
-export async function listServices(
-  carrierCode: string
-): Promise<ShipStationService[]> {
+export async function listServices(carrierCode: string): Promise<Service[]> {
   const params = new URLSearchParams({ carrierCode });
-  return shipStationRequest<ShipStationService[]>(
+  return shipStationRequest<Service[]>(
     `/carriers/listservices?${params.toString()}`
   ).then((data) =>
     data
@@ -270,23 +136,18 @@ export async function listServices(
   );
 }
 
-export async function listPackages(
-  carrierCode: string
-): Promise<ShipStationPackage[]> {
+export async function listPackages(carrierCode: string): Promise<Package[]> {
   const params = new URLSearchParams({ carrierCode });
-  return shipStationRequest<ShipStationPackage[]>(
+  return shipStationRequest<Package[]>(
     `/carriers/listpackages?${params.toString()}`
   );
 }
 
 export async function voidLabel(
   shipmentId: number
-): Promise<ShipstationVoidLabelResponse> {
-  return shipStationRequest<ShipstationVoidLabelResponse>(
-    `/shipments/voidlabel`,
-    {
-      method: "POST",
-      body: JSON.stringify({ shipmentId }),
-    }
-  );
+): Promise<VoidLabelResponse> {
+  return shipStationRequest<VoidLabelResponse>(`/shipments/voidlabel`, {
+    method: "POST",
+    body: JSON.stringify({ shipmentId }),
+  });
 }

@@ -17,8 +17,8 @@ import { Loader2, Trash } from "lucide-react";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import {
   ShipStationRate,
-  ShipstationRatesRequest,
-} from "@/lib/shipstation/client";
+  ShipStationRatesRequest,
+} from "@/lib/shipstation/types";
 import {
   areRateRequestsEqual,
   buildRatesRequest,
@@ -133,7 +133,7 @@ function Package({
   const [rateState, setRateState] = useState<RateState>({ status: "idle" });
 
   const [rateRequest, setRateRequest] =
-    useState<ShipstationRatesRequest | null>(null);
+    useState<ShipStationRatesRequest | null>(null);
   const debouncedRateRequest = useDebounce(rateRequest, RATE_DEBOUNCE_MS);
 
   const formEventTimeoutRef = useRef<number | null>(null);

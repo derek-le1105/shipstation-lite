@@ -13,13 +13,12 @@ import {
   insertShippingLabel,
   type ShippingLabelRecord,
 } from "@/lib/supabase/shipping-labels";
+import { createLabel, voidLabel } from "@/lib/shipstation/client";
 import {
-  createLabel,
-  voidLabel,
   type ShipStationAddress,
   type ShipStationLabel,
   type ShipStationWeight,
-} from "@/lib/shipstation/client";
+} from "@/lib/shipstation/types";
 import { createClient } from "../supabase/server";
 import { getUserUpcharge } from "../supabase/admin";
 import { getPackageById } from "../supabase/packages";
@@ -271,6 +270,9 @@ export async function createShippingLabelAction(
             formData,
             profile
           );
+
+          if (orderNumber !== null) {
+          }
 
           const labelResponse = await createLabel({
             carrierCode,
