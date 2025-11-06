@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useMemo, useState } from "react";
-import { Loader2, PlusCircle } from "lucide-react";
+import { FileWarning, Loader2, PlusCircle } from "lucide-react";
 
 import {
   createAddressAction,
@@ -27,6 +27,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { validateAddress } from "@/lib/fedex/lib";
+import { toast } from "sonner";
 
 type AddressManagerProps = {
   shipFrom: AddressRecord[];
@@ -234,6 +236,7 @@ function AddressKindSection({
         </div>
 
         <form
+          id={`${kind}-${selectedId}`}
           key={`${kind}-${selectedId}`}
           action={selectedId === "new" ? createAction : updateAction}
           className="space-y-6"
@@ -312,6 +315,37 @@ function AddressFields({
   idPrefix: string;
   address: AddressRecord | null;
 }) {
+  const [validateLoading, setValidateLoading] = useState(false);
+  const [validAddress, setValidAddress] = useState<
+    "idle" | "valid" | "invalid"
+  >("idle");
+
+  const handleValidateAddress = async () => {
+    try {
+      setValidateLoading(true);
+      const formData = new FormData();
+      const form = document.getElementById(idPrefix);
+      if (form) {
+        const formElement = form as HTMLFormElement;
+        const currentFormData = new FormData(formElement);
+        for (const [key, value] of currentFormData.entries()) {
+          formData.append(key, value);
+        }
+      }
+      const { valid, issues } = await validateAddress(formData);
+      if (valid) setValidAddress("valid");
+      else {
+        toast.info(issues[0]?.message || "Address validation failed");
+
+        setValidAddress("invalid");
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Validation error");
+    } finally {
+      setValidateLoading(false);
+    }
+  };
+
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <div className="grid gap-2">
@@ -420,20 +454,49 @@ function AddressFields({
           defaultValue={address?.country ?? "US"}
         />
       </div>
-      <div className="md:col-span-2 flex items-center gap-2">
-        <input
-          type="checkbox"
-          id={`${idPrefix}-is_residential`}
-          name="is_residential"
-          value="true"
-          defaultChecked={address?.is_residential ?? false}
-        />
-        <Label
-          htmlFor={`${idPrefix}-is_residential`}
-          className="text-sm text-muted-foreground"
-        >
-          Residential address
-        </Label>
+
+      <div className="grid grid-cols-2 md:col-span-2">
+        <div className="grid items-center justify-between">
+          <div />
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id={`${idPrefix}-is_residential`}
+              name="is_residential"
+              value="true"
+              defaultChecked={address?.is_residential ?? false}
+            />
+            <Label
+              htmlFor={`${idPrefix}-is_residential`}
+              className="text-sm text-muted-foreground"
+            >
+              Residential address
+            </Label>
+          </div>
+        </div>
+
+        <div className="flex justify-end">
+          {validAddress !== "valid" ? (
+            <Button
+              type="button"
+              className="cursor-pointer"
+              onClick={handleValidateAddress}
+            >
+              {validateLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : validAddress === "invalid" ? (
+                <FileWarning className="" />
+              ) : null}
+              Validate Address
+            </Button>
+          ) : (
+            <div className="flex justify-center md:justify-end gap-2">
+              <span className="text-sm font-medium text-emerald-600">
+                Address Validated
+              </span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
