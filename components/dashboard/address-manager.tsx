@@ -1,6 +1,13 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
+import {
+  useActionState,
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+  useCallback,
+} from "react";
 import { FileWarning, Loader2, PlusCircle } from "lucide-react";
 
 import {
@@ -93,6 +100,8 @@ function AddressKindSection({
   const [selectedId, setSelectedId] = useState<string>(
     initialAddresses[0]?.id ?? "new"
   );
+
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     setAddresses(initialAddresses);
@@ -240,6 +249,7 @@ function AddressKindSection({
           key={`${kind}-${selectedId}`}
           action={selectedId === "new" ? createAction : updateAction}
           className="space-y-6"
+          ref={formRef}
         >
           <input type="hidden" name="address_kind" value={kind} />
           {selectedId !== "new" ? (
@@ -249,6 +259,7 @@ function AddressKindSection({
           <AddressFields
             idPrefix={`${kind}-${selectedId}`}
             address={selectedAddress}
+            formRef={formRef}
           />
 
           <div className="space-y-4">
@@ -311,18 +322,21 @@ function AddressKindSection({
 function AddressFields({
   idPrefix,
   address,
+  formRef,
 }: {
   idPrefix: string;
   address: AddressRecord | null;
+  formRef: React.RefObject<HTMLFormElement | null>;
 }) {
-  const [validateLoading, setValidateLoading] = useState(false);
-  const [validAddress, setValidAddress] = useState<
-    "idle" | "valid" | "invalid"
+  const formEventTimeoutRef = useRef<number | null>(null);
+
+  const [validAddressStatus, setValidAddressStatus] = useState<
+    "idle" | "validating" | "valid" | "invalid"
   >("idle");
 
   const handleValidateAddress = async () => {
     try {
-      setValidateLoading(true);
+      setValidAddressStatus("validating");
       const formData = new FormData();
       const form = document.getElementById(idPrefix);
       if (form) {
@@ -333,18 +347,69 @@ function AddressFields({
         }
       }
       const { valid, issues } = await validateAddress(formData);
-      if (valid) setValidAddress("valid");
+      if (valid) setValidAddressStatus("valid");
       else {
         toast.info(issues[0]?.message || "Address validation failed");
 
-        setValidAddress("invalid");
+        setValidAddressStatus("invalid");
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Validation error");
-    } finally {
-      setValidateLoading(false);
     }
   };
+
+  const addressFormUpdated = useCallback(() => {
+    if (!formRef.current) return;
+    setValidAddressStatus("idle");
+  }, [formRef]);
+
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+
+    const handleFormChange = () => {
+      if (formEventTimeoutRef.current !== null) {
+        window.clearTimeout(formEventTimeoutRef.current);
+      }
+      formEventTimeoutRef.current = window.setTimeout(() => {
+        formEventTimeoutRef.current = null;
+        addressFormUpdated();
+      }, 0);
+    };
+
+    form.addEventListener("input", handleFormChange);
+    form.addEventListener("change", handleFormChange);
+
+    return () => {
+      form.removeEventListener("input", handleFormChange);
+      form.removeEventListener("change", handleFormChange);
+      if (formEventTimeoutRef.current !== null) {
+        window.clearTimeout(formEventTimeoutRef.current);
+        formEventTimeoutRef.current = null;
+      }
+    };
+  }, [formRef, addressFormUpdated]);
+
+  const ValidateButton = useMemo(() => {
+    switch (validAddressStatus) {
+      case "idle":
+        return <span>Validate address</span>;
+      case "validating":
+        return (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Validating...</span>
+          </>
+        );
+      case "invalid":
+        return (
+          <>
+            <FileWarning className="" />
+            <span>Invalid address</span>
+          </>
+        );
+    }
+  }, [validAddressStatus]);
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
@@ -476,22 +541,17 @@ function AddressFields({
         </div>
 
         <div className="flex justify-end">
-          {validAddress !== "valid" ? (
+          {validAddressStatus !== "valid" ? (
             <Button
               type="button"
               className="cursor-pointer"
               onClick={handleValidateAddress}
             >
-              {validateLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : validAddress === "invalid" ? (
-                <FileWarning className="" />
-              ) : null}
-              Validate Address
+              {ValidateButton}
             </Button>
           ) : (
             <div className="flex justify-center md:justify-end gap-2">
-              <span className="text-sm font-medium text-emerald-600">
+              <span className="text-sm font-medium text-emerald-600 h-9 px-4 py-2">
                 Address Validated
               </span>
             </div>

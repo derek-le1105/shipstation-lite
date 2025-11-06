@@ -41,7 +41,10 @@ export async function validateAddress(formData: FormData) {
       return { valid: true, issues: [] };
     return { valid: false, issues: resolvedAddresses[0].customerMessages };
   } catch (error) {
-    console.log("Address validation error:", error);
+    if (error instanceof Error) {
+      console.log("Address validation error:", JSON.stringify(error.message));
+    }
+
     return { valid: false, issues: [] };
   }
 }
