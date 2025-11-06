@@ -1,3 +1,10 @@
+type DeliveryConfirmation =
+  | "none"
+  | "delivery"
+  | "signature"
+  | "adult_signature"
+  | "direct_signature";
+
 export type ShipStationRatesRequest = {
   carrierCode: string;
   serviceCode?: string;
@@ -12,12 +19,7 @@ export type ShipStationRatesRequest = {
   toCity?: string;
   weight: ShipStationWeight;
   dimensions?: ShipStationDimensions;
-  confirmation?:
-    | "none"
-    | "delivery"
-    | "signature"
-    | "adult_signature"
-    | "direct_signature";
+  confirmation?: DeliveryConfirmation;
   residential?: boolean;
 };
 
@@ -151,4 +153,80 @@ export type ShipStationRate = {
   confirmation?: string | null;
   residential?: boolean;
   errorMessages?: string[];
+};
+
+type OrderStatus =
+  | "awaiting_shipment"
+  | "shipping"
+  | "on_hold"
+  | "cancelled"
+  | "pending_fulfillment";
+
+type InsuranceOptions = {
+  provider: string;
+  insureShipment: boolean;
+  insuredValue: number;
+};
+
+type InternationalOptions = {
+  contents: "merchandise" | "documents" | "gift" | "returned_goods" | "other";
+  customsItems: unknown;
+  nonDelivery: string;
+};
+
+export type CreateOrderPayload = {
+  orderId?: number;
+  orderNumber: string;
+  orderKey?: string;
+  orderDate: string;
+  paymentDate?: string;
+  shipByDate?: string;
+  orderStatus: OrderStatus;
+  customerUsername?: string;
+  customerEmail?: string;
+  billTo: ShipStationAddress;
+  shipTo: ShipStationAddress;
+  items?: ShipStationOrderItem[];
+  amountPaid?: number;
+  taxAmount?: number;
+  shippingAmount?: number;
+  customerNotes?: string;
+  internalNotes?: string;
+  gift?: boolean;
+  giftMessage?: string;
+  paymentMethod?: string;
+  requestedShippingService?: string;
+  carrierCode?: string;
+  serviceCode?: string;
+  packageCode?: string;
+  confirmation?: DeliveryConfirmation;
+  shipDate?: string;
+  weight?: ShipStationWeight;
+  dimensions?: ShipStationDimensions;
+  insuranceOptions?: InsuranceOptions;
+  internationalOptions?: InternationalOptions;
+  customsCountryCode?: string;
+  advancedOptions?: unknown;
+  tagIds?: number[];
+};
+
+export type ShipStationOrderItem = {
+  orderItemId: number;
+  lineItemKey: string;
+  sku: string;
+  name: string;
+  imageUrl: string;
+  weight: ShipStationWeight;
+  quantity: number;
+  unitPrice: number;
+  taxAmount: number;
+  shippingAmount: number;
+  warehouseLocation: string;
+  options: { name: string; value: string }[];
+  productId: number;
+  fulfillmentSku: string;
+  adjustment: boolean;
+  upc: string;
+  createDate: string;
+  modifyDate: string;
 };
