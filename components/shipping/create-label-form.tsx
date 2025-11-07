@@ -104,7 +104,12 @@ export function CreateLabelForm({
 
   return (
     <CreateLabelFormContext.Provider value={{ formRef }}>
-      <form ref={formRef} action={onSubmit} className="space-y-6">
+      <form
+        id="create-label-form"
+        ref={formRef}
+        action={onSubmit}
+        className="space-y-6"
+      >
         <div className="grid gap-6 lg:grid-cols-2">
           <AddressSection
             prefix="from"
@@ -113,6 +118,7 @@ export function CreateLabelForm({
             mode={fromMode}
             setMode={setFromMode}
             pending={isPending}
+            formRef={formRef}
           />
           <AddressSection
             prefix="to"
@@ -121,6 +127,7 @@ export function CreateLabelForm({
             mode={toMode}
             setMode={setToMode}
             pending={isPending}
+            formRef={formRef}
           />
         </div>
 
