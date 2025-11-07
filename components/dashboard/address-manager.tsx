@@ -423,7 +423,9 @@ function AddressFields({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`${addressKind}-contact_name`}>Contact name</Label>
+        <Label htmlFor={`${addressKind}-contact_name`}>
+          Contact Name <span className="text-red-500">*</span>
+        </Label>
         <Input
           id={`${addressKind}-contact_name`}
           name="contact_name"
@@ -442,7 +444,9 @@ function AddressFields({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`${addressKind}-phone`}>Phone</Label>
+        <Label htmlFor={`${addressKind}-phone`}>
+          Phone <span className="text-red-500">*</span>
+        </Label>
         <Input
           id={`${addressKind}-phone`}
           name="phone"
@@ -462,7 +466,9 @@ function AddressFields({
         />
       </div>
       <div className="grid gap-2 md:col-span-2">
-        <Label htmlFor={`${addressKind}-address_line1`}>Address line 1</Label>
+        <Label htmlFor={`${addressKind}-address_line1`}>
+          Address Line 1 <span className="text-red-500">*</span>
+        </Label>
         <Input
           id={`${addressKind}-address_line1`}
           name="address_line1"
@@ -472,7 +478,7 @@ function AddressFields({
         />
       </div>
       <div className="grid gap-2 md:col-span-2">
-        <Label htmlFor={`${addressKind}-address_line2`}>Address line 2</Label>
+        <Label htmlFor={`${addressKind}-address_line2`}>Address Line 2</Label>
         <Input
           id={`${addressKind}-address_line2`}
           name="address_line2"
@@ -481,7 +487,9 @@ function AddressFields({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`${addressKind}-city`}>City</Label>
+        <Label htmlFor={`${addressKind}-city`}>
+          City <span className="text-red-500">*</span>
+        </Label>
         <Input
           id={`${addressKind}-city`}
           name="city"
@@ -491,7 +499,9 @@ function AddressFields({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`${addressKind}-state`}>State / Province</Label>
+        <Label htmlFor={`${addressKind}-state`}>
+          State / Province <span className="text-red-500">*</span>
+        </Label>
         <Input
           id={`${addressKind}-state`}
           name="state"
@@ -501,7 +511,9 @@ function AddressFields({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`${addressKind}-postal_code`}>Postal code</Label>
+        <Label htmlFor={`${addressKind}-postal_code`}>
+          Postal Code <span className="text-red-500">*</span>
+        </Label>
         <Input
           id={`${addressKind}-postal_code`}
           name="postal_code"
@@ -511,7 +523,9 @@ function AddressFields({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`${addressKind}-country`}>Country</Label>
+        <Label htmlFor={`${addressKind}-country`}>
+          Country <span className="text-red-500">*</span>
+        </Label>
         <Input
           id={`${addressKind}-country`}
           name="country"

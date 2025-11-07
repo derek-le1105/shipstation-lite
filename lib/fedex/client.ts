@@ -185,14 +185,7 @@ export class FedExClient {
       const errBody = (await tryReadBody(res)) ?? {
         message: await safeReadText(res),
       };
-      const msg =
-        typeof errBody === "string"
-          ? errBody
-          : errBody?.message || errBody?.errors || JSON.stringify(errBody);
-      const error = new Error(
-        `FedEx API error: ${res.status} ${res.statusText} - ${msg}`
-      );
-      throw error;
+      throw errBody;
     }
 
     return (await tryReadBody(res)) as T;

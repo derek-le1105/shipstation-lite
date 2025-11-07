@@ -10,6 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { Button } from "../ui/button";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { validateAddress } from "@/lib/fedex/lib";
+import { FileWarning, Loader2 } from "lucide-react";
 
 export function AddressSection({
   prefix,
@@ -18,6 +23,7 @@ export function AddressSection({
   mode,
   setMode,
   pending,
+  formRef,
 }: {
   prefix: "from" | "to";
   title: string;
@@ -25,7 +31,91 @@ export function AddressSection({
   mode: AddressMode;
   setMode: (mode: AddressMode) => void;
   pending: boolean;
+  formRef: React.RefObject<HTMLFormElement | null>;
 }) {
+  const formEventTimeoutRef = useRef<number | null>(null);
+
+  const [validAddressStatus, setValidAddressStatus] = useState<
+    "idle" | "validating" | "valid" | "invalid"
+  >("idle");
+
+  const addressFormUpdated = useCallback(() => {
+    if (!formRef.current) return;
+    setValidAddressStatus("idle");
+  }, [formRef]);
+
+  const handleValidateAddress = async () => {
+    try {
+      setValidAddressStatus("validating");
+      const formData = new FormData();
+      const form = document.getElementById("create-label-form");
+      if (form) {
+        const formElement = form as HTMLFormElement;
+        const currentFormData = new FormData(formElement);
+        for (const [key, value] of currentFormData.entries()) {
+          if (key.startsWith(`to.`)) formData.append(key.slice(3), value);
+        }
+      }
+      const { valid, issues } = await validateAddress(formData);
+      if (valid) setValidAddressStatus("valid");
+      else {
+        toast.info(issues[0]?.message || "Address validation failed");
+
+        setValidAddressStatus("invalid");
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Validation error");
+    }
+  };
+
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+
+    const handleFormChange = () => {
+      if (formEventTimeoutRef.current !== null) {
+        window.clearTimeout(formEventTimeoutRef.current);
+      }
+      formEventTimeoutRef.current = window.setTimeout(() => {
+        formEventTimeoutRef.current = null;
+        addressFormUpdated();
+      }, 0);
+    };
+
+    form.addEventListener("input", handleFormChange);
+    form.addEventListener("change", handleFormChange);
+
+    return () => {
+      form.removeEventListener("input", handleFormChange);
+      form.removeEventListener("change", handleFormChange);
+      if (formEventTimeoutRef.current !== null) {
+        window.clearTimeout(formEventTimeoutRef.current);
+        formEventTimeoutRef.current = null;
+      }
+    };
+  }, [formRef, addressFormUpdated]);
+
+  const ValidateButton = useMemo(() => {
+    switch (validAddressStatus) {
+      case "idle":
+        return <span>Validate address</span>;
+      case "validating":
+        return (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Validating...</span>
+          </>
+        );
+      case "invalid":
+        return (
+          <>
+            <FileWarning className="" />
+            <span>Invalid address</span>
+          </>
+        );
+    }
+  }, [validAddressStatus]);
+
   return (
     <Fieldset title={title}>
       <div className="flex flex-wrap gap-4 text-sm">
@@ -95,7 +185,9 @@ export function AddressSection({
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor={`${prefix}-contact_name`}>Contact name</Label>
+            <Label htmlFor={`${prefix}-contact_name`}>
+              Contact Name <span className="text-red-500">*</span>
+            </Label>
             <Input
               id={`${prefix}-contact_name`}
               name={`${prefix}.contact_name`}
@@ -114,7 +206,9 @@ export function AddressSection({
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor={`${prefix}-phone`}>Phone</Label>
+            <Label htmlFor={`${prefix}-phone`}>
+              Phone <span className="text-red-500">*</span>
+            </Label>
             <Input
               id={`${prefix}-phone`}
               name={`${prefix}.phone`}
@@ -134,7 +228,9 @@ export function AddressSection({
             />
           </div>
           <div className="grid gap-2 md:col-span-2">
-            <Label htmlFor={`${prefix}-address_line1`}>Address line 1</Label>
+            <Label htmlFor={`${prefix}-address_line1`}>
+              Address Line 1 <span className="text-red-500">*</span>
+            </Label>
             <Input
               id={`${prefix}-address_line1`}
               name={`${prefix}.address_line1`}
@@ -144,7 +240,9 @@ export function AddressSection({
             />
           </div>
           <div className="grid gap-2 md:col-span-2">
-            <Label htmlFor={`${prefix}-address_line2`}>Address line 2</Label>
+            <Label htmlFor={`${prefix}-address_line2`}>
+              Address Line 2 <span className="text-red-500">*</span>
+            </Label>
             <Input
               id={`${prefix}-address_line2`}
               name={`${prefix}.address_line2`}
@@ -153,7 +251,9 @@ export function AddressSection({
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor={`${prefix}-city`}>City</Label>
+            <Label htmlFor={`${prefix}-city`}>
+              City <span className="text-red-500">*</span>
+            </Label>
             <Input
               id={`${prefix}-city`}
               name={`${prefix}.city`}
@@ -163,7 +263,9 @@ export function AddressSection({
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor={`${prefix}-state`}>State / Province</Label>
+            <Label htmlFor={`${prefix}-state`}>
+              State / Province <span className="text-red-500">*</span>
+            </Label>
             <Input
               id={`${prefix}-state`}
               name={`${prefix}.state`}
@@ -173,7 +275,9 @@ export function AddressSection({
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor={`${prefix}-postal_code`}>Postal code</Label>
+            <Label htmlFor={`${prefix}-postal_code`}>
+              Postal Code <span className="text-red-500">*</span>
+            </Label>
             <Input
               id={`${prefix}-postal_code`}
               name={`${prefix}.postal_code`}
@@ -183,7 +287,9 @@ export function AddressSection({
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor={`${prefix}-country`}>Country</Label>
+            <Label htmlFor={`${prefix}-country`}>
+              Country <span className="text-red-500">*</span>
+            </Label>
             <Input
               id={`${prefix}-country`}
               name={`${prefix}.country`}
@@ -192,20 +298,44 @@ export function AddressSection({
               disabled={pending}
             />
           </div>
-          <div className="flex items-center gap-2 md:col-span-2">
-            <input
-              type="checkbox"
-              id={`${prefix}-is_residential`}
-              name={`${prefix}.is_residential`}
-              value="true"
-              disabled={pending}
-            />
-            <Label
-              htmlFor={`${prefix}-is_residential`}
-              className="text-sm text-muted-foreground"
-            >
-              Residential address
-            </Label>
+          <div className="grid grid-cols-2 md:col-span-2">
+            <div className="grid items-center justify-between">
+              <div />
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id={`${prefix}-is_residential`}
+                  name={`${prefix}.is_residential`}
+                  value="true"
+                  disabled={pending}
+                />
+                <Label
+                  htmlFor={`${prefix}-is_residential`}
+                  className="text-sm text-muted-foreground"
+                >
+                  Residential address
+                </Label>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              {validAddressStatus !== "valid" ? (
+                <Button
+                  type="button"
+                  className="cursor-pointer"
+                  onClick={handleValidateAddress}
+                >
+                  {ValidateButton}
+                </Button>
+              ) : (
+                <>
+                  <div className="flex justify-center md:justify-end gap-2">
+                    <span className="text-sm font-medium text-emerald-600 h-9 px-4 py-2">
+                      Address Validated
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2 md:col-span-2">
             <input
