@@ -381,7 +381,11 @@ export function AddressSection({
                 </Tooltip>
               )}
             </div>
-
+            <input
+              type="hidden"
+              name={`${prefix}.is_validated`}
+              value={validAddressStatus === "valid" ? "on" : "off"}
+            />
             {validAddressStatus !== "valid" ? (
               <Button
                 type="button"

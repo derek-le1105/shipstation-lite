@@ -86,8 +86,8 @@ function parseAddressInput(
     state: state!,
     postal_code: postal!,
     country: get("country") ?? "US",
-    is_residential: get("is_residential") === "true",
-    is_validated: get("is_validated") === "true",
+    is_residential: get("is_residential") === "on",
+    is_validated: get("is_validated") === "on",
     address_kind: kind,
   };
 }
@@ -497,7 +497,7 @@ async function processAddressMode(
   let shipAddress: ShipStationAddress;
   let addressRecord: AddressRecord | null = null;
   const addressValidated: boolean =
-    formData.get(`${prefix}.is_validated`) === "true";
+    formData.get(`${prefix}.is_validated`) === "on";
   if (mode === "saved") {
     const addressId = formData.get(`${prefix}.addressId`);
     if (typeof addressId !== "string" || addressId.trim().length === 0) {
@@ -514,7 +514,7 @@ async function processAddressMode(
     const input = parseAddressInput(formData, prefix, `ship_${prefix}`);
     shipAddress = inputToShipStationAddress(input);
 
-    const shouldSave = formData.get(`${prefix}.save`) === "true";
+    const shouldSave = formData.get(`${prefix}.save`) === "on";
     if (shouldSave) {
       addressRecord = await createAddress(profile.id, input);
     }
