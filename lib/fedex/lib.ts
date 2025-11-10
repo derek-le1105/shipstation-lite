@@ -177,8 +177,7 @@ export async function validateAddress(formData: FormData) {
     const city = formData.get("city") as string;
     const stateOrProvinceCode = formData.get("state") as string;
     const postalCode = formData.get("postal_code") as string;
-    const countryCode = formData.get("country") as string;
-
+    const countryCode = "US";
     const streetLines = street2 ? [street1, street2] : [street1];
     const address = {
       streetLines,
@@ -194,7 +193,6 @@ export async function validateAddress(formData: FormData) {
         addressesToValidate: [{ address }],
       }
     );
-
     const summary = summarizeAddressValidation(response);
     console.log("summary: ", summary);
     return summary;

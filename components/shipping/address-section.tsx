@@ -253,7 +253,7 @@ export function AddressSection({
               disabled={pending}
             />
           </div>
-          <div className="gap-2">
+          <div className="gap-2 md:col-span-2">
             <Label htmlFor={`${prefix}-city`}>
               City <span className="text-red-500">*</span>
             </Label>
@@ -266,12 +266,16 @@ export function AddressSection({
             />
           </div>
           <div className="gap-2">
-            <Label htmlFor={`${prefix}-state`}>
+            <Label htmlFor={`${prefix}.state`}>
               State <span className="text-red-500">*</span>
             </Label>
-            <Select>
-              <SelectTrigger className="w-full">
-                <SelectValue></SelectValue>
+            <Select name={`${prefix}.state`} required>
+              <SelectTrigger
+                className="w-full"
+                id={`${prefix}.state`}
+                name={`${prefix}.state`}
+              >
+                <SelectValue placeholder="CA" />
               </SelectTrigger>
               <SelectContent>
                 {Object.entries(US_STATE_CODES).map(([code, name]) => (
@@ -281,13 +285,6 @@ export function AddressSection({
                 ))}
               </SelectContent>
             </Select>
-            {/* <Input
-              id={`${prefix}-state`}
-              name={`${prefix}.state`}
-              placeholder="TX"
-              required
-              disabled={pending}
-            /> */}
           </div>
           <div className="gap-2">
             <Label htmlFor={`${prefix}-postal_code`}>
@@ -301,28 +298,17 @@ export function AddressSection({
               disabled={pending}
             />
           </div>
-          <div className="gap-2">
-            <Label htmlFor={`${prefix}-country`}>
-              Country <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id={`${prefix}-country`}
-              name={`${prefix}.country`}
-              placeholder="US"
-              defaultValue="US"
-              disabled={true}
-            />
-          </div>
           <div className="flex justify-between items-center gap-2 col-span-full">
             <Label
-              htmlFor={`${prefix}-is_residential`}
+              htmlFor={`${prefix}.is_residential`}
               className="text-sm text-muted-foreground"
             >
               Residential address?
             </Label>
             <div className="grid grid-cols-2 items-center gap-4">
               <Switch
-                id={`${prefix}-is_residential`}
+                id={`${prefix}.is_residential`}
+                name={`${prefix}.is_residential`}
                 checked={isResidential}
                 onCheckedChange={setIsResidential}
               />
@@ -341,6 +327,7 @@ export function AddressSection({
             <div className="grid grid-cols-2 items-center justify-between gap-4">
               <Switch
                 id={`${prefix}-save`}
+                name={`${prefix}.save`}
                 checked={saveAddress}
                 onCheckedChange={setSaveAddress}
               />
