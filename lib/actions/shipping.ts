@@ -30,7 +30,11 @@ import {
 } from "@/lib/shipstation/types";
 import { createClient } from "../supabase/server";
 import { getUserUpcharge } from "../supabase/admin";
-import { getPackageById } from "../supabase/packages";
+import {
+  createPackage,
+  getPackageById,
+  updatePackage,
+} from "../supabase/packages";
 
 type AddressMode = "saved" | "new";
 
@@ -523,30 +527,58 @@ async function processPackageMode(
   formData: FormData,
   profile: UserProfile
 ) {
-  if (formData.get(`${prefix}.id`) === "new-package") {
-    const weight = parseWeight(formData, prefix);
-    const dimensions = parseDimensions(formData, prefix);
+  const id = formData.get(`${prefix}.id`);
+  const savePackage = formData.get(`${prefix}.save`) === "on";
+
+  const weight = parseWeight(formData, prefix);
+  const dimensions = parseDimensions(formData, prefix);
+  if (id === "new-package") {
+    if (savePackage)
+      await createPackage(profile.id, {
+        length: dimensions.length,
+        width: dimensions.width,
+        height: dimensions.height,
+        dimension_unit: dimensions.units,
+        weight: weight.value,
+        weight_unit: weight.units,
+        nickname: formData.get(`${prefix}.nickname`) as string | "",
+      });
     return { weight, dimensions };
   } else {
-    const packageId = formData.get(`${prefix}.id`);
-    if (typeof packageId !== "string" || packageId.trim().length === 0) {
-      throw new Error("Package ID is required.");
+    const packageId = formData.get(`${prefix}.id`) as string;
+
+    //if savePackage, user wants to update existing package
+    if (savePackage) {
+      await updatePackage(packageId, profile.id, {
+        weight: weight.value,
+        weight_unit: weight.units,
+        length: dimensions.length,
+        width: dimensions.width,
+        height: dimensions.height,
+        dimension_unit: dimensions.units,
+        nickname: formData.get(`${prefix}.nickname`) as string | "",
+      });
+      return { weight, dimensions };
+    } else {
+      if (typeof packageId !== "string" || packageId.trim().length === 0) {
+        throw new Error("Package ID is required.");
+      }
+      const savedPackage = await getPackageById(packageId, profile.id);
+      if (!savedPackage) {
+        throw new Error("Package not found.");
+      }
+      const weight = {
+        value: savedPackage.weight,
+        units: savedPackage.weight_unit,
+      } as ShipStationWeight;
+      const dimensions = {
+        length: savedPackage.length,
+        width: savedPackage.width,
+        height: savedPackage.height,
+        units: savedPackage.dimension_unit,
+      };
+      return { weight, dimensions };
     }
-    const savedPackage = await getPackageById(packageId, profile.id);
-    if (!savedPackage) {
-      throw new Error("Package not found.");
-    }
-    const weight = {
-      value: savedPackage.weight,
-      units: savedPackage.weight_unit,
-    } as ShipStationWeight;
-    const dimensions = {
-      length: savedPackage.length,
-      width: savedPackage.width,
-      height: savedPackage.height,
-      units: savedPackage.dimension_unit,
-    };
-    return { weight, dimensions };
   }
 }
 

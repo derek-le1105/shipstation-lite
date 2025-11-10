@@ -534,8 +534,14 @@ function Package({
         </div>
         <div className="pt-2 gap-2 col-span-3 md:col-span-1">
           <div className="flex items-center justify-between space-x-2">
-            <Label htmlFor={`package-${index}.save`}>Save this package?</Label>
-            <Switch id={`package-${index}.save`} />
+            <Label htmlFor={`package-${index}.save`}>
+              {selectedPackageId !== "new-package" ? "Update" : "Save"} this
+              package?
+            </Label>
+            <Switch
+              id={`package-${index}.save`}
+              name={`package-${index}.save`}
+            />
           </div>
         </div>
         <div className="flex items-center justify-between md:gap-2 col-span-3 md:col-span-1 md:col-start-4">
