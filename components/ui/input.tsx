@@ -28,7 +28,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && <label className="mb-1 text-sm text-gray-700">{label}</label>}
         <div
           className={cn(
-            "bg-card flex items-center h-10 w-full rounded-md border border-input text-sm ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 min-w-0",
+            "bg-card flex items-center h-full w-full rounded-md border border-input text-sm ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 min-w-0 overflow-hidden",
             className
           )}
         >
