@@ -75,7 +75,31 @@ export function AddressSection({
     const form = formRef.current;
     if (!form) return;
 
-    const handleFormChange = () => {
+    // Only react to changes from specific fields in this section
+    const watchedSuffixes = new Set([
+      "contact_name",
+      "phone",
+      "address_line1",
+      "address_line2",
+      "city",
+      "state",
+      "postal_code",
+      // add/remove keys as desired
+    ]);
+
+    const handleFormChange = (event: Event) => {
+      const target = event.target as
+        | HTMLInputElement
+        | HTMLSelectElement
+        | HTMLTextAreaElement
+        | null;
+      const name = target?.name;
+      if (!name) return;
+
+      const [namePrefix, key] = name.split(".");
+      if (namePrefix !== prefix) return; // ignore changes from other sections
+      if (!watchedSuffixes.has(key)) return; // ignore non-watched fields
+
       if (formEventTimeoutRef.current !== null) {
         window.clearTimeout(formEventTimeoutRef.current);
       }
@@ -85,18 +109,18 @@ export function AddressSection({
       }, 0);
     };
 
-    form.addEventListener("input", handleFormChange);
-    form.addEventListener("change", handleFormChange);
+    form.addEventListener("input", handleFormChange as EventListener);
+    form.addEventListener("change", handleFormChange as EventListener);
 
     return () => {
-      form.removeEventListener("input", handleFormChange);
-      form.removeEventListener("change", handleFormChange);
+      form.removeEventListener("input", handleFormChange as EventListener);
+      form.removeEventListener("change", handleFormChange as EventListener);
       if (formEventTimeoutRef.current !== null) {
         window.clearTimeout(formEventTimeoutRef.current);
         formEventTimeoutRef.current = null;
       }
     };
-  }, [formRef, addressFormUpdated]);
+  }, [formRef, addressFormUpdated, prefix]);
 
   const ValidateButton = useMemo(() => {
     switch (validAddressStatus) {
