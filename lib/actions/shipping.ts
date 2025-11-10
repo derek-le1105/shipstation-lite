@@ -30,7 +30,11 @@ import {
 } from "@/lib/shipstation/types";
 import { createClient } from "../supabase/server";
 import { getUserUpcharge } from "../supabase/admin";
-import { getPackageById } from "../supabase/packages";
+import {
+  createPackage,
+  getPackageById,
+  updatePackage,
+} from "../supabase/packages";
 
 type AddressMode = "saved" | "new";
 
@@ -82,8 +86,8 @@ function parseAddressInput(
     state: state!,
     postal_code: postal!,
     country: get("country") ?? "US",
-    is_residential: get("is_residential") === "true",
-    is_validated: get("is_validated") === "true",
+    is_residential: get("is_residential") === "on",
+    is_validated: get("is_validated") === "on",
     address_kind: kind,
   };
 }
@@ -267,8 +271,11 @@ export async function createShippingLabelAction(
 
     const { shipAddress: shipFrom, addressRecord: fromAddressRecord } =
       await processAddressMode(fromMode, "from", formData, profile);
-    const { shipAddress: shipTo, addressRecord: toAddressRecord } =
-      await processAddressMode(toMode, "to", formData, profile);
+    const {
+      shipAddress: shipTo,
+      addressRecord: toAddressRecord,
+      addressValidated,
+    } = await processAddressMode(toMode, "to", formData, profile);
 
     const packagesCount = Number(formData.get("packages.count")) || 1;
 
@@ -356,6 +363,7 @@ export async function createShippingLabelAction(
               voided: false,
               voided_at: null,
               order_number: orderNumber,
+              is_address_validated: addressValidated,
             });
 
             return {
@@ -488,6 +496,8 @@ async function processAddressMode(
 ) {
   let shipAddress: ShipStationAddress;
   let addressRecord: AddressRecord | null = null;
+  const addressValidated: boolean =
+    formData.get(`${prefix}.is_validated`) === "on";
   if (mode === "saved") {
     const addressId = formData.get(`${prefix}.addressId`);
     if (typeof addressId !== "string" || addressId.trim().length === 0) {
@@ -504,12 +514,12 @@ async function processAddressMode(
     const input = parseAddressInput(formData, prefix, `ship_${prefix}`);
     shipAddress = inputToShipStationAddress(input);
 
-    const shouldSave = formData.get(`${prefix}.save`) === "true";
+    const shouldSave = formData.get(`${prefix}.save`) === "on";
     if (shouldSave) {
       addressRecord = await createAddress(profile.id, input);
     }
   }
-  return { shipAddress, addressRecord };
+  return { shipAddress, addressRecord, addressValidated };
 }
 
 async function processPackageMode(
@@ -517,30 +527,58 @@ async function processPackageMode(
   formData: FormData,
   profile: UserProfile
 ) {
-  if (formData.get(`${prefix}.id`) === "new-package") {
-    const weight = parseWeight(formData, prefix);
-    const dimensions = parseDimensions(formData, prefix);
+  const id = formData.get(`${prefix}.id`);
+  const savePackage = formData.get(`${prefix}.save`) === "on";
+
+  const weight = parseWeight(formData, prefix);
+  const dimensions = parseDimensions(formData, prefix);
+  if (id === "new-package") {
+    if (savePackage)
+      await createPackage(profile.id, {
+        length: dimensions.length,
+        width: dimensions.width,
+        height: dimensions.height,
+        dimension_unit: dimensions.units,
+        weight: weight.value,
+        weight_unit: weight.units,
+        nickname: formData.get(`${prefix}.nickname`) as string | "",
+      });
     return { weight, dimensions };
   } else {
-    const packageId = formData.get(`${prefix}.id`);
-    if (typeof packageId !== "string" || packageId.trim().length === 0) {
-      throw new Error("Package ID is required.");
+    const packageId = formData.get(`${prefix}.id`) as string;
+
+    //if savePackage, user wants to update existing package
+    if (savePackage) {
+      await updatePackage(packageId, profile.id, {
+        weight: weight.value,
+        weight_unit: weight.units,
+        length: dimensions.length,
+        width: dimensions.width,
+        height: dimensions.height,
+        dimension_unit: dimensions.units,
+        nickname: formData.get(`${prefix}.nickname`) as string | "",
+      });
+      return { weight, dimensions };
+    } else {
+      if (typeof packageId !== "string" || packageId.trim().length === 0) {
+        throw new Error("Package ID is required.");
+      }
+      const savedPackage = await getPackageById(packageId, profile.id);
+      if (!savedPackage) {
+        throw new Error("Package not found.");
+      }
+      const weight = {
+        value: savedPackage.weight,
+        units: savedPackage.weight_unit,
+      } as ShipStationWeight;
+      const dimensions = {
+        length: savedPackage.length,
+        width: savedPackage.width,
+        height: savedPackage.height,
+        units: savedPackage.dimension_unit,
+      };
+      return { weight, dimensions };
     }
-    const savedPackage = await getPackageById(packageId, profile.id);
-    if (!savedPackage) {
-      throw new Error("Package not found.");
-    }
-    const weight = {
-      value: savedPackage.weight,
-      units: savedPackage.weight_unit,
-    } as ShipStationWeight;
-    const dimensions = {
-      length: savedPackage.length,
-      width: savedPackage.width,
-      height: savedPackage.height,
-      units: savedPackage.dimension_unit,
-    };
-    return { weight, dimensions };
   }
 }
 

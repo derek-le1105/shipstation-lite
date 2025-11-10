@@ -58,7 +58,7 @@ export function resolveAddressFromForm(
   const postalCode =
     (formData.get(`${prefix}.postal_code`) as string | null)?.trim() ?? "";
   const country =
-    (formData.get(`${prefix}.country`) as string | null)?.trim() ?? "";
+    (formData.get(`${prefix}.country`) as string | null)?.trim() ?? "US";
 
   if (!city || !state || !postalCode || !country) {
     return null;

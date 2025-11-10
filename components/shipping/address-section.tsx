@@ -14,9 +14,10 @@ import { Button } from "../ui/button";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { validateAddress } from "@/lib/fedex/lib";
-import { FileWarning, Loader2 } from "lucide-react";
+import { FileWarning, Loader2, TriangleAlert } from "lucide-react";
 import { US_STATE_CODES } from "@/lib/shipping-label/state-codes";
 import { Switch } from "../ui/switch";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 export function AddressSection({
   prefix,
@@ -75,7 +76,31 @@ export function AddressSection({
     const form = formRef.current;
     if (!form) return;
 
-    const handleFormChange = () => {
+    // Only react to changes from specific fields in this section
+    const watchedSuffixes = new Set([
+      "contact_name",
+      "phone",
+      "address_line1",
+      "address_line2",
+      "city",
+      "state",
+      "postal_code",
+      // add/remove keys as desired
+    ]);
+
+    const handleFormChange = (event: Event) => {
+      const target = event.target as
+        | HTMLInputElement
+        | HTMLSelectElement
+        | HTMLTextAreaElement
+        | null;
+      const name = target?.name;
+      if (!name) return;
+
+      const [namePrefix, key] = name.split(".");
+      if (namePrefix !== prefix) return; // ignore changes from other sections
+      if (!watchedSuffixes.has(key)) return; // ignore non-watched fields
+
       if (formEventTimeoutRef.current !== null) {
         window.clearTimeout(formEventTimeoutRef.current);
       }
@@ -85,18 +110,18 @@ export function AddressSection({
       }, 0);
     };
 
-    form.addEventListener("input", handleFormChange);
-    form.addEventListener("change", handleFormChange);
+    form.addEventListener("input", handleFormChange as EventListener);
+    form.addEventListener("change", handleFormChange as EventListener);
 
     return () => {
-      form.removeEventListener("input", handleFormChange);
-      form.removeEventListener("change", handleFormChange);
+      form.removeEventListener("input", handleFormChange as EventListener);
+      form.removeEventListener("change", handleFormChange as EventListener);
       if (formEventTimeoutRef.current !== null) {
         window.clearTimeout(formEventTimeoutRef.current);
         formEventTimeoutRef.current = null;
       }
     };
-  }, [formRef, addressFormUpdated]);
+  }, [formRef, addressFormUpdated, prefix]);
 
   const ValidateButton = useMemo(() => {
     switch (validAddressStatus) {
@@ -123,7 +148,7 @@ export function AddressSection({
     <Fieldset title={title}>
       <div className="flex flex-wrap gap-4 text-sm">
         <Label className="flex items-center gap-2">
-          <Input
+          <input
             type="radio"
             name={`${prefix}.mode`}
             value="saved"
@@ -135,7 +160,7 @@ export function AddressSection({
           Use saved address
         </Label>
         <Label className="flex items-center gap-2">
-          <Input
+          <input
             type="radio"
             name={`${prefix}.mode`}
             value="new"
@@ -178,7 +203,7 @@ export function AddressSection({
         </div>
       ) : (
         <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-          <div className="gap-2 col-span-2">
+          <div className="min-w-0 gap-2 col-span-2">
             <Label htmlFor={`${prefix}-label`}>Nickname</Label>
             <Input
               id={`${prefix}-label`}
@@ -187,7 +212,7 @@ export function AddressSection({
               disabled={pending}
             />
           </div>
-          <div className="gap-2 col-span-2">
+          <div className="min-w-0 gap-2 col-span-2">
             <Label htmlFor={`${prefix}-contact_name`}>
               Contact Name <span className="text-red-500">*</span>
             </Label>
@@ -199,7 +224,7 @@ export function AddressSection({
               disabled={pending}
             />
           </div>
-          <div className="gap-2 md:col-span-2">
+          <div className="min-w-0 gap-2 md:col-span-2">
             <Label htmlFor={`${prefix}-company`}>Company</Label>
             <Input
               id={`${prefix}-company`}
@@ -208,7 +233,7 @@ export function AddressSection({
               disabled={pending}
             />
           </div>
-          <div className="gap-2 md:col-span-2">
+          <div className="min-w-0 gap-2 md:col-span-2">
             <Label htmlFor={`${prefix}-phone`}>
               Phone <span className="text-red-500">*</span>
             </Label>
@@ -220,7 +245,7 @@ export function AddressSection({
               disabled={pending}
             />
           </div>
-          <div className="gap-2 col-span-full">
+          <div className="min-w-0 gap-2 col-span-full">
             <Label htmlFor={`${prefix}-email`}>Email</Label>
             <Input
               id={`${prefix}-email`}
@@ -230,7 +255,7 @@ export function AddressSection({
               disabled={pending}
             />
           </div>
-          <div className="gap-2 md:col-span-4">
+          <div className="min-w-0 gap-2 col-span-2 md:col-span-4">
             <Label htmlFor={`${prefix}-address_line1`}>
               Address Line 1 <span className="text-red-500">*</span>
             </Label>
@@ -242,10 +267,8 @@ export function AddressSection({
               disabled={pending}
             />
           </div>
-          <div className="gap-2 md:col-span-4">
-            <Label htmlFor={`${prefix}-address_line2`}>
-              Address Line 2 <span className="text-red-500">*</span>
-            </Label>
+          <div className="min-w-0 gap-2 col-span-2 md:col-span-4">
+            <Label htmlFor={`${prefix}-address_line2`}>Address Line 2</Label>
             <Input
               id={`${prefix}-address_line2`}
               name={`${prefix}.address_line2`}
@@ -253,7 +276,7 @@ export function AddressSection({
               disabled={pending}
             />
           </div>
-          <div className="gap-2">
+          <div className="min-w-0 gap-2 col-span-2">
             <Label htmlFor={`${prefix}-city`}>
               City <span className="text-red-500">*</span>
             </Label>
@@ -265,13 +288,17 @@ export function AddressSection({
               disabled={pending}
             />
           </div>
-          <div className="gap-2">
-            <Label htmlFor={`${prefix}-state`}>
+          <div className="min-w-0 gap-2">
+            <Label htmlFor={`${prefix}.state`}>
               State <span className="text-red-500">*</span>
             </Label>
-            <Select>
-              <SelectTrigger className="w-full">
-                <SelectValue></SelectValue>
+            <Select name={`${prefix}.state`} required>
+              <SelectTrigger
+                className="w-full"
+                id={`${prefix}.state`}
+                name={`${prefix}.state`}
+              >
+                <SelectValue placeholder="CA" />
               </SelectTrigger>
               <SelectContent>
                 {Object.entries(US_STATE_CODES).map(([code, name]) => (
@@ -281,15 +308,8 @@ export function AddressSection({
                 ))}
               </SelectContent>
             </Select>
-            {/* <Input
-              id={`${prefix}-state`}
-              name={`${prefix}.state`}
-              placeholder="TX"
-              required
-              disabled={pending}
-            /> */}
           </div>
-          <div className="gap-2">
+          <div className="min-w-0 gap-2">
             <Label htmlFor={`${prefix}-postal_code`}>
               Postal Code <span className="text-red-500">*</span>
             </Label>
@@ -301,28 +321,17 @@ export function AddressSection({
               disabled={pending}
             />
           </div>
-          <div className="gap-2">
-            <Label htmlFor={`${prefix}-country`}>
-              Country <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id={`${prefix}-country`}
-              name={`${prefix}.country`}
-              placeholder="US"
-              defaultValue="US"
-              disabled={true}
-            />
-          </div>
-          <div className="flex justify-between items-center gap-2 col-span-full">
+          <div className="flex justify-between items-center gap-2 col-span-full min-w-0">
             <Label
-              htmlFor={`${prefix}-is_residential`}
+              htmlFor={`${prefix}.is_residential`}
               className="text-sm text-muted-foreground"
             >
               Residential address?
             </Label>
             <div className="grid grid-cols-2 items-center gap-4">
               <Switch
-                id={`${prefix}-is_residential`}
+                id={`${prefix}.is_residential`}
+                name={`${prefix}.is_residential`}
                 checked={isResidential}
                 onCheckedChange={setIsResidential}
               />
@@ -331,16 +340,17 @@ export function AddressSection({
               </span>
             </div>
           </div>
-          <div className="flex justify-between items-center gap-2 col-span-full">
+          <div className="flex justify-between items-center gap-2 col-span-full min-w-0">
             <Label
               htmlFor={`${prefix}-is_residential`}
               className="text-sm text-muted-foreground"
             >
-              Save this address for future labels?
+              Save this address?
             </Label>
-            <div className="grid grid-cols-2 items-center justify-between gap-4">
+            <div className="grid grid-cols-2 items-center gap-4">
               <Switch
                 id={`${prefix}-save`}
+                name={`${prefix}.save`}
                 checked={saveAddress}
                 onCheckedChange={setSaveAddress}
               />
@@ -349,7 +359,33 @@ export function AddressSection({
               </span>
             </div>
           </div>
-          <div className="col-span-1">
+          <div className="flex justify-between items-center gap-2 col-span-full min-w-0">
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor={`${prefix}.is_residential`}
+                className="text-sm text-muted-foreground"
+              >
+                Address Status
+              </Label>
+              {validAddressStatus !== "valid" && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <TriangleAlert className="text-sm text-yellow-500" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span>
+                      If this address is not validated, a correction fee of $17
+                      might be applied.
+                    </span>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+            <input
+              type="hidden"
+              name={`${prefix}.is_validated`}
+              value={validAddressStatus === "valid" ? "on" : "off"}
+            />
             {validAddressStatus !== "valid" ? (
               <Button
                 type="button"
@@ -359,13 +395,9 @@ export function AddressSection({
                 {ValidateButton}
               </Button>
             ) : (
-              <>
-                <div className="flex justify-center md:justify-end gap-2">
-                  <span className="text-sm font-medium text-emerald-600 h-9 px-4 py-2">
-                    Address Validated
-                  </span>
-                </div>
-              </>
+              <span className="text-sm font-medium text-emerald-600">
+                Validated
+              </span>
             )}
           </div>
         </div>
