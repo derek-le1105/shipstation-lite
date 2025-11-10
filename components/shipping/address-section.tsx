@@ -14,9 +14,10 @@ import { Button } from "../ui/button";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { validateAddress } from "@/lib/fedex/lib";
-import { FileWarning, Loader2 } from "lucide-react";
+import { FileWarning, Loader2, TriangleAlert } from "lucide-react";
 import { US_STATE_CODES } from "@/lib/shipping-label/state-codes";
 import { Switch } from "../ui/switch";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 export function AddressSection({
   prefix,
@@ -359,12 +360,28 @@ export function AddressSection({
             </div>
           </div>
           <div className="flex justify-between items-center gap-2 col-span-full min-w-0">
-            <Label
-              htmlFor={`${prefix}.is_residential`}
-              className="text-sm text-muted-foreground"
-            >
-              Address Status
-            </Label>
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor={`${prefix}.is_residential`}
+                className="text-sm text-muted-foreground"
+              >
+                Address Status
+              </Label>
+              {validAddressStatus !== "valid" && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <TriangleAlert className="text-sm text-yellow-500" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span>
+                      If this address is not validated, a correction fee of $17
+                      might be applied.
+                    </span>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+
             {validAddressStatus !== "valid" ? (
               <Button
                 type="button"
