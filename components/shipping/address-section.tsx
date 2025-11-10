@@ -335,6 +335,11 @@ export function AddressSection({
             </div>
           </div>
           <div className="md:col-span-full min-w-0">
+            <input
+              type="hidden"
+              name={`${prefix}.is_validated`}
+              value={validAddressStatus === "valid" ? "true" : "false"}
+            />
             {validAddressStatus !== "valid" ? (
               <Button
                 type="button"

@@ -267,8 +267,11 @@ export async function createShippingLabelAction(
 
     const { shipAddress: shipFrom, addressRecord: fromAddressRecord } =
       await processAddressMode(fromMode, "from", formData, profile);
-    const { shipAddress: shipTo, addressRecord: toAddressRecord } =
-      await processAddressMode(toMode, "to", formData, profile);
+    const {
+      shipAddress: shipTo,
+      addressRecord: toAddressRecord,
+      addressValidated,
+    } = await processAddressMode(toMode, "to", formData, profile);
 
     const packagesCount = Number(formData.get("packages.count")) || 1;
 
@@ -356,6 +359,7 @@ export async function createShippingLabelAction(
               voided: false,
               voided_at: null,
               order_number: orderNumber,
+              is_address_validated: addressValidated,
             });
 
             return {
@@ -488,6 +492,8 @@ async function processAddressMode(
 ) {
   let shipAddress: ShipStationAddress;
   let addressRecord: AddressRecord | null = null;
+  const addressValidated: boolean =
+    formData.get(`${prefix}.is_validated`) === "true";
   if (mode === "saved") {
     const addressId = formData.get(`${prefix}.addressId`);
     if (typeof addressId !== "string" || addressId.trim().length === 0) {
@@ -509,7 +515,7 @@ async function processAddressMode(
       addressRecord = await createAddress(profile.id, input);
     }
   }
-  return { shipAddress, addressRecord };
+  return { shipAddress, addressRecord, addressValidated };
 }
 
 async function processPackageMode(

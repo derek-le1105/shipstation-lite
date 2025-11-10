@@ -43,6 +43,7 @@ export type ShippingLabelRecord = {
   voided: boolean;
   voided_at: string | null;
   order_number?: string | null;
+  is_address_validated: boolean;
 };
 
 type ShippingLabelInsert = Omit<

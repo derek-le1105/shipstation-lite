@@ -152,6 +152,7 @@ export type Database = {
           height: number;
           id: string;
           insurance_cost: number | null;
+          is_address_validated: boolean;
           label_data_base64: string | null;
           length: number;
           order_number: string | null;
@@ -181,6 +182,7 @@ export type Database = {
           height?: number;
           id?: string;
           insurance_cost?: number | null;
+          is_address_validated?: boolean;
           label_data_base64?: string | null;
           length?: number;
           order_number?: string | null;
@@ -210,6 +212,7 @@ export type Database = {
           height?: number;
           id?: string;
           insurance_cost?: number | null;
+          is_address_validated?: boolean;
           label_data_base64?: string | null;
           length?: number;
           order_number?: string | null;
