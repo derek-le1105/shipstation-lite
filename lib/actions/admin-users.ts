@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdminProfile } from "@/lib/auth";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, upsertUserUpcharge } from "@/lib/supabase/admin";
 
 export type UserState = {
   status: "idle" | "success" | "error";
@@ -21,7 +21,12 @@ export async function createUserInviteAction(
     const emailRaw = formData.get("email");
     const fullNameRaw = formData.get("full_name");
     const roleRaw = formData.get("role");
-
+    const upchargeValueRaw = formData.get(
+      "upcharge_value"
+    ) as unknown as number;
+    const upchargeUnitRaw = formData.get("upcharge_unit") as
+      | "dollars"
+      | "percent";
     const email = typeof emailRaw === "string" ? emailRaw.trim() : "";
     const full_name =
       typeof fullNameRaw === "string" && fullNameRaw.trim().length > 0
@@ -93,7 +98,7 @@ export async function createUserInviteAction(
     }
 
     await ensureProfileRow(admin, user.id, email, full_name, role);
-
+    await upsertUserUpcharge(user.id, upchargeUnitRaw, upchargeValueRaw);
     revalidatePath("/admin");
     return {
       status: "success",
