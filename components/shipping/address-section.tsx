@@ -344,9 +344,9 @@ export function AddressSection({
               htmlFor={`${prefix}-is_residential`}
               className="text-sm text-muted-foreground"
             >
-              Save this address for future labels?
+              Save this address?
             </Label>
-            <div className="grid grid-cols-2 items-center justify-between gap-4">
+            <div className="grid grid-cols-2 items-center gap-4">
               <Switch
                 id={`${prefix}-save`}
                 name={`${prefix}.save`}
@@ -358,12 +358,13 @@ export function AddressSection({
               </span>
             </div>
           </div>
-          <div className="md:col-span-full min-w-0">
-            <input
-              type="hidden"
-              name={`${prefix}.is_validated`}
-              value={validAddressStatus === "valid" ? "true" : "false"}
-            />
+          <div className="flex justify-between items-center gap-2 col-span-full min-w-0">
+            <Label
+              htmlFor={`${prefix}.is_residential`}
+              className="text-sm text-muted-foreground"
+            >
+              Address Status
+            </Label>
             {validAddressStatus !== "valid" ? (
               <Button
                 type="button"
@@ -373,13 +374,9 @@ export function AddressSection({
                 {ValidateButton}
               </Button>
             ) : (
-              <>
-                <div className="flex gap-2">
-                  <span className="text-sm font-medium text-emerald-600 h-9 px-4 py-2">
-                    Address Validated
-                  </span>
-                </div>
-              </>
+              <span className="text-sm font-medium text-emerald-600">
+                Validated
+              </span>
             )}
           </div>
         </div>
