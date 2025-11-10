@@ -538,7 +538,7 @@ function Package({
             <Switch id={`package-${index}.save`} />
           </div>
         </div>
-        <div className="flex items-center justify-between md:gap-2 col-span-3 md:col-span-1 md:col-start-3">
+        <div className="flex items-center justify-between md:gap-2 col-span-3 md:col-span-1 md:col-start-4">
           <Label className="font-semibold">Price:</Label>
           {priceContent}
         </div>
