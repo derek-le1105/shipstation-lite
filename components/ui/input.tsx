@@ -24,11 +24,11 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     ref
   ) => {
     return (
-      <div className="flex flex-col">
+      <div className="flex flex-col min-w-0">
         {label && <label className="mb-1 text-sm text-gray-700">{label}</label>}
         <div
           className={cn(
-            "bg-card flex items-center h-10 w-full rounded-md border border-input  text-sm ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
+            "bg-card flex items-center h-10 w-full rounded-md border border-input text-sm ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 min-w-0",
             className
           )}
         >
@@ -40,7 +40,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <input
             type={type}
             className={cn(
-              "flex-1 px-3 py-2 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50"
+              "flex-1 px-3 py-2 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 min-w-0"
             )}
             ref={ref}
             {...props}
