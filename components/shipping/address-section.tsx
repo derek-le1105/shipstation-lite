@@ -336,7 +336,7 @@ export function AddressSection({
               </span>
             </div>
           </div>
-          <div className="col-span-1">
+          <div className="md:col-span-full">
             {validAddressStatus !== "valid" ? (
               <Button
                 type="button"
@@ -347,7 +347,7 @@ export function AddressSection({
               </Button>
             ) : (
               <>
-                <div className="flex justify-center md:justify-end gap-2">
+                <div className="flex gap-2">
                   <span className="text-sm font-medium text-emerald-600 h-9 px-4 py-2">
                     Address Validated
                   </span>
