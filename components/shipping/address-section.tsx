@@ -243,9 +243,7 @@ export function AddressSection({
             />
           </div>
           <div className="min-w-0 gap-2 col-span-2 md:col-span-4">
-            <Label htmlFor={`${prefix}-address_line2`}>
-              Address Line 2 <span className="text-red-500">*</span>
-            </Label>
+            <Label htmlFor={`${prefix}-address_line2`}>Address Line 2</Label>
             <Input
               id={`${prefix}-address_line2`}
               name={`${prefix}.address_line2`}
