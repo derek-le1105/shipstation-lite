@@ -150,10 +150,6 @@ export default async function LabelDetailsPage({
               />
               <DetailItem label="Dimensions" value={dimensions} />
               <DetailItem
-                label="Package code"
-                value={label.package_code ?? "—"}
-              />
-              <DetailItem
                 label="Shipment cost"
                 value={formatCurrency(label.total_shipment_cost)}
               />

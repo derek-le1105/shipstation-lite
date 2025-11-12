@@ -200,30 +200,18 @@ export const columns = <T,>(): ColumnDef<T>[] => [
   },
   {
     accessorKey: "total_shipment_cost",
-    header: () => <div className="text-right">Cost</div>,
+    header: () => <div className="text-right">Total Cost</div>,
     cell: ({ row }) => {
       const shipmentCost = parseFloat(row.getValue("total_shipment_cost"));
+      const insuranceCost = (row.original as ShippingLabelRecord)
+        ?.total_insurance_cost;
       const formatted = new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "USD",
-      }).format(shipmentCost);
+      }).format(shipmentCost + insuranceCost);
       return <div className="text-right font-medium">{formatted}</div>;
     },
   },
-  //   {
-  //     accessorKey: "total_insurance_cost",
-  //     header: () => <div className="text-right">Insurance Cost</div>,
-  //     cell: ({ row }) => {
-  //       const insuranceCost = parseFloat(
-  //         row.getValue("total_insurance_cost") || "0"
-  //       );
-  //       const formatted = new Intl.NumberFormat("en-US", {
-  //         style: "currency",
-  //         currency: "USD",
-  //       }).format(insuranceCost);
-  //       return <div className="text-right font-medium">{formatted}</div>;
-  //     },
-  //   },
   {
     accessorKey: "label_data_base64",
     header: () => <div className="text-right">Label PDF</div>,
