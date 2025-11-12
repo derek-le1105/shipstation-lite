@@ -27,7 +27,7 @@ import {
 import { AddressRecord } from "@/lib/supabase/addresses";
 import { AddressMode } from "./types";
 import { useCreateLabelFormContext } from "./create-label-form";
-import { Switch } from "../ui/switch";
+import SwitchLabel from "../switch-label";
 
 const RATE_DEBOUNCE_MS = 1500;
 const USD_FORMATTER = new Intl.NumberFormat("en-US", {
@@ -88,7 +88,9 @@ export function PackageDetailsSection({
               allowDelete={packageIds.length > 1}
             />
 
-            {index !== packageIds.length - 1 ? <Separator /> : null}
+            {index !== packageIds.length - 1 ? (
+              <Separator className="border-2 border-border" />
+            ) : null}
           </div>
         );
       })}
@@ -121,6 +123,11 @@ type PkgFields = {
     | "signature"
     | "adult_signature"
     | "direct_signature";
+  insuranceOptions?: {
+    provider: string;
+    insureShipment: boolean;
+    insuredValue: number;
+  };
 };
 
 function Package({
@@ -149,6 +156,8 @@ function Package({
   allowDelete?: boolean;
 }) {
   const [fields, setFields] = useState<PkgFields>();
+  const [selectedInsuranceProvider, setSelectedInsuranceProvider] =
+    useState<string>("none");
   const [selectedPackageId, setSelectedPackageId] =
     useState<string>("new-package");
   const { formRef } = useCreateLabelFormContext();
@@ -382,7 +391,7 @@ function Package({
         );
       }
       default:
-        return <p className="text-sm text-muted-foreground">$0.00</p>;
+        return <p className="text-lg text-muted-foreground">$0.00</p>;
     }
   }, [rateState, selectedRate]);
 
@@ -513,8 +522,54 @@ function Package({
             </SelectContent>
           </Select>
         </div>
-        <div className="gap-2 col-span-3 md:col-span-1 md:col-start-4">
-          <Label htmlFor="confirmation">Confirmation</Label>
+        <div className="py-2 col-span-full">
+          <Separator />
+        </div>
+        <div className="gap-2 col-span-2 md:col-span-1 md:col-start-1">
+          <Label htmlFor={`package-${index}.insuranceOptions.provider`}>
+            Insurance
+          </Label>
+          <Select
+            name={`package-${index}.insuranceOptions.provider`}
+            disabled={isPending}
+            onValueChange={setSelectedInsuranceProvider}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select confirmation" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              <SelectItem value="carrier">Carrier</SelectItem>
+              {/* <SelectItem value="shipsurance">Shipsurance</SelectItem>
+              <SelectItem value="provider">Provider</SelectItem>
+              <SelectItem value="xcover">Xcover</SelectItem>
+              <SelectItem value="parcelguard">Parcelguard</SelectItem> */}
+            </SelectContent>
+          </Select>
+        </div>
+        {selectedInsuranceProvider !== "none" && (
+          <div className="gap-2 col-span-1 md:col-span-1">
+            <Label htmlFor={`package-${index}.insuranceOptions.insuredValue`}>
+              Amount
+            </Label>
+            <Input
+              id={`package-${index}.insuranceOptions.insuredValue`}
+              name={`package-${index}.insuranceOptions.insuredValue`}
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="0"
+              required
+              disabled={isPending}
+            />
+          </div>
+        )}
+        <div
+          className={`gap-2 col-span-3 md:col-span-1 ${
+            selectedInsuranceProvider === "none" ? "md:col-start-3" : ""
+          }`}
+        >
+          <Label htmlFor={`package-${index}.confirmation`}>Confirmation</Label>
           <Select
             name={`package-${index}.confirmation`}
             disabled={isPending}
@@ -532,20 +587,18 @@ function Package({
             </SelectContent>
           </Select>
         </div>
-        <div className="pt-2 gap-2 col-span-3 md:col-span-1">
-          <div className="flex items-center justify-between space-x-2">
-            <Label htmlFor={`package-${index}.save`}>
-              {selectedPackageId !== "new-package" ? "Update" : "Save"} this
-              package?
-            </Label>
-            <Switch
-              id={`package-${index}.save`}
-              name={`package-${index}.save`}
-            />
-          </div>
+        <div className="grid gap-1 col-span-full md:col-span-1">
+          <SwitchLabel
+            name={`package-${index}.saturday_delivery`}
+            title="Saturday Delivery?"
+          />
+          <SwitchLabel
+            name={`package-${index}.save`}
+            title="Save this package?"
+          />
         </div>
-        <div className="flex items-center justify-between md:gap-2 col-span-3 md:col-span-1 md:col-start-4">
-          <Label className="font-semibold">Price:</Label>
+        <div className="flex items-center justify-between md:gap-2 col-span-3 md:col-span-1">
+          <Label className="text-xl font-semibold">Price:</Label>
           {priceContent}
         </div>
         <div className="col-span-full md:col-span-1 md:col-start-4">

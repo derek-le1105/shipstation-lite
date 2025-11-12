@@ -22,6 +22,7 @@ import {
 } from "@/lib/shipstation/client";
 import {
   CreateOrderPayload,
+  InsuranceOption,
   ShipStationOrder,
   ShipStationOrderLabel,
   type ShipStationAddress,
@@ -288,7 +289,7 @@ export async function createShippingLabelAction(
         orderDate: new Date().toISOString(),
         orderStatus: "awaiting_shipment",
       });
-      console.log("Created order in ShipStation:", createOrderResponse.orderId);
+      //console.log("Created order in ShipStation:", createOrderResponse.orderId);
       if (!createOrderResponse) {
         throw new Error("Failed to create order in ShipStation.");
       }
@@ -299,41 +300,46 @@ export async function createShippingLabelAction(
         const prefix = `package-${index}`;
         try {
           let labelResponse: ShipStationLabel | ShipStationOrderLabel;
+          const insuranceOption = processInsuranceOption(formData, prefix);
           const { weight, dimensions } = await processPackageMode(
             prefix,
             formData,
             profile
           );
-
           if (orderNumber && createOrderResponse) {
             labelResponse = await createLabelForOrder({
               orderId: createOrderResponse.orderId,
+              shipDate: new Date().toISOString(),
+              testLabel: false,
               carrierCode,
               serviceCode,
               packageCode: PACKAGE_CODE,
               confirmation: CONFIRMATION,
-              shipDate: new Date().toISOString(),
               weight,
               dimensions,
-              testLabel: false,
+              ...(insuranceOption && { insuranceOptions: insuranceOption }),
             });
-            console.log("Label response for order:", labelResponse.shipmentId);
           } else {
             labelResponse = await createLabel({
+              shipFrom,
+              shipTo,
               carrierCode,
               serviceCode,
               packageCode: PACKAGE_CODE,
               confirmation: CONFIRMATION,
-              shipFrom,
-              shipTo,
               weight,
               dimensions,
+              ...(insuranceOption && { insuranceOptions: insuranceOption }),
             });
           }
 
           const upchargedShipmentCost = calculateUpchargeCost(
             upcharge,
             labelResponse.shipmentCost
+          );
+          const upchargedInsuranceCost = calculateUpchargeCost(
+            upcharge,
+            labelResponse.insuranceCost
           );
 
           try {
@@ -356,7 +362,7 @@ export async function createShippingLabelAction(
               shipment_cost: labelResponse.shipmentCost ?? null,
               insurance_cost: labelResponse.insuranceCost ?? null,
               total_shipment_cost: upchargedShipmentCost,
-              total_insurance_cost: labelResponse.insuranceCost ?? null,
+              total_insurance_cost: upchargedInsuranceCost,
               tracking_number: labelResponse.trackingNumber ?? null,
               label_data_base64: labelResponse.labelData ?? null,
               shipment_id: labelResponse.shipmentId,
@@ -467,6 +473,31 @@ async function createShipStationOrder(payload: CreateOrderPayload) {
     }
   }
   return createOrder(payload);
+}
+
+function processInsuranceOption(
+  formData: FormData,
+  prefix: string
+): InsuranceOption | undefined {
+  const provider = formData.get(
+    `${prefix}.insuranceOptions.provider`
+  ) as string as InsuranceOption["provider"];
+  if (typeof provider !== "string" || provider === "none") {
+    return undefined;
+  }
+
+  const insuredValue = Number(
+    formData.get(`${prefix}.insuranceOptions.insuredValue`)
+  );
+  if (!Number.isFinite(insuredValue) || insuredValue <= 0) {
+    return undefined;
+  }
+
+  return {
+    provider,
+    insureShipment: true,
+    insuredValue,
+  };
 }
 
 function calculateUpchargeCost(

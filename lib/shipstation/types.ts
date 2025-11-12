@@ -98,10 +98,26 @@ export type ShipStationLabel = {
     height: number;
     units: "inches" | "centimeters";
   };
-  insuranceOptions?: unknown;
+  insuranceOptions?: InsuranceOption;
   advancedOptions?: unknown;
   shipmentItems?: unknown[];
   labelData?: string;
+};
+
+/**
+ * Insurance related types
+ * Per BF: Only 'none' and 'carrier'
+ */
+type InsuranceProvider = "none" | "carrier";
+// | "shipsurance"
+// | "provider"
+// | "xcover"
+// | "parcelguard";
+
+export type InsuranceOption = {
+  provider: InsuranceProvider;
+  insureShipment: boolean;
+  insuredValue: number;
 };
 
 export type ShipStationCarrier = {
@@ -235,10 +251,7 @@ export type CreateLabelPayload = {
   };
   //testLabel?: boolean;
   externalOrderId?: string;
-  insuranceOptions?: {
-    insureShipment: boolean;
-    insuredValue: number;
-  };
+  insuranceOptions?: InsuranceOption;
 };
 
 export type ShipStationOrder = {
