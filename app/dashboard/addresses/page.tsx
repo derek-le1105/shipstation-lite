@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 
 import { AddressManager } from "@/components/dashboard/address-manager";
 import { getCurrentProfile } from "@/lib/auth";
-import { listAddresses } from "@/lib/supabase/addresses";
+import { listUserAddresses } from "@/lib/supabase/addresses";
 
 export const metadata = {
   title: "UNS Shipping Manager - Addresses",
@@ -16,8 +16,8 @@ export default async function AddressPage() {
   }
 
   const [shipFromAddresses, shipToAddresses] = await Promise.all([
-    listAddresses(profile.id, "ship_from"),
-    listAddresses(profile.id, "ship_to"),
+    listUserAddresses(profile.id, "ship_from"),
+    listUserAddresses(profile.id, "ship_to"),
   ]);
 
   return (

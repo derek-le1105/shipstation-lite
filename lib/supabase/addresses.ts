@@ -31,7 +31,7 @@ async function getClient(
   return createClient();
 }
 
-export async function listAddresses(
+export async function listUserAddresses(
   userId: string,
   kind?: AddressRecord["address_kind"],
   client?: ServerSupabaseClient
