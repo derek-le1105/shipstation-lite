@@ -589,7 +589,7 @@ function Package({
         </div>
         <div className="grid gap-1 col-span-full md:col-span-1">
           <SwitchLabel
-            name={`package-${index}.saturday_delivery`}
+            name={`package-${index}.advancedOptions.saturday_delivery`}
             title="Saturday Delivery?"
           />
           <SwitchLabel

@@ -21,6 +21,7 @@ import {
   voidLabel,
 } from "@/lib/shipstation/client";
 import {
+  AdvancedOptions,
   CreateOrderPayload,
   InsuranceOption,
   ShipStationOrder,
@@ -289,7 +290,6 @@ export async function createShippingLabelAction(
         orderDate: new Date().toISOString(),
         orderStatus: "awaiting_shipment",
       });
-      //console.log("Created order in ShipStation:", createOrderResponse.orderId);
       if (!createOrderResponse) {
         throw new Error("Failed to create order in ShipStation.");
       }
@@ -300,7 +300,8 @@ export async function createShippingLabelAction(
         const prefix = `package-${index}`;
         try {
           let labelResponse: ShipStationLabel | ShipStationOrderLabel;
-          const insuranceOption = processInsuranceOption(formData, prefix);
+          const insuranceOptions = processInsuranceOption(formData, prefix);
+          const advancedOptions = processAdvancedOptions(formData, prefix);
           const { weight, dimensions } = await processPackageMode(
             prefix,
             formData,
@@ -317,7 +318,8 @@ export async function createShippingLabelAction(
               confirmation: CONFIRMATION,
               weight,
               dimensions,
-              ...(insuranceOption && { insuranceOptions: insuranceOption }),
+              ...(insuranceOptions && { insuranceOptions }),
+              ...(advancedOptions && { advancedOptions }),
             });
           } else {
             labelResponse = await createLabel({
@@ -329,7 +331,8 @@ export async function createShippingLabelAction(
               confirmation: CONFIRMATION,
               weight,
               dimensions,
-              ...(insuranceOption && { insuranceOptions: insuranceOption }),
+              ...(insuranceOptions && { insuranceOptions }),
+              ...(advancedOptions && { advancedOptions }),
             });
           }
 
@@ -370,6 +373,14 @@ export async function createShippingLabelAction(
               voided_at: null,
               order_number: orderNumber,
               is_address_validated: addressValidated,
+              insurance_options: insuranceOptions ?? {
+                provider: "none",
+                insureShipment: false,
+                insuredValue: 0,
+              },
+              advanced_options: advancedOptions ?? {
+                saturdayDelivery: false,
+              },
             });
 
             return {
@@ -498,6 +509,20 @@ function processInsuranceOption(
     insureShipment: true,
     insuredValue,
   };
+}
+
+function processAdvancedOptions(
+  formData: FormData,
+  prefix: string
+): AdvancedOptions | undefined {
+  const options: AdvancedOptions = { saturdayDelivery: false };
+  const saturdayDelivery = formData.get(
+    `${prefix}.advancedOptions.saturday_delivery`
+  );
+  if (saturdayDelivery === "on") options.saturdayDelivery = true;
+
+  if (Object.keys(options).length === 0) return undefined;
+  return options;
 }
 
 function calculateUpchargeCost(
