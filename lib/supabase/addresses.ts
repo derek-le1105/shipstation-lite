@@ -31,6 +31,23 @@ async function getClient(
   return createClient();
 }
 
+export async function listAllAddresses(
+  client?: ServerSupabaseClient
+): Promise<AddressRecord[]> {
+  const supabase = await getClient(client);
+
+  const { data, error } = await supabase
+    .from("addresses")
+    .select("*")
+    .order("created_at", {
+      ascending: false,
+    });
+  if (error) {
+    throw error;
+  }
+  return (data ?? []) as AddressRecord[];
+}
+
 export async function listUserAddresses(
   userId: string,
   kind?: AddressRecord["address_kind"],
