@@ -1,3 +1,4 @@
+import { AdvancedOptions, InsuranceOption } from "../shipstation/types";
 import { createClient } from "./server";
 
 type ServerSupabaseClient = Awaited<ReturnType<typeof createClient>>;
@@ -44,13 +45,21 @@ export type ShippingLabelRecord = {
   voided_at: string | null;
   order_number?: string | null;
   is_address_validated: boolean;
+  insurance_options: InsuranceOption | null;
+  advanced_options: AdvancedOptions | null;
 };
 
 type ShippingLabelInsert = Omit<
   ShippingLabelRecord,
-  "id" | "created_at" | "label_data_base64"
+  | "id"
+  | "created_at"
+  | "label_data_base64"
+  | "insurance_options"
+  | "advanced_options"
 > & {
   label_data_base64?: string | null;
+  insurance_options?: InsuranceOption | null;
+  advanced_options?: AdvancedOptions | null;
 };
 
 export type ShippingLabelWithProfile = ShippingLabelRecord & {

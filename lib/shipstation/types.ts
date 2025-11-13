@@ -98,10 +98,26 @@ export type ShipStationLabel = {
     height: number;
     units: "inches" | "centimeters";
   };
-  insuranceOptions?: unknown;
+  insuranceOptions?: InsuranceOption;
   advancedOptions?: unknown;
   shipmentItems?: unknown[];
   labelData?: string;
+};
+
+/**
+ * Insurance related types
+ * Per BF: Only 'none' and 'carrier'
+ */
+type InsuranceProvider = "none" | "carrier";
+// | "shipsurance"
+// | "provider"
+// | "xcover"
+// | "parcelguard";
+
+export type InsuranceOption = {
+  provider: InsuranceProvider;
+  insureShipment: boolean;
+  insuredValue: number;
 };
 
 export type ShipStationCarrier = {
@@ -200,7 +216,7 @@ export type CreateOrderPayload = {
   insuranceOptions?: InsuranceOptions;
   internationalOptions?: InternationalOptions;
   customsCountryCode?: string;
-  advancedOptions?: unknown;
+  advancedOptions?: AdvancedOptions;
   tagIds?: number[];
 };
 
@@ -235,10 +251,8 @@ export type CreateLabelPayload = {
   };
   //testLabel?: boolean;
   externalOrderId?: string;
-  insuranceOptions?: {
-    insureShipment: boolean;
-    insuredValue: number;
-  };
+  insuranceOptions?: InsuranceOption;
+  advancedOptions?: AdvancedOptions;
 };
 
 export type ShipStationOrder = {
@@ -277,31 +291,31 @@ export type ShipStationOrder = {
   dimensions: ShipStationDimensions;
   insuranceOptions: InsuranceOptions;
   internationalOptions: InternationalOptions;
-  advancedOptions: AdvancedOptions;
+  advancedOptions?: AdvancedOptions;
   tagIds: null;
   userId: null;
   externallyFulfilled: boolean;
   externallyFulfilledBy: null;
 };
 
-interface AdvancedOptions {
-  warehouseId: number;
-  nonMachinable: boolean;
-  saturdayDelivery: boolean;
-  containsAlcohol: boolean;
-  mergedOrSplit: boolean;
-  mergedIds: unknown[];
-  parentId: null;
-  storeId: number;
-  customField1: string;
-  customField2: string;
-  customField3: string;
-  source: string;
-  billToParty: null;
-  billToAccount: null;
-  billToPostalCode: null;
-  billToCountryCode: null;
-}
+export type AdvancedOptions = {
+  warehouseId?: number | null;
+  nonMachinable?: boolean | null;
+  saturdayDelivery: boolean | null;
+  containsAlcohol?: boolean | null;
+  mergedOrSplit?: boolean | null;
+  mergedIds?: string[] | null;
+  parentId?: null;
+  storeId?: number | null;
+  customField1?: string | null;
+  customField2?: string | null;
+  customField3?: string | null;
+  source?: string | null;
+  billToParty?: null;
+  billToAccount?: null;
+  billToPostalCode?: null;
+  billToCountryCode?: null;
+};
 
 export type ShipStationOrderItem = {
   orderItemId: number;

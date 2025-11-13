@@ -145,6 +145,7 @@ export type Database = {
       };
       shipping_labels: {
         Row: {
+          advanced_options: Json | null;
           carrier_code: string;
           confirmation: string | null;
           created_at: string;
@@ -152,6 +153,7 @@ export type Database = {
           height: number;
           id: string;
           insurance_cost: number | null;
+          insurance_options: Json | null;
           is_address_validated: boolean;
           label_data_base64: string | null;
           length: number;
@@ -175,6 +177,7 @@ export type Database = {
           width: number;
         };
         Insert: {
+          advanced_options?: Json | null;
           carrier_code: string;
           confirmation?: string | null;
           created_at?: string;
@@ -182,6 +185,7 @@ export type Database = {
           height?: number;
           id?: string;
           insurance_cost?: number | null;
+          insurance_options?: Json | null;
           is_address_validated?: boolean;
           label_data_base64?: string | null;
           length?: number;
@@ -205,6 +209,7 @@ export type Database = {
           width?: number;
         };
         Update: {
+          advanced_options?: Json | null;
           carrier_code?: string;
           confirmation?: string | null;
           created_at?: string;
@@ -212,6 +217,7 @@ export type Database = {
           height?: number;
           id?: string;
           insurance_cost?: number | null;
+          insurance_options?: Json | null;
           is_address_validated?: boolean;
           label_data_base64?: string | null;
           length?: number;
