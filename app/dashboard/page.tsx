@@ -4,7 +4,10 @@ import { AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getCurrentProfile } from "@/lib/auth";
-import { listAddresses, type AddressRecord } from "@/lib/supabase/addresses";
+import {
+  listUserAddresses,
+  type AddressRecord,
+} from "@/lib/supabase/addresses";
 import { listShippingLabelsForUser } from "@/lib/supabase/shipping-labels";
 import { listCarriers } from "@/lib/shipstation/client";
 import {
@@ -83,8 +86,8 @@ export default async function DashboardPage() {
   }
   const [savedFromAddresses, savedToAddresses, savedPackages, labels] =
     await Promise.all([
-      listAddresses(profile.id, "ship_from"),
-      listAddresses(profile.id, "ship_to"),
+      listUserAddresses(profile.id, "ship_from"),
+      listUserAddresses(profile.id, "ship_to"),
       listPackages(profile.id),
       listShippingLabelsForUser(profile.id),
     ]);

@@ -31,7 +31,24 @@ async function getClient(
   return createClient();
 }
 
-export async function listAddresses(
+export async function listAllAddresses(
+  client?: ServerSupabaseClient
+): Promise<AddressRecord[]> {
+  const supabase = await getClient(client);
+
+  const { data, error } = await supabase
+    .from("addresses")
+    .select("*")
+    .order("created_at", {
+      ascending: false,
+    });
+  if (error) {
+    throw error;
+  }
+  return (data ?? []) as AddressRecord[];
+}
+
+export async function listUserAddresses(
   userId: string,
   kind?: AddressRecord["address_kind"],
   client?: ServerSupabaseClient
@@ -82,6 +99,33 @@ export async function createAddress(
   return data as AddressRecord;
 }
 
+/**
+ * Get an address by its ID.
+ * @param id Address ID
+ * @returns Address record or null
+ */
+export async function getAddress(id: string): Promise<AddressRecord | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("addresses")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return (data as AddressRecord | null) ?? null;
+}
+
+/**
+ * Get an address by its ID and user's ID.
+ * @param id Address ID
+ * @param userId User ID
+ * @param client Supabase client
+ * @returns Address record or null
+ */
 export async function getAddressById(
   id: string,
   userId: string,
