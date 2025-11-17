@@ -77,7 +77,10 @@ const NAV_MAIN: Navigation[] = [
     isActive: true,
     isEnabled: true,
     requiredRole: "admin",
-    items: [{ title: "Users", url: "/admin/users", enabled: true }],
+    items: [
+      { title: "Users", url: "/admin/users", enabled: true },
+      { title: "Addresses", url: "/admin/addresses", enabled: true },
+    ],
   },
 ];
 
