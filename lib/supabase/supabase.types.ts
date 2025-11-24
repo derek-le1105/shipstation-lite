@@ -159,6 +159,7 @@ export type Database = {
           length: number;
           order_number: string | null;
           package_code: string | null;
+          paid: boolean;
           service_code: string;
           ship_from_snapshot: Json;
           ship_to_snapshot: Json;
@@ -191,6 +192,7 @@ export type Database = {
           length?: number;
           order_number?: string | null;
           package_code?: string | null;
+          paid?: boolean;
           service_code: string;
           ship_from_snapshot: Json;
           ship_to_snapshot: Json;
@@ -223,6 +225,7 @@ export type Database = {
           length?: number;
           order_number?: string | null;
           package_code?: string | null;
+          paid?: boolean;
           service_code?: string;
           ship_from_snapshot?: Json;
           ship_to_snapshot?: Json;
