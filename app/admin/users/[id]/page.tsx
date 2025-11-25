@@ -113,7 +113,10 @@ export default async function UserPage({
                     </Badge>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <DetailTile label="Total" value={formatCurrency(lastLabelTotal)} />
+                    <DetailTile
+                      label="Total"
+                      value={formatCurrency(lastLabelTotal)}
+                    />
                     <DetailTile
                       label="Shipment ID"
                       value={String(mostRecentLabel.shipment_id)}
@@ -151,16 +154,14 @@ export default async function UserPage({
             </CardContent>
           </Card>
           <Card className="md:col-span-1">
-            <CardHeader className="py-4">
-              <CardTitle className="flex justify-between items-center">
-                User
-                <UserForm
-                  action={updateProfileAction}
-                  user={user}
-                  upcharge={userUpcharge}
-                  icon={<UserPen />}
-                />
-              </CardTitle>
+            <CardHeader className="pb-3 flex flex-row items-center justify-between gap-3">
+              <CardTitle>User</CardTitle>
+              <UserForm
+                action={updateProfileAction}
+                user={user}
+                upcharge={userUpcharge}
+                icon={<UserPen />}
+              />
             </CardHeader>
             <CardContent>
               <UserInformation user={user} upcharge={userUpcharge} />
