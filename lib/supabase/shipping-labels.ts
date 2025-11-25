@@ -47,6 +47,7 @@ export type ShippingLabelRecord = {
   is_address_validated: boolean;
   insurance_options: InsuranceOption | null;
   advanced_options: AdvancedOptions | null;
+  paid?: boolean;
 };
 
 type ShippingLabelInsert = Omit<
@@ -68,6 +69,12 @@ export type ShippingLabelWithProfile = ShippingLabelRecord & {
     full_name: string | null;
     role: string | null;
   };
+};
+
+export type UserLabelStats = {
+  totalSpent: number;
+  totalPaid: number;
+  labelCount: number;
 };
 
 const SHIPPING_LABEL_COLUMNS = [
@@ -153,6 +160,40 @@ export async function getShippingLabel(
     throw error;
   }
   return data as ShippingLabelRecord | null;
+}
+
+export async function getUserLabelStats(
+  userId: string,
+  client?: ServerSupabaseClient
+): Promise<UserLabelStats> {
+  const supabase = await getClient(client);
+  const { data, error } = await supabase
+    .from("shipping_labels")
+    .select("total_shipment_cost,total_insurance_cost,paid")
+    .eq("user_id", userId);
+
+  if (error) {
+    throw error;
+  }
+
+  const stats = (data ?? []).reduce<UserLabelStats>(
+    (acc, label) => {
+      const shipmentCost = Number(label.total_shipment_cost) || 0;
+      const insuranceCost = Number(label.total_insurance_cost) || 0;
+      const total = shipmentCost + insuranceCost;
+
+      acc.totalSpent += total;
+      if (label.paid) {
+        acc.totalPaid += total;
+      }
+      acc.labelCount += 1;
+
+      return acc;
+    },
+    { totalSpent: 0, totalPaid: 0, labelCount: 0 }
+  );
+
+  return stats;
 }
 
 export async function getShippingLabelById(
