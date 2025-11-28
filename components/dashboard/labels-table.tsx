@@ -65,6 +65,17 @@ import {
   HoverCardTrigger,
 } from "../ui/hover-card";
 import { StatusBadge } from "./status-badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../ui/alert-dialog";
 
 type ColumnOptions = {
   showUserId?: boolean;
@@ -158,12 +169,12 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
     },
     {
       accessorKey: "created_at",
-      header: "Created At",
+      header: () => <div className="text-center">Created At</div>,
       cell: ({ row }) => {
         const date = new Date(row.getValue("created_at"));
 
         return (
-          <div className="text-center font-medium">
+          <div className="text-center items-center justify-center font-medium">
             <div>
               {Intl.DateTimeFormat("en-US", {
                 dateStyle: "medium",
@@ -185,10 +196,10 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
     },
     {
       accessorKey: "tracking_number",
-      header: () => <div className="text-right">Tracking Number</div>,
+      header: "Tracking #",
       cell: ({ row }) => {
         return (
-          <div className="text-right font-medium underline">
+          <div className="font-medium hover:underline">
             <a
               href={generateTrackingLink(row.getValue("tracking_number"))}
               target="_blank"
@@ -233,33 +244,33 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
         return <div className="text-right font-medium">{formatted}</div>;
       },
     },
-    {
-      accessorKey: "label_data_base64",
-      header: () => <div className="text-right">Label PDF</div>,
-      cell: ({ row }) => {
-        const label = row.getValue("label_data_base64") as string;
-        return (
-          <div className="flex justify-end">
-            <Button
-              size="sm"
-              className="w-full md:w-auto"
-              disabled={!label}
-              onClick={async () => {
-                try {
-                  await printLabels([label as string]);
-                } catch (e) {
-                  toast.error(
-                    e instanceof Error ? e.message : "Unable to print label"
-                  );
-                }
-              }}
-            >
-              <Printer className="mr-2 h-4 w-4" /> Print
-            </Button>
-          </div>
-        );
-      },
-    },
+    // {
+    //   accessorKey: "label_data_base64",
+    //   header: () => <div className="text-right">Label PDF</div>,
+    //   cell: ({ row }) => {
+    //     const label = row.getValue("label_data_base64") as string;
+    //     return (
+    //       <div className="flex justify-end">
+    //         <Button
+    //           size="sm"
+    //           className="w-full md:w-auto"
+    //           disabled={!label}
+    //           onClick={async () => {
+    //             try {
+    //               await printLabels([label as string]);
+    //             } catch (e) {
+    //               toast.error(
+    //                 e instanceof Error ? e.message : "Unable to print label"
+    //               );
+    //             }
+    //           }}
+    //         >
+    //           <Printer className="mr-2 h-4 w-4" /> Print
+    //         </Button>
+    //       </div>
+    //     );
+    //   },
+    // },
   ];
 
   return baseColumns;
@@ -302,6 +313,80 @@ export function LabelsTable<T>({
       globalFilter,
     },
   });
+
+  const handlePrintClick = async () => {
+    const selectedLabelsPDFs = table
+      .getSelectedRowModel()
+      .rows.map(
+        (row) => (row.original as ShippingLabelRecord).label_data_base64
+      );
+    await printLabels(selectedLabelsPDFs);
+  };
+
+  const handleVoidClick = async () => {
+    const selectedLabels = table
+      .getSelectedRowModel()
+      .rows.map((row) => row.original as ShippingLabelRecord)
+      .filter((label) => !label.voided);
+
+    if (selectedLabels.length === 0) {
+      toast.error("No active labels selected to void.");
+      return;
+    }
+
+    try {
+      const responses = await Promise.all(
+        selectedLabels.map(async (label) => {
+          const res = await fetch("/api/admin/voidlabel", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ shipment_id: label.shipment_id }),
+          });
+
+          if (!res.ok) {
+            const data = (await res.json().catch(() => null)) as
+              | { message?: string }
+              | null;
+            return {
+              success: false,
+              shipment_id: label.shipment_id,
+              message: data?.message,
+            };
+          }
+
+          return (await res.json().catch(() => ({
+            success: false,
+            shipment_id: label.shipment_id,
+            message: "Unexpected response from server.",
+          }))) as {
+            success: boolean;
+            shipment_id: number;
+            message?: string;
+          };
+        })
+      );
+
+      const failures = responses.filter((response) => !response.success);
+
+      if (failures.length === 0) {
+        toast.success(
+          `Successfully voided ${responses.length} label${
+            responses.length === 1 ? "" : "s"
+          }!`
+        );
+        router.refresh();
+        return;
+      }
+
+      failures.forEach((response) =>
+        toast.error(
+          response.message ?? `Failed to void ${response.shipment_id}`
+        )
+      );
+    } catch (error) {
+      toast.error("Unable to void labels right now. Please try again.");
+    }
+  };
 
   const exportToFile = (type: "csv" | "excel" | "json") => {
     const selectedRows = table.getSelectedRowModel().rows;
@@ -363,39 +448,61 @@ export function LabelsTable<T>({
             className="max-w-sm"
           />
         </div>
-        <div className="flex items-center space-x-2">
-          <div className="text-muted-foreground text-sm">
-            {table.getSelectedRowModel().rows.length > 0 && (
-              <span className="mr-2">
-                {table.getSelectedRowModel().rows.length} of{" "}
-                {table.getFilteredRowModel().rows.length} row(s) selected
-              </span>
-            )}
+
+        {table.getSelectedRowModel().rows.length > 0 && (
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" onClick={handlePrintClick}>
+              Print
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  Void Labels
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Voiding {table.getSelectedRowModel().rows.length} labels
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. Please ensure that you want to
+                    void this label.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleVoidClick}>
+                    Continue
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <DownloadIcon className="mr-2 h-4 w-4" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => exportToFile("csv")}>
+                  <FileTextIcon className="mr-2 h-4 w-4" />
+                  Export as CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportToFile("excel")}>
+                  <FileSpreadsheetIcon className="mr-2 h-4 w-4" />
+                  Export as Excel
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => exportToFile("json")}>
+                  <FileTextIcon className="mr-2 h-4 w-4" />
+                  Export as JSON
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <DownloadIcon className="mr-2 h-4 w-4" />
-                Export
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => exportToFile("csv")}>
-                <FileTextIcon className="mr-2 h-4 w-4" />
-                Export as CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => exportToFile("excel")}>
-                <FileSpreadsheetIcon className="mr-2 h-4 w-4" />
-                Export as Excel
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => exportToFile("json")}>
-                <FileTextIcon className="mr-2 h-4 w-4" />
-                Export as JSON
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        )}
       </div>
       <div className="bg-card rounded-md border">
         <Table>
@@ -448,6 +555,30 @@ export function LabelsTable<T>({
             )}
           </TableBody>
         </Table>
+      </div>
+      <div className="flex items-center justify-end space-x-2 py-4">
+        <div className="text-muted-foreground flex-1 text-sm">
+          {table.getFilteredSelectedRowModel().rows.length} of{" "}
+          {table.getFilteredRowModel().rows.length} row(s) selected.
+        </div>
+        <div className="space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            Next
+          </Button>
+        </div>
       </div>
     </div>
   );
