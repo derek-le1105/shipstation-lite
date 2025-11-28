@@ -66,186 +66,214 @@ import {
 } from "../ui/hover-card";
 import { StatusBadge } from "./status-badge";
 
-export const columns = <T,>(): ColumnDef<T>[] => [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
+type ColumnOptions = {
+  showUserId?: boolean;
+};
+
+export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
+  const baseColumns: ColumnDef<T>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: "shipment_id",
+      header: "Shipment ID",
+      cell: ({ row }) => (
+        <div className="font-medium">{row.getValue("shipment_id")}</div>
+      ),
+    },
+    ...(options?.showUserId
+      ? ([
+          {
+            accessorKey: "user_id",
+            header: "User",
+            cell: ({ row }) => {
+              const { profiles } = row.original as {
+                profiles: { full_name: string };
+              };
+              return (
+                <div className="font-medium">{profiles?.full_name ?? "-"}</div>
+              );
+            },
+          } satisfies ColumnDef<T>,
+        ] as ColumnDef<T>[])
+      : []),
+    {
+      accessorKey: "service_code",
+      header: "Service",
+      cell: ({ row }) => (
+        <div className="font-medium">
+          {
+            FEDEX_SERVICES.find(
+              (service) => service.code === row.getValue("service_code")
+            )?.name
+          }
+        </div>
+      ),
+    },
+    {
+      accessorKey: "ship_from_snapshot",
+      header: "Origin City",
+      cell: ({ row }) => {
+        const shipFromSnapshot = row.getValue(
+          "ship_from_snapshot"
+        ) as ShippingLabelRecord["ship_from_snapshot"];
+        if (!shipFromSnapshot) {
+          return "-";
         }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: "shipment_id",
-    header: "Shipment ID",
-    cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("shipment_id")}</div>
-    ),
-  },
-  {
-    accessorKey: "service_code",
-    header: "Service",
-    cell: ({ row }) => (
-      <div className="font-medium">
-        {
-          FEDEX_SERVICES.find(
-            (service) => service.code === row.getValue("service_code")
-          )?.name
+        return <ShippingSnapShotHoverCard {...shipFromSnapshot} />;
+      },
+    },
+    {
+      accessorKey: "ship_to_snapshot",
+      header: "Delivery City",
+      cell: ({ row }) => {
+        const shipToSnapshot = row.getValue(
+          "ship_to_snapshot"
+        ) as ShippingLabelRecord["ship_to_snapshot"];
+        if (!shipToSnapshot) {
+          return "-";
         }
-      </div>
-    ),
-  },
-  {
-    accessorKey: "ship_from_snapshot",
-    header: "Origin City",
-    cell: ({ row }) => {
-      const shipFromSnapshot = row.getValue(
-        "ship_from_snapshot"
-      ) as ShippingLabelRecord["ship_from_snapshot"];
-      if (!shipFromSnapshot) {
-        return "—";
-      }
-      return <ShippingSnapShotHoverCard {...shipFromSnapshot} />;
+        return <ShippingSnapShotHoverCard {...shipToSnapshot} />;
+      },
     },
-  },
-  {
-    accessorKey: "ship_to_snapshot",
-    header: "Delivery City",
-    cell: ({ row }) => {
-      const shipToSnapshot = row.getValue(
-        "ship_to_snapshot"
-      ) as ShippingLabelRecord["ship_to_snapshot"];
-      if (!shipToSnapshot) {
-        return "—";
-      }
-      return <ShippingSnapShotHoverCard {...shipToSnapshot} />;
-    },
-  },
-  {
-    accessorKey: "created_at",
-    header: "Created At",
-    cell: ({ row }) => {
-      const date = new Date(row.getValue("created_at"));
+    {
+      accessorKey: "created_at",
+      header: "Created At",
+      cell: ({ row }) => {
+        const date = new Date(row.getValue("created_at"));
 
-      return (
-        <div className="text-center font-medium">
-          <div>
-            {Intl.DateTimeFormat("en-US", {
-              dateStyle: "medium",
-            }).format(date)}
+        return (
+          <div className="text-center font-medium">
+            <div>
+              {Intl.DateTimeFormat("en-US", {
+                dateStyle: "medium",
+              }).format(date)}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {Intl.DateTimeFormat("en-US", {
+                timeStyle: "short",
+              }).format(date)}
+            </div>
           </div>
-          <div className="text-xs text-muted-foreground">
-            {Intl.DateTimeFormat("en-US", {
-              timeStyle: "short",
-            }).format(date)}
+        );
+      },
+    },
+    {
+      accessorKey: "voided",
+      header: "Active?",
+      cell: ({ row }) => <StatusBadge voided={row.getValue("voided")} />,
+    },
+    {
+      accessorKey: "tracking_number",
+      header: () => <div className="text-right">Tracking Number</div>,
+      cell: ({ row }) => {
+        return (
+          <div className="text-right font-medium underline">
+            <a
+              href={generateTrackingLink(row.getValue("tracking_number"))}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {row.getValue("tracking_number")}
+            </a>
           </div>
-        </div>
-      );
+        );
+      },
     },
-  },
-  {
-    accessorKey: "voided",
-    header: "Active?",
-    cell: ({ row }) => <StatusBadge voided={row.getValue("voided")} />,
-  },
-  {
-    accessorKey: "tracking_number",
-    header: () => <div className="text-right">Tracking Number</div>,
-    cell: ({ row }) => {
-      return (
-        <div className="text-right font-medium underline">
-          <a
-            href={generateTrackingLink(row.getValue("tracking_number"))}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {row.getValue("tracking_number")}
-          </a>
-        </div>
-      );
-    },
-  },
-  {
-    id: "package_dimensions", // Use 'id' instead of 'accessorKey' for virtual columns
-    header: () => <div className="text-center">Package Dimensions</div>,
-    cell: ({ row }) => {
-      const original = row.original as ShippingLabelRecord;
-      const { length, width, height, units, weight_value, weight_unit } =
-        original;
+    {
+      id: "package_dimensions", // Use 'id' instead of 'accessorKey' for virtual columns
+      header: () => <div className="text-center">Package Dimensions</div>,
+      cell: ({ row }) => {
+        const original = row.original as ShippingLabelRecord;
+        const { length, width, height, units, weight_value, weight_unit } =
+          original;
 
-      const dimensions = `${length} × ${width} × ${height} ${units}`;
-      const weight = `${weight_value} ${weight_unit}`;
+        const dimensions = `${length} x ${width} x ${height} ${units}`;
+        const weight = `${weight_value} ${weight_unit}`;
 
-      return (
-        <div className="text-center font-medium">
-          <div>{dimensions}</div>
-          <div className="text-xs text-muted-foreground">{weight}</div>
-        </div>
-      );
+        return (
+          <div className="text-center font-medium">
+            <div>{dimensions}</div>
+            <div className="text-xs text-muted-foreground">{weight}</div>
+          </div>
+        );
+      },
     },
-  },
-  {
-    accessorKey: "total_shipment_cost",
-    header: () => <div className="text-right">Total Cost</div>,
-    cell: ({ row }) => {
-      const shipmentCost = parseFloat(row.getValue("total_shipment_cost"));
-      const insuranceCost = (row.original as ShippingLabelRecord)
-        ?.total_insurance_cost;
-      const formatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(shipmentCost + insuranceCost);
-      return <div className="text-right font-medium">{formatted}</div>;
+    {
+      accessorKey: "total_shipment_cost",
+      header: () => <div className="text-right">Total Cost</div>,
+      cell: ({ row }) => {
+        const shipmentCost = parseFloat(row.getValue("total_shipment_cost"));
+        const insuranceCost = (row.original as ShippingLabelRecord)
+          ?.total_insurance_cost;
+        const formatted = new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+        }).format(shipmentCost + insuranceCost);
+        return <div className="text-right font-medium">{formatted}</div>;
+      },
     },
-  },
-  {
-    accessorKey: "label_data_base64",
-    header: () => <div className="text-right">Label PDF</div>,
-    cell: ({ row }) => {
-      const label = row.getValue("label_data_base64") as string;
-      return (
-        <div className="flex justify-end">
-          <Button
-            size="sm"
-            className="w-full md:w-auto"
-            disabled={!label}
-            onClick={async () => {
-              try {
-                await printLabels([label as string]);
-              } catch (e) {
-                toast.error(
-                  e instanceof Error ? e.message : "Unable to print label"
-                );
-              }
-            }}
-          >
-            <Printer className="mr-2 h-4 w-4" /> Print
-          </Button>
-        </div>
-      );
+    {
+      accessorKey: "label_data_base64",
+      header: () => <div className="text-right">Label PDF</div>,
+      cell: ({ row }) => {
+        const label = row.getValue("label_data_base64") as string;
+        return (
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              className="w-full md:w-auto"
+              disabled={!label}
+              onClick={async () => {
+                try {
+                  await printLabels([label as string]);
+                } catch (e) {
+                  toast.error(
+                    e instanceof Error ? e.message : "Unable to print label"
+                  );
+                }
+              }}
+            >
+              <Printer className="mr-2 h-4 w-4" /> Print
+            </Button>
+          </div>
+        );
+      },
     },
-  },
-];
+  ];
+
+  return baseColumns;
+};
 
 interface LabelsTableProps<T> {
   labels: T[];
+  showUserId?: boolean;
 }
 
-export function LabelsTable<T>({ labels }: LabelsTableProps<T>) {
+export function LabelsTable<T>({
+  labels,
+  showUserId = false,
+}: LabelsTableProps<T>) {
   const router = useRouter();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -255,7 +283,7 @@ export function LabelsTable<T>({ labels }: LabelsTableProps<T>) {
 
   const table = useReactTable<T>({
     data: labels,
-    columns: columns<T>(),
+    columns: columns<T>({ showUserId }),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -411,7 +439,7 @@ export function LabelsTable<T>({ labels }: LabelsTableProps<T>) {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length}
+                  colSpan={table.getVisibleLeafColumns().length}
                   className="h-24 text-center"
                 >
                   No results.
@@ -433,7 +461,7 @@ function ShippingSnapShotHoverCard(
     .join(", ");
   const postalCountry = [shipSnapshot.postalCode, shipSnapshot.country]
     .filter(Boolean)
-    .join(" • ");
+    .join(" | ");
 
   const street =
     shipSnapshot.street1 +
