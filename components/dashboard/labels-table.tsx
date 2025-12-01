@@ -121,16 +121,8 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
     ...(options?.showUserId
       ? ([
           {
-            accessorKey: "user_id",
+            accessorKey: "profiles.full_name",
             header: "User",
-            cell: ({ row }) => {
-              const { profiles } = row.original as {
-                profiles: { full_name: string };
-              };
-              return (
-                <div className="font-medium">{profiles?.full_name ?? "-"}</div>
-              );
-            },
           } satisfies ColumnDef<T>,
         ] as ColumnDef<T>[])
       : []),
@@ -148,12 +140,11 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
       ),
     },
     {
-      accessorKey: "ship_from_snapshot",
+      accessorKey: "ship_from_snapshot.city",
       header: "Origin City",
       cell: ({ row }) => {
-        const shipFromSnapshot = row.getValue(
-          "ship_from_snapshot"
-        ) as ShippingLabelRecord["ship_from_snapshot"];
+        const shipFromSnapshot = (row.original as ShippingLabelRecord)
+          ?.ship_from_snapshot;
         if (!shipFromSnapshot) {
           return "-";
         }
@@ -161,12 +152,11 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
       },
     },
     {
-      accessorKey: "ship_to_snapshot",
+      accessorKey: "ship_to_snapshot.city",
       header: "Delivery City",
       cell: ({ row }) => {
-        const shipToSnapshot = row.getValue(
-          "ship_to_snapshot"
-        ) as ShippingLabelRecord["ship_to_snapshot"];
+        const shipToSnapshot = (row.original as ShippingLabelRecord)
+          ?.ship_to_snapshot;
         if (!shipToSnapshot) {
           return "-";
         }
@@ -406,7 +396,9 @@ export function LabelsTable<T>({
           <Input
             placeholder="Search all columns..."
             value={globalFilter ?? ""}
-            onChange={(event) => setGlobalFilter(String(event.target.value))}
+            onChange={(event) =>
+              table.setGlobalFilter(String(event.target.value))
+            }
             className="max-w-sm"
           />
         </div>
