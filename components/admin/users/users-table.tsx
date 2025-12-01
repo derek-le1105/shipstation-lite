@@ -101,6 +101,20 @@ const columns: ColumnDef<UserRow>[] = [
     cell: ({ row }) => <div>{row.getValue("email")}</div>,
   },
   {
+    accessorKey: "upcharge",
+    header: "Upcharge Value",
+    cell: ({ row }) => {
+      const upcharge = row.original.upcharge;
+      return upcharge ? (
+        <span className="font-medium">
+          {formatDollarPercent(upcharge?.value, upcharge?.unit)}
+        </span>
+      ) : (
+        "N/A"
+      );
+    },
+  },
+  {
     id: "total_labels",
     header: "Labels",
     cell: ({ row }) => <div>{row.original.shipping_labels.total} Labels</div>,
@@ -121,20 +135,6 @@ const columns: ColumnDef<UserRow>[] = [
     accessorKey: "role",
     header: "Role",
     cell: ({ row }) => <div>{row.getValue("role")}</div>,
-  },
-  {
-    accessorKey: "upcharge",
-    header: "Upcharge Value",
-    cell: ({ row }) => {
-      const upcharge = row.original.upcharge;
-      return upcharge ? (
-        <span className="font-medium">
-          {formatDollarPercent(upcharge?.value, upcharge?.unit)}
-        </span>
-      ) : (
-        "N/A"
-      );
-    },
   },
 ];
 
