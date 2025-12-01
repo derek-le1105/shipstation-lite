@@ -251,7 +251,7 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
     },
     {
       accessorKey: "total_shipment_cost",
-      header: () => <div className="text-right">Total Cost</div>,
+      header: () => <div>Total Cost</div>,
       cell: ({ row }) => {
         const shipmentCost = parseFloat(row.getValue("total_shipment_cost"));
         const insuranceCost = (row.original as ShippingLabelRecord)
@@ -260,36 +260,9 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
           style: "currency",
           currency: "USD",
         }).format(shipmentCost + insuranceCost);
-        return <div className="text-right font-medium">{formatted}</div>;
+        return <div className="font-medium">{formatted}</div>;
       },
     },
-    // {
-    //   accessorKey: "label_data_base64",
-    //   header: () => <div className="text-right">Label PDF</div>,
-    //   cell: ({ row }) => {
-    //     const label = row.getValue("label_data_base64") as string;
-    //     return (
-    //       <div className="flex justify-end">
-    //         <Button
-    //           size="sm"
-    //           className="w-full md:w-auto"
-    //           disabled={!label}
-    //           onClick={async () => {
-    //             try {
-    //               await printLabels([label as string]);
-    //             } catch (e) {
-    //               toast.error(
-    //                 e instanceof Error ? e.message : "Unable to print label"
-    //               );
-    //             }
-    //           }}
-    //         >
-    //           <Printer className="mr-2 h-4 w-4" /> Print
-    //         </Button>
-    //       </div>
-    //     );
-    //   },
-    // },
   ];
 
   return baseColumns;
@@ -480,54 +453,56 @@ export function LabelsTable<T>({
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  Mark as
-                  <ChevronDown />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem
-                  onClick={() => {
-                    toast.promise(
-                      async () => {
-                        return await markPayment("paid");
-                      },
-                      {
-                        loading: "Updating label...",
-                        success: (data: {
-                          message: string;
-                          success: boolean;
-                        }) => data?.message,
-                        error: "Failed to update label.",
-                      }
-                    );
-                  }}
-                >
-                  Paid
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    toast.promise(
-                      async () => {
-                        return await markPayment("unpaid");
-                      },
-                      {
-                        loading: "Updating label...",
-                        success: (data: {
-                          message: string;
-                          success: boolean;
-                        }) => data?.message,
-                        error: "Failed to update label.",
-                      }
-                    );
-                  }}
-                >
-                  Unpaid
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {showUserId && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    Mark as
+                    <ChevronDown />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      toast.promise(
+                        async () => {
+                          return await markPayment("paid");
+                        },
+                        {
+                          loading: "Updating label...",
+                          success: (data: {
+                            message: string;
+                            success: boolean;
+                          }) => data?.message,
+                          error: "Failed to update label.",
+                        }
+                      );
+                    }}
+                  >
+                    Paid
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      toast.promise(
+                        async () => {
+                          return await markPayment("unpaid");
+                        },
+                        {
+                          loading: "Updating label...",
+                          success: (data: {
+                            message: string;
+                            success: boolean;
+                          }) => data?.message,
+                          error: "Failed to update label.",
+                        }
+                      );
+                    }}
+                  >
+                    Unpaid
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
