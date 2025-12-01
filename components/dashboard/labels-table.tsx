@@ -9,7 +9,7 @@ import {
   DownloadIcon,
   FileTextIcon,
   FileSpreadsheetIcon,
-  Printer,
+  ChevronDown,
 } from "lucide-react";
 
 import type {
@@ -76,6 +76,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../ui/alert-dialog";
+import { bulkUpdatePaidStatus, updatePaidStatus } from "@/lib/actions/shipping";
 
 type ColumnOptions = {
   showUserId?: boolean;
@@ -449,6 +450,37 @@ export function LabelsTable<T>({
     }
   };
 
+  const markPayment = (type: "paid" | "unpaid") => {
+    const selectedLabels = table
+      .getSelectedRowModel()
+      .rows.map((row) => row.original as ShippingLabelRecord);
+
+    try {
+      toast.promise(
+        async () => {
+          const res =
+            selectedLabels.length > 1
+              ? await bulkUpdatePaidStatus(
+                  selectedLabels.map((lbl) => lbl.shipment_id),
+                  type === "paid"
+                )
+              : await updatePaidStatus(
+                  selectedLabels[0].shipment_id,
+                  type == "paid"
+                );
+
+          return res;
+        },
+        {
+          loading: "Updating label...",
+          success: (data: { message: string; success: boolean }) =>
+            data?.message,
+          error: "Failed to update label.",
+        }
+      );
+    } catch (error) {}
+  };
+
   return (
     <div className="w-full">
       <div className="flex justify-between gap-2 pb-4 max-sm:flex-col sm:items-center">
@@ -503,6 +535,22 @@ export function LabelsTable<T>({
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  Mark as
+                  <ChevronDown />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => markPayment("paid")}>
+                  Paid
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => markPayment("unpaid")}>
+                  Unpaid
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
