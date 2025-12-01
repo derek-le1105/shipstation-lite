@@ -326,8 +326,7 @@ export function LabelsTable<T>({
   const handleVoidClick = async () => {
     const selectedLabels = table
       .getSelectedRowModel()
-      .rows.map((row) => row.original as ShippingLabelRecord)
-      .filter((label) => !label.voided);
+      .rows.map((row) => row.original as ShippingLabelRecord);
 
     if (selectedLabels.length === 0) {
       toast.error("No active labels selected to void.");
@@ -344,9 +343,9 @@ export function LabelsTable<T>({
           });
 
           if (!res.ok) {
-            const data = (await res.json().catch(() => null)) as
-              | { message?: string }
-              | null;
+            const data = (await res.json().catch(() => null)) as {
+              message?: string;
+            } | null;
             return {
               success: false,
               shipment_id: label.shipment_id,
@@ -472,7 +471,20 @@ export function LabelsTable<T>({
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleVoidClick}>
+                  <AlertDialogAction
+                    onClick={() => {
+                      toast.promise(
+                        async () => {
+                          return await handleVoidClick();
+                        },
+                        {
+                          loading: "Voiding Labels...",
+                          success: "Labels have been voided",
+                          error: "Error voiding labels",
+                        }
+                      );
+                    }}
+                  >
                     Continue
                   </AlertDialogAction>
                 </AlertDialogFooter>
