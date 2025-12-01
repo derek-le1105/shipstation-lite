@@ -76,7 +76,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../ui/alert-dialog";
-import { bulkUpdatePaidStatus, updatePaidStatus } from "@/lib/actions/shipping";
+import {
+  bulkUpdatePaidStatus,
+  bulkVoidShippingLabels,
+  updatePaidStatus,
+  voidShippingLabel,
+} from "@/lib/actions/labels";
 
 type ColumnOptions = {
   showUserId?: boolean;
@@ -347,58 +352,13 @@ export function LabelsTable<T>({
       return;
     }
 
-    try {
-      const responses = await Promise.all(
-        selectedLabels.map(async (label) => {
-          const res = await fetch("/api/admin/voidlabel", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ shipment_id: label.shipment_id }),
-          });
-
-          if (!res.ok) {
-            const data = (await res.json().catch(() => null)) as {
-              message?: string;
-            } | null;
-            return {
-              success: false,
-              shipment_id: label.shipment_id,
-              message: data?.message,
-            };
-          }
-
-          return (await res.json().catch(() => ({
-            success: false,
-            shipment_id: label.shipment_id,
-            message: "Unexpected response from server.",
-          }))) as {
-            success: boolean;
-            shipment_id: number;
-            message?: string;
-          };
-        })
-      );
-
-      const failures = responses.filter((response) => !response.success);
-
-      if (failures.length === 0) {
-        toast.success(
-          `Successfully voided ${responses.length} label${
-            responses.length === 1 ? "" : "s"
-          }!`
-        );
-        router.refresh();
-        return;
-      }
-
-      failures.forEach((response) =>
-        toast.error(
-          response.message ?? `Failed to void ${response.shipment_id}`
-        )
-      );
-    } catch (error) {
-      toast.error("Unable to void labels right now. Please try again.");
-    }
+    const res =
+      selectedLabels.length > 1
+        ? await bulkVoidShippingLabels(
+            selectedLabels.map((lbl) => lbl.shipment_id)
+          )
+        : await voidShippingLabel(selectedLabels[0].shipment_id);
+    return res;
   };
 
   const exportToFile = (type: "csv" | "excel" | "json") => {
@@ -450,35 +410,20 @@ export function LabelsTable<T>({
     }
   };
 
-  const markPayment = (type: "paid" | "unpaid") => {
+  const markPayment = async (type: "paid" | "unpaid") => {
     const selectedLabels = table
       .getSelectedRowModel()
       .rows.map((row) => row.original as ShippingLabelRecord);
 
-    try {
-      toast.promise(
-        async () => {
-          const res =
-            selectedLabels.length > 1
-              ? await bulkUpdatePaidStatus(
-                  selectedLabels.map((lbl) => lbl.shipment_id),
-                  type === "paid"
-                )
-              : await updatePaidStatus(
-                  selectedLabels[0].shipment_id,
-                  type == "paid"
-                );
+    const res =
+      selectedLabels.length > 1
+        ? await bulkUpdatePaidStatus(
+            selectedLabels.map((lbl) => lbl.shipment_id),
+            type === "paid"
+          )
+        : await updatePaidStatus(selectedLabels[0].shipment_id, type == "paid");
 
-          return res;
-        },
-        {
-          loading: "Updating label...",
-          success: (data: { message: string; success: boolean }) =>
-            data?.message,
-          error: "Failed to update label.",
-        }
-      );
-    } catch (error) {}
+    return res;
   };
 
   return (
@@ -543,10 +488,42 @@ export function LabelsTable<T>({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => markPayment("paid")}>
+                <DropdownMenuItem
+                  onClick={() => {
+                    toast.promise(
+                      async () => {
+                        return await markPayment("paid");
+                      },
+                      {
+                        loading: "Updating label...",
+                        success: (data: {
+                          message: string;
+                          success: boolean;
+                        }) => data?.message,
+                        error: "Failed to update label.",
+                      }
+                    );
+                  }}
+                >
                   Paid
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => markPayment("unpaid")}>
+                <DropdownMenuItem
+                  onClick={() => {
+                    toast.promise(
+                      async () => {
+                        return await markPayment("unpaid");
+                      },
+                      {
+                        loading: "Updating label...",
+                        success: (data: {
+                          message: string;
+                          success: boolean;
+                        }) => data?.message,
+                        error: "Failed to update label.",
+                      }
+                    );
+                  }}
+                >
                   Unpaid
                 </DropdownMenuItem>
               </DropdownMenuContent>
