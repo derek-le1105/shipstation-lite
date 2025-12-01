@@ -51,7 +51,10 @@ export function AdminTable({ labels }: { labels: ShippingLabelWithProfile[] }) {
                 </div>
               </td>
               <td className="px-4 py-3">
-                <StatusBadge voided={label.voided} />
+                <StatusBadge
+                  variant={label.voided ? "destructive" : "success"}
+                  title={label.voided ? "Voided" : "Active"}
+                />
               </td>
               {/* <td className="px-4 py-3">
                 <Badge variant="secondary">{label.carrier_code}</Badge>

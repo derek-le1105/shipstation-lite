@@ -105,13 +105,13 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
       enableSorting: false,
       enableHiding: false,
     },
-    {
-      accessorKey: "shipment_id",
-      header: "Shipment ID",
-      cell: ({ row }) => (
-        <div className="font-medium">{row.getValue("shipment_id")}</div>
-      ),
-    },
+    // {
+    //   accessorKey: "shipment_id",
+    //   header: "Shipment ID",
+    //   cell: ({ row }) => (
+    //     <div className="font-medium">{row.getValue("shipment_id")}</div>
+    //   ),
+    // },
     ...(options?.showUserId
       ? ([
           {
@@ -192,7 +192,20 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
     {
       accessorKey: "voided",
       header: "Active?",
-      cell: ({ row }) => <StatusBadge voided={row.getValue("voided")} />,
+      cell: ({ row }) => {
+        const variant = row.getValue("voided") ? "destructive" : "success";
+        const title = row.getValue("voided") ? "Voided" : "Active";
+        return <StatusBadge variant={variant} title={title} />;
+      },
+    },
+    {
+      accessorKey: "paid",
+      header: "Paid?",
+      cell: ({ row }) => {
+        const variant = row.getValue("paid") ? "success" : "destructive";
+        const title = row.getValue("paid") ? "Paid" : "Unpaid";
+        return <StatusBadge variant={variant} title={title} />;
+      },
     },
     {
       accessorKey: "tracking_number",
