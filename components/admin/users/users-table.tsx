@@ -9,7 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { UserProfile } from "@/lib/auth";
 import { formatDollarPercent } from "@/lib/utils";
 import {
   ColumnDef,
@@ -27,8 +26,10 @@ import {
 import { useState } from "react";
 import type { MouseEvent } from "react";
 import { useRouter } from "next/navigation";
-
-type UserRow = UserProfile & {
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { listProfiles } from "@/lib/supabase/profiles";
+type UserRow = Awaited<ReturnType<typeof listProfiles>>[0] & {
   upcharge: { value: number; unit: "dollars" | "percent" } | null;
 };
 
@@ -57,13 +58,64 @@ const columns: ColumnDef<UserRow>[] = [
   },
   {
     accessorKey: "full_name",
-    header: "Name",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          className="p-0"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Name
+          {column.getIsSorted() === "asc" ? (
+            <ArrowUp className="ml-2 h-4 w-4" />
+          ) : column.getIsSorted() === "desc" ? (
+            <ArrowDown className="ml-2 h-4 w-4" />
+          ) : (
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          )}
+        </Button>
+      );
+    },
     cell: ({ row }) => <div>{row.getValue("full_name")}</div>,
   },
   {
     accessorKey: "email",
-    header: "Email",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          className="p-0"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Email
+          {column.getIsSorted() === "asc" ? (
+            <ArrowUp className="ml-2 h-4 w-4" />
+          ) : column.getIsSorted() === "desc" ? (
+            <ArrowDown className="ml-2 h-4 w-4" />
+          ) : (
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          )}
+        </Button>
+      );
+    },
     cell: ({ row }) => <div>{row.getValue("email")}</div>,
+  },
+  {
+    id: "total_labels",
+    header: "Labels",
+    cell: ({ row }) => <div>{row.original.shipping_labels.total} Labels</div>,
+  },
+  {
+    id: "total_amount",
+    header: "Amount Spent",
+    cell: ({ row }) => (
+      <div>
+        {new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+        }).format(row.original.shipping_labels.total_cost)}
+      </div>
+    ),
   },
   {
     accessorKey: "role",
