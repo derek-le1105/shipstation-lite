@@ -66,7 +66,7 @@ export default async function LabelDetailsPage({
             <Badge variant="secondary">{label.carrier_code}</Badge>
             <Tooltip>
               <TooltipTrigger>
-                <StatusBadge voided={label.voided} />
+                <StatusBadge variant="destructive" title="Voided" />
               </TooltipTrigger>
               <TooltipContent>
                 {label.voided &&

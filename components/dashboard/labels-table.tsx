@@ -9,7 +9,7 @@ import {
   DownloadIcon,
   FileTextIcon,
   FileSpreadsheetIcon,
-  Printer,
+  ChevronDown,
 } from "lucide-react";
 
 import type {
@@ -65,187 +65,208 @@ import {
   HoverCardTrigger,
 } from "../ui/hover-card";
 import { StatusBadge } from "./status-badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../ui/alert-dialog";
+import {
+  bulkUpdatePaidStatus,
+  bulkVoidShippingLabels,
+  updatePaidStatus,
+  voidShippingLabel,
+} from "@/lib/actions/labels";
 
-export const columns = <T,>(): ColumnDef<T>[] => [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
+type ColumnOptions = {
+  showUserId?: boolean;
+};
+
+export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
+  const baseColumns: ColumnDef<T>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    // {
+    //   accessorKey: "shipment_id",
+    //   header: "Shipment ID",
+    //   cell: ({ row }) => (
+    //     <div className="font-medium">{row.getValue("shipment_id")}</div>
+    //   ),
+    // },
+    ...(options?.showUserId
+      ? ([
+          {
+            accessorKey: "profiles.full_name",
+            header: "User",
+          } satisfies ColumnDef<T>,
+        ] as ColumnDef<T>[])
+      : []),
+    {
+      accessorKey: "service_code",
+      header: "Service",
+      cell: ({ row }) => (
+        <div className="font-medium">
+          {
+            FEDEX_SERVICES.find(
+              (service) => service.code === row.getValue("service_code")
+            )?.name
+          }
+        </div>
+      ),
+    },
+    {
+      accessorKey: "ship_from_snapshot.city",
+      header: "Origin City",
+      cell: ({ row }) => {
+        const shipFromSnapshot = (row.original as ShippingLabelRecord)
+          ?.ship_from_snapshot;
+        if (!shipFromSnapshot) {
+          return "-";
         }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: "shipment_id",
-    header: "Shipment ID",
-    cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("shipment_id")}</div>
-    ),
-  },
-  {
-    accessorKey: "service_code",
-    header: "Service",
-    cell: ({ row }) => (
-      <div className="font-medium">
-        {
-          FEDEX_SERVICES.find(
-            (service) => service.code === row.getValue("service_code")
-          )?.name
+        return <ShippingSnapShotHoverCard {...shipFromSnapshot} />;
+      },
+    },
+    {
+      accessorKey: "ship_to_snapshot.city",
+      header: "Delivery City",
+      cell: ({ row }) => {
+        const shipToSnapshot = (row.original as ShippingLabelRecord)
+          ?.ship_to_snapshot;
+        if (!shipToSnapshot) {
+          return "-";
         }
-      </div>
-    ),
-  },
-  {
-    accessorKey: "ship_from_snapshot",
-    header: "Origin City",
-    cell: ({ row }) => {
-      const shipFromSnapshot = row.getValue(
-        "ship_from_snapshot"
-      ) as ShippingLabelRecord["ship_from_snapshot"];
-      if (!shipFromSnapshot) {
-        return "—";
-      }
-      return <ShippingSnapShotHoverCard {...shipFromSnapshot} />;
+        return <ShippingSnapShotHoverCard {...shipToSnapshot} />;
+      },
     },
-  },
-  {
-    accessorKey: "ship_to_snapshot",
-    header: "Delivery City",
-    cell: ({ row }) => {
-      const shipToSnapshot = row.getValue(
-        "ship_to_snapshot"
-      ) as ShippingLabelRecord["ship_to_snapshot"];
-      if (!shipToSnapshot) {
-        return "—";
-      }
-      return <ShippingSnapShotHoverCard {...shipToSnapshot} />;
-    },
-  },
-  {
-    accessorKey: "created_at",
-    header: "Created At",
-    cell: ({ row }) => {
-      const date = new Date(row.getValue("created_at"));
+    {
+      accessorKey: "created_at",
+      header: () => <div className="text-center">Created At</div>,
+      cell: ({ row }) => {
+        const date = new Date(row.getValue("created_at"));
 
-      return (
-        <div className="text-center font-medium">
-          <div>
-            {Intl.DateTimeFormat("en-US", {
-              dateStyle: "medium",
-            }).format(date)}
+        return (
+          <div className="text-center items-center justify-center font-medium">
+            <div>
+              {Intl.DateTimeFormat("en-US", {
+                dateStyle: "medium",
+              }).format(date)}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {Intl.DateTimeFormat("en-US", {
+                timeStyle: "short",
+              }).format(date)}
+            </div>
           </div>
-          <div className="text-xs text-muted-foreground">
-            {Intl.DateTimeFormat("en-US", {
-              timeStyle: "short",
-            }).format(date)}
+        );
+      },
+    },
+    {
+      accessorKey: "voided",
+      header: "Active?",
+      cell: ({ row }) => {
+        const variant = row.getValue("voided") ? "destructive" : "success";
+        const title = row.getValue("voided") ? "Voided" : "Active";
+        return <StatusBadge variant={variant} title={title} />;
+      },
+    },
+    {
+      accessorKey: "paid",
+      header: "Paid?",
+      cell: ({ row }) => {
+        const variant = row.getValue("paid") ? "success" : "destructive";
+        const title = row.getValue("paid") ? "Paid" : "Unpaid";
+        return <StatusBadge variant={variant} title={title} />;
+      },
+    },
+    {
+      accessorKey: "tracking_number",
+      header: "Tracking #",
+      cell: ({ row }) => {
+        return (
+          <div className="font-medium hover:underline">
+            <a
+              href={generateTrackingLink(row.getValue("tracking_number"))}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {row.getValue("tracking_number")}
+            </a>
           </div>
-        </div>
-      );
+        );
+      },
     },
-  },
-  {
-    accessorKey: "voided",
-    header: "Active?",
-    cell: ({ row }) => <StatusBadge voided={row.getValue("voided")} />,
-  },
-  {
-    accessorKey: "tracking_number",
-    header: () => <div className="text-right">Tracking Number</div>,
-    cell: ({ row }) => {
-      return (
-        <div className="text-right font-medium underline">
-          <a
-            href={generateTrackingLink(row.getValue("tracking_number"))}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {row.getValue("tracking_number")}
-          </a>
-        </div>
-      );
-    },
-  },
-  {
-    id: "package_dimensions", // Use 'id' instead of 'accessorKey' for virtual columns
-    header: () => <div className="text-center">Package Dimensions</div>,
-    cell: ({ row }) => {
-      const original = row.original as ShippingLabelRecord;
-      const { length, width, height, units, weight_value, weight_unit } =
-        original;
+    {
+      id: "package_dimensions", // Use 'id' instead of 'accessorKey' for virtual columns
+      header: () => <div className="text-center">Package Dimensions</div>,
+      cell: ({ row }) => {
+        const original = row.original as ShippingLabelRecord;
+        const { length, width, height, units, weight_value, weight_unit } =
+          original;
 
-      const dimensions = `${length} × ${width} × ${height} ${units}`;
-      const weight = `${weight_value} ${weight_unit}`;
+        const dimensions = `${length} x ${width} x ${height} ${units}`;
+        const weight = `${weight_value} ${weight_unit}`;
 
-      return (
-        <div className="text-center font-medium">
-          <div>{dimensions}</div>
-          <div className="text-xs text-muted-foreground">{weight}</div>
-        </div>
-      );
+        return (
+          <div className="text-center font-medium">
+            <div>{dimensions}</div>
+            <div className="text-xs text-muted-foreground">{weight}</div>
+          </div>
+        );
+      },
     },
-  },
-  {
-    accessorKey: "total_shipment_cost",
-    header: () => <div className="text-right">Total Cost</div>,
-    cell: ({ row }) => {
-      const shipmentCost = parseFloat(row.getValue("total_shipment_cost"));
-      const insuranceCost = (row.original as ShippingLabelRecord)
-        ?.total_insurance_cost;
-      const formatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(shipmentCost + insuranceCost);
-      return <div className="text-right font-medium">{formatted}</div>;
+    {
+      accessorKey: "total_shipment_cost",
+      header: () => <div>Total Cost</div>,
+      cell: ({ row }) => {
+        const shipmentCost = parseFloat(row.getValue("total_shipment_cost"));
+        const insuranceCost = (row.original as ShippingLabelRecord)
+          ?.total_insurance_cost;
+        const formatted = new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+        }).format(shipmentCost + insuranceCost);
+        return <div className="font-medium">{formatted}</div>;
+      },
     },
-  },
-  {
-    accessorKey: "label_data_base64",
-    header: () => <div className="text-right">Label PDF</div>,
-    cell: ({ row }) => {
-      const label = row.getValue("label_data_base64") as string;
-      return (
-        <div className="flex justify-end">
-          <Button
-            size="sm"
-            className="w-full md:w-auto"
-            disabled={!label}
-            onClick={async () => {
-              try {
-                await printLabels([label as string]);
-              } catch (e) {
-                toast.error(
-                  e instanceof Error ? e.message : "Unable to print label"
-                );
-              }
-            }}
-          >
-            <Printer className="mr-2 h-4 w-4" /> Print
-          </Button>
-        </div>
-      );
-    },
-  },
-];
+  ];
+
+  return baseColumns;
+};
 
 interface LabelsTableProps<T> {
   labels: T[];
+  showUserId?: boolean;
 }
 
-export function LabelsTable<T>({ labels }: LabelsTableProps<T>) {
+export function LabelsTable<T>({
+  labels,
+  showUserId = false,
+}: LabelsTableProps<T>) {
   const router = useRouter();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -255,7 +276,7 @@ export function LabelsTable<T>({ labels }: LabelsTableProps<T>) {
 
   const table = useReactTable<T>({
     data: labels,
-    columns: columns<T>(),
+    columns: columns<T>({ showUserId }),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -274,6 +295,34 @@ export function LabelsTable<T>({ labels }: LabelsTableProps<T>) {
       globalFilter,
     },
   });
+
+  const handlePrintClick = async () => {
+    const selectedLabelsPDFs = table
+      .getSelectedRowModel()
+      .rows.map(
+        (row) => (row.original as ShippingLabelRecord).label_data_base64
+      );
+    await printLabels(selectedLabelsPDFs);
+  };
+
+  const handleVoidClick = async () => {
+    const selectedLabels = table
+      .getSelectedRowModel()
+      .rows.map((row) => row.original as ShippingLabelRecord);
+
+    if (selectedLabels.length === 0) {
+      toast.error("No active labels selected to void.");
+      return;
+    }
+
+    const res =
+      selectedLabels.length > 1
+        ? await bulkVoidShippingLabels(
+            selectedLabels.map((lbl) => lbl.shipment_id)
+          )
+        : await voidShippingLabel(selectedLabels[0].shipment_id);
+    return res;
+  };
 
   const exportToFile = (type: "csv" | "excel" | "json") => {
     const selectedRows = table.getSelectedRowModel().rows;
@@ -324,6 +373,22 @@ export function LabelsTable<T>({ labels }: LabelsTableProps<T>) {
     }
   };
 
+  const markPayment = async (type: "paid" | "unpaid") => {
+    const selectedLabels = table
+      .getSelectedRowModel()
+      .rows.map((row) => row.original as ShippingLabelRecord);
+
+    const res =
+      selectedLabels.length > 1
+        ? await bulkUpdatePaidStatus(
+            selectedLabels.map((lbl) => lbl.shipment_id),
+            type === "paid"
+          )
+        : await updatePaidStatus(selectedLabels[0].shipment_id, type == "paid");
+
+    return res;
+  };
+
   return (
     <div className="w-full">
       <div className="flex justify-between gap-2 pb-4 max-sm:flex-col sm:items-center">
@@ -331,43 +396,130 @@ export function LabelsTable<T>({ labels }: LabelsTableProps<T>) {
           <Input
             placeholder="Search all columns..."
             value={globalFilter ?? ""}
-            onChange={(event) => setGlobalFilter(String(event.target.value))}
+            onChange={(event) =>
+              table.setGlobalFilter(String(event.target.value))
+            }
             className="max-w-sm"
           />
         </div>
-        <div className="flex items-center space-x-2">
-          <div className="text-muted-foreground text-sm">
-            {table.getSelectedRowModel().rows.length > 0 && (
-              <span className="mr-2">
-                {table.getSelectedRowModel().rows.length} of{" "}
-                {table.getFilteredRowModel().rows.length} row(s) selected
-              </span>
+
+        {table.getSelectedRowModel().rows.length > 0 && (
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" onClick={handlePrintClick}>
+              Print
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  Void Labels
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Voiding {table.getSelectedRowModel().rows.length} labels
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. Please ensure that you want to
+                    void this label.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      toast.promise(
+                        async () => {
+                          return await handleVoidClick();
+                        },
+                        {
+                          loading: "Voiding Labels...",
+                          success: "Labels have been voided",
+                          error: "Error voiding labels",
+                        }
+                      );
+                    }}
+                  >
+                    Continue
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            {showUserId && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    Mark as
+                    <ChevronDown />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      toast.promise(
+                        async () => {
+                          return await markPayment("paid");
+                        },
+                        {
+                          loading: "Updating label...",
+                          success: (data: {
+                            message: string;
+                            success: boolean;
+                          }) => data?.message,
+                          error: "Failed to update label.",
+                        }
+                      );
+                    }}
+                  >
+                    Paid
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      toast.promise(
+                        async () => {
+                          return await markPayment("unpaid");
+                        },
+                        {
+                          loading: "Updating label...",
+                          success: (data: {
+                            message: string;
+                            success: boolean;
+                          }) => data?.message,
+                          error: "Failed to update label.",
+                        }
+                      );
+                    }}
+                  >
+                    Unpaid
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <DownloadIcon className="mr-2 h-4 w-4" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => exportToFile("csv")}>
+                  <FileTextIcon className="mr-2 h-4 w-4" />
+                  Export as CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportToFile("excel")}>
+                  <FileSpreadsheetIcon className="mr-2 h-4 w-4" />
+                  Export as Excel
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => exportToFile("json")}>
+                  <FileTextIcon className="mr-2 h-4 w-4" />
+                  Export as JSON
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <DownloadIcon className="mr-2 h-4 w-4" />
-                Export
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => exportToFile("csv")}>
-                <FileTextIcon className="mr-2 h-4 w-4" />
-                Export as CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => exportToFile("excel")}>
-                <FileSpreadsheetIcon className="mr-2 h-4 w-4" />
-                Export as Excel
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => exportToFile("json")}>
-                <FileTextIcon className="mr-2 h-4 w-4" />
-                Export as JSON
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        )}
       </div>
       <div className="bg-card rounded-md border">
         <Table>
@@ -411,7 +563,7 @@ export function LabelsTable<T>({ labels }: LabelsTableProps<T>) {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length}
+                  colSpan={table.getVisibleLeafColumns().length}
                   className="h-24 text-center"
                 >
                   No results.
@@ -420,6 +572,30 @@ export function LabelsTable<T>({ labels }: LabelsTableProps<T>) {
             )}
           </TableBody>
         </Table>
+      </div>
+      <div className="flex items-center justify-end space-x-2 py-4">
+        <div className="text-muted-foreground flex-1 text-sm">
+          {table.getFilteredSelectedRowModel().rows.length} of{" "}
+          {table.getFilteredRowModel().rows.length} row(s) selected.
+        </div>
+        <div className="space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            Next
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -433,7 +609,7 @@ function ShippingSnapShotHoverCard(
     .join(", ");
   const postalCountry = [shipSnapshot.postalCode, shipSnapshot.country]
     .filter(Boolean)
-    .join(" • ");
+    .join(" | ");
 
   const street =
     shipSnapshot.street1 +

@@ -1,3 +1,4 @@
+import { UserProfile } from "../auth";
 import { AdvancedOptions, InsuranceOption } from "../shipstation/types";
 import { createClient } from "./server";
 
@@ -47,6 +48,8 @@ export type ShippingLabelRecord = {
   is_address_validated: boolean;
   insurance_options: InsuranceOption | null;
   advanced_options: AdvancedOptions | null;
+  paid?: boolean;
+  profiles?: Omit<UserProfile, "id" | "created_at" | "updated_at">;
 };
 
 type ShippingLabelInsert = Omit<
@@ -68,6 +71,12 @@ export type ShippingLabelWithProfile = ShippingLabelRecord & {
     full_name: string | null;
     role: string | null;
   };
+};
+
+export type UserLabelStats = {
+  totalSpent: number;
+  totalPaid: number;
+  labelCount: number;
 };
 
 const SHIPPING_LABEL_COLUMNS = [
@@ -153,6 +162,40 @@ export async function getShippingLabel(
     throw error;
   }
   return data as ShippingLabelRecord | null;
+}
+
+export async function getUserLabelStats(
+  userId: string,
+  client?: ServerSupabaseClient
+): Promise<UserLabelStats> {
+  const supabase = await getClient(client);
+  const { data, error } = await supabase
+    .from("shipping_labels")
+    .select("total_shipment_cost,total_insurance_cost,paid")
+    .eq("user_id", userId);
+
+  if (error) {
+    throw error;
+  }
+
+  const stats = (data ?? []).reduce<UserLabelStats>(
+    (acc, label) => {
+      const shipmentCost = Number(label.total_shipment_cost) || 0;
+      const insuranceCost = Number(label.total_insurance_cost) || 0;
+      const total = shipmentCost + insuranceCost;
+
+      acc.totalSpent += total;
+      if (label.paid) {
+        acc.totalPaid += total;
+      }
+      acc.labelCount += 1;
+
+      return acc;
+    },
+    { totalSpent: 0, totalPaid: 0, labelCount: 0 }
+  );
+
+  return stats;
 }
 
 export async function getShippingLabelById(
@@ -247,51 +290,20 @@ export async function listShippingLabelsForUser<
 }
 
 export async function listAllShippingLabels(
-  client?: ServerSupabaseClient
+  referenceProfile?: boolean
 ): Promise<ShippingLabelWithProfile[]> {
-  const supabase = await getClient(client);
+  const supabase = await getClient();
 
-  const { data, error } = await supabase
-    .from("shipping_labels")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const shippingLabelsTable = supabase.from("shipping_labels");
 
+  const { data, error } = await (referenceProfile
+    ? shippingLabelsTable.select("*, profiles(full_name)")
+    : shippingLabelsTable.select("*")
+  ).order("created_at", { ascending: false });
   if (error) {
     throw error;
   }
 
   const labels = (data ?? []) as ShippingLabelRecord[];
-
-  const userIds = Array.from(
-    new Set(labels.map((label) => label.user_id).filter(Boolean))
-  );
-
-  const profilesById = new Map<
-    string,
-    { email: string | null; full_name: string | null; role: string | null }
-  >();
-
-  if (userIds.length > 0) {
-    const { data: profileRows, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, email, full_name, role")
-      .in("id", userIds);
-
-    if (profileError) {
-      throw profileError;
-    }
-
-    (profileRows ?? []).forEach((profile) => {
-      profilesById.set(profile.id, {
-        email: profile.email ?? null,
-        full_name: profile.full_name ?? null,
-        role: profile.role ?? null,
-      });
-    });
-  }
-
-  return labels.map((label) => ({
-    ...label,
-    profiles: profilesById.get(label.user_id),
-  }));
+  return labels;
 }

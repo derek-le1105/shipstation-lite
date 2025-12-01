@@ -73,7 +73,10 @@ export function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mb-1">
-                      <StatusBadge voided={label.voided} />
+                      <StatusBadge
+                        variant={label.voided ? "destructive" : "success"}
+                        title={label.voided ? "Voided" : "Active"}
+                      />
                       <span className="text-muted-foreground md:ml-0">
                         {created.toLocaleDateString("en-US", {
                           year: "numeric",

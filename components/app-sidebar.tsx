@@ -61,12 +61,12 @@ const NAV_MAIN: Navigation[] = [
     isActive: true,
     isEnabled: true,
     items: [
+      { title: "Addresses", url: "/dashboard/addresses", enabled: true },
       {
         title: "Labels",
         url: "/dashboard/labels",
         enabled: true,
       },
-      { title: "Addresses", url: "/dashboard/addresses", enabled: true },
       { title: "Packages", url: "/dashboard/packages", enabled: true },
     ],
   },
@@ -78,8 +78,9 @@ const NAV_MAIN: Navigation[] = [
     isEnabled: true,
     requiredRole: "admin",
     items: [
-      { title: "Users", url: "/admin/users", enabled: true },
       { title: "Addresses", url: "/admin/addresses", enabled: true },
+      { title: "Labels", url: "/admin/labels", enabled: true },
+      { title: "Users", url: "/admin/users", enabled: true },
     ],
   },
 ];

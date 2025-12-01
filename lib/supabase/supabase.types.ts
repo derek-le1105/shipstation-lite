@@ -159,6 +159,8 @@ export type Database = {
           length: number;
           order_number: string | null;
           package_code: string | null;
+          paid: boolean;
+          paid_at: string | null;
           service_code: string;
           ship_from_snapshot: Json;
           ship_to_snapshot: Json;
@@ -191,6 +193,8 @@ export type Database = {
           length?: number;
           order_number?: string | null;
           package_code?: string | null;
+          paid?: boolean;
+          paid_at?: string | null;
           service_code: string;
           ship_from_snapshot: Json;
           ship_to_snapshot: Json;
@@ -223,6 +227,8 @@ export type Database = {
           length?: number;
           order_number?: string | null;
           package_code?: string | null;
+          paid?: boolean;
+          paid_at?: string | null;
           service_code?: string;
           ship_from_snapshot?: Json;
           ship_to_snapshot?: Json;
@@ -253,6 +259,13 @@ export type Database = {
             columns: ["to_address_id"];
             isOneToOne: false;
             referencedRelation: "addresses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "shipping_labels_user_id_fkey1";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           }
         ];
