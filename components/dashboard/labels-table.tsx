@@ -140,27 +140,35 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
       ),
     },
     {
-      accessorKey: "ship_from_snapshot.city",
+      id: "origin_city",
       header: "Origin City",
-      cell: ({ row }) => {
-        const shipFromSnapshot = (row.original as ShippingLabelRecord)
-          ?.ship_from_snapshot;
-        if (!shipFromSnapshot) {
-          return "-";
-        }
-        return <ShippingSnapShotHoverCard {...shipFromSnapshot} />;
+      accessorFn: (row) => {
+        const { ship_from_snapshot } = row as ShippingLabelRecord;
+        return `${ship_from_snapshot.city}, ${ship_from_snapshot.state}`;
       },
     },
     {
-      accessorKey: "ship_to_snapshot.city",
+      id: "origin_zip",
+      header: "Origin Zip",
+      accessorFn: (row) => {
+        const { ship_from_snapshot } = row as ShippingLabelRecord;
+        return ship_from_snapshot.postalCode;
+      },
+    },
+    {
+      id: "delivery_city",
       header: "Delivery City",
-      cell: ({ row }) => {
-        const shipToSnapshot = (row.original as ShippingLabelRecord)
-          ?.ship_to_snapshot;
-        if (!shipToSnapshot) {
-          return "-";
-        }
-        return <ShippingSnapShotHoverCard {...shipToSnapshot} />;
+      accessorFn: (row) => {
+        const { ship_to_snapshot } = row as ShippingLabelRecord;
+        return `${ship_to_snapshot.city}, ${ship_to_snapshot.state}`;
+      },
+    },
+    {
+      id: "delivery_zip",
+      header: "Delivery Zip",
+      accessorFn: (row) => {
+        const { ship_to_snapshot } = row as ShippingLabelRecord;
+        return ship_to_snapshot.postalCode;
       },
     },
     {
@@ -324,24 +332,53 @@ export function LabelsTable<T>({
     return res;
   };
 
-  const exportToFile = (type: "csv" | "excel" | "json") => {
+  function exportToFile(type: "csv" | "excel" | "json") {
+    const formatShippingSnapshots = (
+      exportData: Omit<
+        ShippingLabelRecord,
+        "label_data_base64" | "user_id" | "from_address_id" | "to_address_id"
+      >[]
+    ) => {
+      return exportData.map(
+        ({ ship_from_snapshot, ship_to_snapshot, id, ...rest }) => {
+          const origin_zip = ship_from_snapshot.postalCode;
+          const origin_city = `${ship_from_snapshot.city}, ${ship_from_snapshot.state}`;
+          const delivery_zip = ship_to_snapshot.postalCode;
+          const delivery_city = `${ship_to_snapshot.city}, ${ship_to_snapshot.state}`;
+          return {
+            id,
+            origin_city,
+            origin_zip,
+            delivery_city,
+            delivery_zip,
+            ...rest,
+          };
+        }
+      );
+    };
+
     const selectedRows = table.getSelectedRowModel().rows;
 
-    const dataToExport =
+    const dataToExport = (
       selectedRows.length > 0
-        ? selectedRows.map((row) => row.original)
-        : table.getFilteredRowModel().rows.map((row) => {
-            const { original } = row;
-            const { label_data_base64, ...rest } =
-              original as ShippingLabelRecord;
-            return rest as T;
-          });
+        ? table.getFilteredSelectedRowModel()
+        : table.getFilteredRowModel()
+    ).rows.map(({ original }) => {
+      const {
+        label_data_base64,
+        user_id,
+        from_address_id,
+        to_address_id,
+        ...rest
+      } = original as ShippingLabelRecord;
+      return { ...rest };
+    });
     switch (type) {
       case "csv":
-        exportToCSV(dataToExport);
+        exportToCSV(formatShippingSnapshots(dataToExport));
         break;
       case "excel":
-        exportToExcel(dataToExport);
+        exportToExcel(formatShippingSnapshots(dataToExport));
         break;
       case "json":
         exportToJson(dataToExport);
@@ -349,7 +386,7 @@ export function LabelsTable<T>({
       default:
         break;
     }
-  };
+  }
 
   const handleRowClick = (
     event: MouseEvent<HTMLTableRowElement>,
@@ -403,123 +440,126 @@ export function LabelsTable<T>({
           />
         </div>
 
-        {table.getSelectedRowModel().rows.length > 0 && (
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" onClick={handlePrintClick}>
-              Print
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  Void Labels
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>
-                    Voiding {table.getSelectedRowModel().rows.length} labels
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. Please ensure that you want to
-                    void this label.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => {
-                      toast.promise(
-                        async () => {
-                          return await handleVoidClick();
-                        },
-                        {
-                          loading: "Voiding Labels...",
-                          success: "Labels have been voided",
-                          error: "Error voiding labels",
-                        }
-                      );
-                    }}
-                  >
-                    Continue
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            {showUserId && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+        <div className="flex items-center space-x-2">
+          {table.getSelectedRowModel().rows.length > 0 && (
+            <>
+              <Button variant="outline" size="sm" onClick={handlePrintClick}>
+                Print
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
                   <Button variant="outline" size="sm">
-                    Mark as
-                    <ChevronDown />
+                    Void Labels
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      toast.promise(
-                        async () => {
-                          return await markPayment("paid");
-                        },
-                        {
-                          loading: "Updating label...",
-                          success: (data: {
-                            message: string;
-                            success: boolean;
-                          }) => data?.message,
-                          error: "Failed to update label.",
-                        }
-                      );
-                    }}
-                  >
-                    Paid
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      toast.promise(
-                        async () => {
-                          return await markPayment("unpaid");
-                        },
-                        {
-                          loading: "Updating label...",
-                          success: (data: {
-                            message: string;
-                            success: boolean;
-                          }) => data?.message,
-                          error: "Failed to update label.",
-                        }
-                      );
-                    }}
-                  >
-                    Unpaid
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <DownloadIcon className="mr-2 h-4 w-4" />
-                  Export
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => exportToFile("csv")}>
-                  <FileTextIcon className="mr-2 h-4 w-4" />
-                  Export as CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportToFile("excel")}>
-                  <FileSpreadsheetIcon className="mr-2 h-4 w-4" />
-                  Export as Excel
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => exportToFile("json")}>
-                  <FileTextIcon className="mr-2 h-4 w-4" />
-                  Export as JSON
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        )}
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Voiding {table.getSelectedRowModel().rows.length} labels
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. Please ensure that you want
+                      to void this label.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => {
+                        toast.promise(
+                          async () => {
+                            return await handleVoidClick();
+                          },
+                          {
+                            loading: "Voiding Labels...",
+                            success: "Labels have been voided",
+                            error: "Error voiding labels",
+                          }
+                        );
+                      }}
+                    >
+                      Continue
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              {showUserId && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      Mark as
+                      <ChevronDown />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        toast.promise(
+                          async () => {
+                            return await markPayment("paid");
+                          },
+                          {
+                            loading: "Updating label...",
+                            success: (data: {
+                              message: string;
+                              success: boolean;
+                            }) => data?.message,
+                            error: "Failed to update label.",
+                          }
+                        );
+                      }}
+                    >
+                      Paid
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        toast.promise(
+                          async () => {
+                            return await markPayment("unpaid");
+                          },
+                          {
+                            loading: "Updating label...",
+                            success: (data: {
+                              message: string;
+                              success: boolean;
+                            }) => data?.message,
+                            error: "Failed to update label.",
+                          }
+                        );
+                      }}
+                    >
+                      Unpaid
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </>
+          )}
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <DownloadIcon className="mr-2 h-4 w-4" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => exportToFile("csv")}>
+                <FileTextIcon className="mr-2 h-4 w-4" />
+                Export as CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportToFile("excel")}>
+                <FileSpreadsheetIcon className="mr-2 h-4 w-4" />
+                Export as Excel
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => exportToFile("json")}>
+                <FileTextIcon className="mr-2 h-4 w-4" />
+                Export as JSON
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
       <div className="bg-card rounded-md border">
         <Table>
