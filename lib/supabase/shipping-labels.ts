@@ -296,7 +296,7 @@ export async function listAllShippingLabels(
   const shippingLabelsTable = supabase.from("shipping_labels");
 
   const { data, error } = await (referenceProfile
-    ? shippingLabelsTable.select("*, profiles(full_name)")
+    ? shippingLabelsTable.select("*, profiles(full_name, email)")
     : shippingLabelsTable.select("*")
   ).order("created_at", { ascending: false });
   if (error) {

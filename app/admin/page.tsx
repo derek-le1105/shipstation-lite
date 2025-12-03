@@ -19,7 +19,8 @@ export default async function AdminPage() {
   const labels = await listAllShippingLabels();
 
   const totalCost = labels.reduce(
-    (sum, label) => sum + (label.shipment_cost ?? 0),
+    (sum, label) =>
+      sum + (label.shipment_cost ?? 0) + (label.insurance_cost ?? 0),
     0
   );
 

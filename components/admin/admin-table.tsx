@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "../ui/button";
 import { FEDEX_SERVICES, generateTrackingLink } from "@/lib/shipstation/fedex";
 import { StatusBadge } from "../dashboard/status-badge";
+import { Badge } from "../ui/badge";
 
 export function AdminTable({ labels }: { labels: ShippingLabelWithProfile[] }) {
   if (labels.length === 0) {
@@ -25,10 +26,10 @@ export function AdminTable({ labels }: { labels: ShippingLabelWithProfile[] }) {
             <th className="px-4 py-3 text-left">Created</th>
             <th className="px-4 py-3 text-left">User</th>
             <th className="px-4 py-3 text-left">Status</th>
-            {/* <th className="px-4 py-3 text-left">Carrier</th> */}
+            <th className="px-4 py-3 text-left">Paid</th>
             <th className="px-4 py-3 text-left">Service</th>
             <th className="px-4 py-3 text-left">Tracking</th>
-            <th className="px-4 py-3 text-right">Cost</th>
+            <th className="px-4 py-3 text-left">Cost</th>
             <th className="px-4 py-3 text-left">Download</th>
           </tr>
         </thead>
@@ -56,9 +57,11 @@ export function AdminTable({ labels }: { labels: ShippingLabelWithProfile[] }) {
                   title={label.voided ? "Voided" : "Active"}
                 />
               </td>
-              {/* <td className="px-4 py-3">
-                <Badge variant="secondary">{label.carrier_code}</Badge>
-              </td> */}
+              <td className="px-4 py-3">
+                <Badge variant={label.paid ? "success" : "destructive"}>
+                  {label.paid ? "Paid" : "Unpaid"}
+                </Badge>
+              </td>
               <td className="px-4 py-3">
                 {
                   FEDEX_SERVICES.find(
@@ -75,10 +78,11 @@ export function AdminTable({ labels }: { labels: ShippingLabelWithProfile[] }) {
                   "—"
                 )}
               </td>
-              <td className="px-4 py-3 text-right">
-                {label.shipment_cost
-                  ? `$${label.shipment_cost.toFixed(2)}`
-                  : "—"}
+              <td className="px-4 py-3 text-left">
+                {Intl.NumberFormat("en-US", {
+                  style: "currency",
+                  currency: "USD",
+                }).format(label.shipment_cost ?? 0)}
               </td>
               <td className="px-4 py-3">
                 {label.label_data_base64 ? (
