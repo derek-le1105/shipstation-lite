@@ -8,7 +8,6 @@ import {
   getShippingLabelById,
   type ShipStationAddressSnapshot,
 } from "@/lib/supabase/shipping-labels";
-import { FEDEX_SERVICES } from "@/lib/shipstation/fedex";
 import { formatPhoneNumber } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -45,9 +44,6 @@ export default async function LabelDetailsPage({
 
   const createdAt = new Date(label.created_at);
   const voidedAt = label.voided_at ? new Date(label.voided_at) : null;
-  const serviceName =
-    FEDEX_SERVICES.find((service) => service.code === label.service_code)
-      ?.name ?? label.service_code;
   const trackingLink = label.tracking_number
     ? `https://www.fedex.com/wtrk/track/?action=track&trackingnumber=${label.tracking_number}`
     : null;
@@ -63,23 +59,26 @@ export default async function LabelDetailsPage({
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">{label.carrier_code}</Badge>
-            <Tooltip>
-              <TooltipTrigger>
-                <StatusBadge variant="destructive" title="Voided" />
-              </TooltipTrigger>
-              <TooltipContent>
-                {label.voided &&
-                  "Voided on " +
-                    voidedAt?.toLocaleString("en-US", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-              </TooltipContent>
-            </Tooltip>
+            {label.voided ? (
+              <Tooltip>
+                <TooltipTrigger>
+                  <StatusBadge variant="destructive" title="Voided" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  {label.voided &&
+                    "Voided on " +
+                      voidedAt?.toLocaleString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <Badge variant="success">Active</Badge>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" asChild>
@@ -87,7 +86,7 @@ export default async function LabelDetailsPage({
                 <ChevronLeft className="h-4 w-4" />
               </Link>
             </Button>
-            <h1 className="text-2xl font-semibold">{serviceName}</h1>
+            <h1 className="text-2xl font-semibold">{label.order_number}</h1>
           </div>
           <p className="text-sm text-muted-foreground">
             Created{" "}
