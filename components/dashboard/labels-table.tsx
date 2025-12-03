@@ -330,9 +330,13 @@ export function LabelsTable<T>({
     const res =
       selectedLabels.length > 1
         ? await bulkVoidShippingLabels(
-            selectedLabels.map((lbl) => lbl.shipment_id)
+            selectedLabels.map((lbl) => lbl.shipment_id),
+            showUserId ? "admin" : "dashboard"
           )
-        : await voidShippingLabel(selectedLabels[0].shipment_id);
+        : await voidShippingLabel(
+            selectedLabels[0].shipment_id,
+            showUserId ? "admin" : "dashboard"
+          );
     return res;
   };
 

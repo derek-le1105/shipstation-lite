@@ -92,7 +92,10 @@ export async function bulkUpdatePaidStatus(
   };
 }
 
-export async function voidShippingLabel(shipment_id: number) {
+export async function voidShippingLabel(
+  shipment_id: number,
+  type: "dashboard" | "admin"
+) {
   const supabase = await createClient();
 
   try {
@@ -107,7 +110,7 @@ export async function voidShippingLabel(shipment_id: number) {
       .single();
 
     if (error || !data) return { message: error.message, success: false };
-
+    revalidatePath(`${type}/labels`);
     return {
       message: "Succesfully voided label",
       success: true,
@@ -117,7 +120,10 @@ export async function voidShippingLabel(shipment_id: number) {
   }
 }
 
-export async function bulkVoidShippingLabels(shipment_ids: number[]) {
+export async function bulkVoidShippingLabels(
+  shipment_ids: number[],
+  type: "dashboard" | "admin"
+) {
   const supabase = await createClient();
 
   try {
@@ -135,6 +141,7 @@ export async function bulkVoidShippingLabels(shipment_ids: number[]) {
       .select("*");
 
     if (error || !data) return { message: error.message, success: false };
+    revalidatePath(`${type}/labels`);
 
     return {
       message: "Succesfully voided label",
