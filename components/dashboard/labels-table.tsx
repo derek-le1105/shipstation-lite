@@ -127,6 +127,11 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
         ] as ColumnDef<T>[])
       : []),
     {
+      accessorKey: "order_number",
+      header: "Order #",
+      cell: ({ row }) => <div>{row.getValue("order_number")}</div>,
+    },
+    {
       accessorKey: "service_code",
       header: "Service",
       cell: ({ row }) => (
@@ -281,7 +286,6 @@ export function LabelsTable<T>({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
   const [globalFilter, setGlobalFilter] = useState("");
-
   const table = useReactTable<T>({
     data: labels,
     columns: columns<T>({ showUserId }),
