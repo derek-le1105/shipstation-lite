@@ -194,7 +194,6 @@ export async function validateAddress(formData: FormData) {
       }
     );
     const summary = summarizeAddressValidation(response);
-    console.log("summary: ", summary);
     return summary;
   } catch (error) {
     const message = (() => {
@@ -202,7 +201,6 @@ export async function validateAddress(formData: FormData) {
       const oneLine = raw.replace(/\s+/g, " ").trim();
       return oneLine.length > 200 ? `${oneLine.slice(0, 197)}...` : oneLine;
     })();
-    console.log("Address validation error: ", error);
     return {
       valid: false,
       issues: [

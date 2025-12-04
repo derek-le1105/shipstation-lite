@@ -48,6 +48,7 @@ export function AddressSection({
     if (!formRef.current) return;
     setValidAddressStatus("idle");
   }, [formRef]);
+
   const handleValidateAddress = async () => {
     try {
       setValidAddressStatus("validating");
@@ -57,7 +58,8 @@ export function AddressSection({
         const formElement = form as HTMLFormElement;
         const currentFormData = new FormData(formElement);
         for (const [key, value] of currentFormData.entries()) {
-          if (key.startsWith(`to.`)) formData.append(key.slice(3), value);
+          if (key.startsWith(`${prefix}.`))
+            formData.append(key.slice(prefix.length + 1), value);
         }
       }
       const { valid, issues } = await validateAddress(formData);
