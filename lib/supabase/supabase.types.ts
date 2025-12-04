@@ -149,6 +149,7 @@ export type Database = {
           carrier_code: string;
           confirmation: string | null;
           created_at: string;
+          deleted_at: string | null;
           from_address_id: string | null;
           height: number;
           id: string;
@@ -183,6 +184,7 @@ export type Database = {
           carrier_code: string;
           confirmation?: string | null;
           created_at?: string;
+          deleted_at?: string | null;
           from_address_id?: string | null;
           height?: number;
           id?: string;
@@ -217,6 +219,7 @@ export type Database = {
           carrier_code?: string;
           confirmation?: string | null;
           created_at?: string;
+          deleted_at?: string | null;
           from_address_id?: string | null;
           height?: number;
           id?: string;
