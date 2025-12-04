@@ -128,6 +128,8 @@ function summarizeAddressValidation(
   const matched = attr.Matched !== "false"; // default to true if missing
   const resolved = attr.Resolved !== "false"; // default to true if missing
 
+  const validated = attr.StreetAddress === "true"; //True indicates that the house number and street name were validated against reference data.
+
   const blockingIssues = [
     attr.SuiteRequiredButMissing === "true",
     attr.InvalidSuiteNumber === "true",
@@ -136,7 +138,7 @@ function summarizeAddressValidation(
     attr.CountrySupported === "false",
   ].some(Boolean);
 
-  const valid = dpv && matched && resolved && !blockingIssues;
+  const valid = (dpv && matched && resolved && !blockingIssues) || validated;
 
   const normalizedPostal = (() => {
     const base = first?.parsedPostalCode?.base || first?.postalCodeToken?.value;
@@ -186,7 +188,6 @@ export async function validateAddress(formData: FormData) {
       postalCode,
       countryCode,
     };
-
     const response = await fedexClient.post<AddressValidationResponse>(
       "/address/v1/addresses/resolve",
       {
