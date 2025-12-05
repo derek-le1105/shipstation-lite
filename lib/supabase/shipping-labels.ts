@@ -103,6 +103,7 @@ const SHIPPING_LABEL_COLUMNS = [
   "created_at",
   "shipment_id",
   "voided_at",
+  "paid_at",
 ] as const satisfies ReadonlyArray<keyof ShippingLabelRecord>;
 
 type ListShippingLabelsOptions<
@@ -308,8 +309,8 @@ export async function listAllShippingLabels(
 
 export async function getNextOrderNumber() {
   const supabase = await createClient();
-  const { data } = await supabase
-    .rpc("next_shipping_label_order_number")
-    .throwOnError();
-  return data;
+  const { count } = await supabase
+    .from("shipping_labels")
+    .select("*", { count: "exact", head: true });
+  return `UNS-SM-${count}`;
 }

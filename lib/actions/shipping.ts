@@ -533,20 +533,24 @@ function processAdvancedOptions(
 function calculateUpchargeCost(
   upcharge: { value: number; unit: string },
   totalShipmentCost: number
-) {
+): number {
   const { value: upchargeValue, unit: upchargeUnit } = upcharge;
+
+  let result = totalShipmentCost;
+
   if (
     Number.isFinite(upchargeValue) &&
     upchargeValue > 0 &&
     (upchargeUnit === "dollars" || upchargeUnit === "percent")
   ) {
     if (upchargeUnit === "dollars") {
-      return totalShipmentCost + upchargeValue;
+      result = totalShipmentCost + upchargeValue;
     } else if (upchargeUnit === "percent") {
-      return totalShipmentCost * (1 + upchargeValue / 100);
+      result = totalShipmentCost * (1 + upchargeValue / 100);
     }
   }
-  return totalShipmentCost;
+
+  return parseFloat(result.toFixed(2)); // always round to cents
 }
 
 async function processAddressMode(
