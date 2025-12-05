@@ -244,7 +244,7 @@ export async function voidShippingLabelAction(formData: FormData) {
 
     const { data: updatedLabel, error: updatedLabelError } = await supabase
       .from("shipping_labels")
-      .update({ voided: true, voided_at: new Date().toISOString() })
+      .update({ voided_at: new Date().toISOString() })
       .eq("shipment_id", shipmentId)
       .select("*")
       .single();
@@ -394,6 +394,7 @@ export async function createShippingLabelAction(
               shipStationLabel: labelResponse,
             };
           } catch (dbErr) {
+            console.log(dbErr);
             // best-effort rollback of the carrier label if DB insert fails
             try {
               if (Number.isFinite(labelResponse.shipmentId)) {
@@ -460,6 +461,7 @@ export async function createShippingLabelAction(
       items,
     };
   } catch (error) {
+    console.log(error);
     const message =
       error instanceof Error
         ? error.message
@@ -476,7 +478,6 @@ async function createShipStationOrder(payload: CreateOrderPayload) {
   const { orderNumber } = payload;
 
   const existingOrders = await listOrders({ orderNumber });
-  console.log("Number of existing orders found:", existingOrders.total);
 
   if (existingOrders.total > 0) {
     const valid = existingOrders.orders.filter(

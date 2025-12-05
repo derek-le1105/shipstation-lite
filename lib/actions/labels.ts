@@ -101,7 +101,7 @@ export async function voidShippingLabel(
 
     const { data, error } = await supabase
       .from("shipping_labels")
-      .update({ voided: true, voided_at: new Date().toISOString() })
+      .update({ voided_at: new Date().toISOString() })
       .eq("shipment_id", shipment_id)
       .select("*")
       .single();
@@ -133,7 +133,7 @@ export async function bulkVoidShippingLabels(
 
     const { data, error } = await supabase
       .from("shipping_labels")
-      .update({ voided: true, voided_at: new Date().toISOString() })
+      .update({ voided_at: new Date().toISOString() })
       .in("shipment_id", shipment_ids)
       .select("*");
 
