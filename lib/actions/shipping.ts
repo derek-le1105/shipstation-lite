@@ -374,6 +374,7 @@ export async function createShippingLabelAction(
               label_data_base64: labelResponse.labelData ?? null,
               shipment_id: labelResponse.shipmentId,
               voided_at: null,
+              paid_at: null,
               order_number: orderNumber,
               is_address_validated: addressValidated,
               insurance_options: insuranceOptions ?? {

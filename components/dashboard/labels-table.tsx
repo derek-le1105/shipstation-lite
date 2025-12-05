@@ -221,11 +221,11 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
       },
     },
     {
-      accessorKey: "paid",
+      accessorKey: "paid_at",
       header: "Paid?",
       cell: ({ row }) => {
-        const variant = row.getValue("paid") ? "success" : "destructive";
-        const title = row.getValue("paid") ? "Paid" : "Unpaid";
+        const variant = row.getValue("paid_at") ? "success" : "destructive";
+        const title = row.getValue("paid_at") ? "Paid" : "Unpaid";
         return <StatusBadge variant={variant} title={title} />;
       },
     },
@@ -485,10 +485,9 @@ export function LabelsTable<T>({
     const res =
       selectedLabels.length > 1
         ? await bulkUpdatePaidStatus(
-            selectedLabels.map((lbl) => lbl.shipment_id),
-            type === "paid"
+            selectedLabels.map((lbl) => lbl.shipment_id)
           )
-        : await updatePaidStatus(selectedLabels[0].shipment_id, type == "paid");
+        : await updatePaidStatus(selectedLabels[0].shipment_id);
 
     return res;
   };

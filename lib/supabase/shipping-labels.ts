@@ -47,7 +47,7 @@ export type ShippingLabelRecord = {
   is_address_validated: boolean;
   insurance_options: InsuranceOption | null;
   advanced_options: AdvancedOptions | null;
-  paid?: boolean;
+  paid_at: string | null;
   profiles?: Omit<UserProfile, "id" | "created_at" | "updated_at">;
 };
 
@@ -168,7 +168,7 @@ export async function getUserLabelStats(
   const supabase = await getClient(client);
   const { data, error } = await supabase
     .from("shipping_labels")
-    .select("total_shipment_cost,total_insurance_cost,paid")
+    .select("total_shipment_cost,total_insurance_cost,paid_at")
     .eq("user_id", userId);
 
   if (error) {
@@ -182,7 +182,7 @@ export async function getUserLabelStats(
       const total = shipmentCost + insuranceCost;
 
       acc.totalSpent += total;
-      if (label.paid) {
+      if (label.paid_at) {
         acc.totalPaid += total;
       }
       acc.labelCount += 1;

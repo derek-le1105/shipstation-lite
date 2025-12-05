@@ -58,8 +58,8 @@ export function AdminTable({ labels }: { labels: ShippingLabelWithProfile[] }) {
                 />
               </td>
               <td className="px-4 py-3">
-                <Badge variant={label.paid ? "success" : "destructive"}>
-                  {label.paid ? "Paid" : "Unpaid"}
+                <Badge variant={label.paid_at ? "success" : "destructive"}>
+                  {label.paid_at ? "Paid" : "Unpaid"}
                 </Badge>
               </td>
               <td className="px-4 py-3">

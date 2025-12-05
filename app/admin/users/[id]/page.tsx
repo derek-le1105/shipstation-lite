@@ -144,7 +144,7 @@ export default async function UserPage({
                       label="Paid"
                       value={
                         <Badge variant="outline">
-                          {mostRecentLabel.paid ? "Paid" : "Unpaid"}
+                          {mostRecentLabel.paid_at ? "Paid" : "Unpaid"}
                         </Badge>
                       }
                     />
