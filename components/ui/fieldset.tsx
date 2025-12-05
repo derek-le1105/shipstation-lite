@@ -9,7 +9,7 @@ export function Fieldset({
 }) {
   return (
     <fieldset className="space-y-1 rounded-lg border border-border p-4">
-      <legend className="px-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+      <legend className="px-2 text-md font-semibold uppercase tracking-wide">
         {title}
       </legend>
       {description ? (
