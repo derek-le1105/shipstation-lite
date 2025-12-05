@@ -283,6 +283,7 @@ export type Database = {
         Returns: undefined;
       };
       is_admin: { Args: never; Returns: boolean };
+      next_shipping_label_order_number: { Args: never; Returns: string };
     };
     Enums: {
       package_dimension_units: "inches" | "centimeters";

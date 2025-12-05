@@ -10,6 +10,7 @@ import {
   type AddressRecord,
 } from "@/lib/supabase/addresses";
 import {
+  getNextOrderNumber,
   insertShippingLabel,
   type ShippingLabelRecord,
 } from "@/lib/supabase/shipping-labels";
@@ -260,6 +261,7 @@ export async function createShippingLabelAction(
 ): Promise<CreateShippingLabelState> {
   try {
     const profile = await requireUserProfile();
+
     const upcharge = await getUserUpcharge(profile.id).then((data) => ({
       value: data.value,
       unit: data.unit,
@@ -267,7 +269,8 @@ export async function createShippingLabelAction(
     const fromMode = (formData.get("from.mode") as AddressMode) ?? "new";
     const toMode = (formData.get("to.mode") as AddressMode) ?? "new";
 
-    const orderNumber = formData.get("orderNumber") as string | null;
+    let orderNumber = formData.get("orderNumber") as string | null;
+    if (!orderNumber) orderNumber = await getNextOrderNumber();
     const carrierCode = getCarrierCode(formData);
     const serviceCode = getServiceCode(formData);
 

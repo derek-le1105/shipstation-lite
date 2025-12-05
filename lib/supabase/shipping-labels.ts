@@ -306,3 +306,11 @@ export async function listAllShippingLabels(
   const labels = (data ?? []) as ShippingLabelRecord[];
   return labels;
 }
+
+export async function getNextOrderNumber() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .rpc("next_shipping_label_order_number")
+    .throwOnError();
+  return data;
+}
