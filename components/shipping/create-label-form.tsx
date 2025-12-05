@@ -115,7 +115,6 @@ export function CreateLabelForm({
             prefix="from"
             title="Ship from"
             addresses={fromAddresses}
-            mode={fromMode}
             setMode={setFromMode}
             pending={isPending}
             formRef={formRef}
@@ -124,7 +123,6 @@ export function CreateLabelForm({
             prefix="to"
             title="Ship to"
             addresses={toAddresses}
-            mode={toMode}
             setMode={setToMode}
             pending={isPending}
             formRef={formRef}
