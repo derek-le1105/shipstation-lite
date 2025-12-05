@@ -309,8 +309,8 @@ export async function listAllShippingLabels(
 
 export async function getNextOrderNumber() {
   const supabase = await createClient();
-  const { count } = await supabase
-    .from("shipping_labels")
-    .select("*", { count: "exact", head: true });
-  return `UNS-SM-${count}`;
+  const { data } = await supabase
+    .rpc("next_shipping_label_order_number")
+    .throwOnError();
+  return data;
 }
