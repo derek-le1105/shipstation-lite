@@ -106,10 +106,10 @@ export default async function UserPage({
                     </div>
                     <Badge
                       variant={
-                        mostRecentLabel.voided ? "destructive" : "secondary"
+                        mostRecentLabel.voided_at ? "destructive" : "secondary"
                       }
                     >
-                      {mostRecentLabel.voided ? "Voided" : "Active"}
+                      {mostRecentLabel.voided_at ? "Voided" : "Active"}
                     </Badge>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">

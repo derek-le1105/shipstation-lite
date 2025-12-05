@@ -230,13 +230,13 @@ export async function voidShippingLabelAction(formData: FormData) {
 
   const { data: row, error } = await supabase
     .from("shipping_labels")
-    .select("id, user_id, voided")
+    .select("id, user_id, voided_at")
     .eq("shipment_id", shipmentId)
     .maybeSingle();
   if (error) throw error;
   if (!row || row.user_id !== profile.id) throw new Error("Not found");
 
-  if (!row.voided) {
+  if (!row.voided_at) {
     const { approved, message } = await voidLabel(shipmentId);
     console.log(`voidLabel response for ${shipmentId}:`, { approved, message });
     if (!approved)
@@ -249,7 +249,8 @@ export async function voidShippingLabelAction(formData: FormData) {
       .select("*")
       .single();
     if (updatedLabelError) throw updatedLabelError;
-    if (!updatedLabel.voided) throw new Error("Failed to update label status.");
+    if (!updatedLabel.voided_at)
+      throw new Error("Failed to update label status.");
   }
 
   revalidatePath("/dashboard");
@@ -372,7 +373,6 @@ export async function createShippingLabelAction(
               tracking_number: labelResponse.trackingNumber ?? null,
               label_data_base64: labelResponse.labelData ?? null,
               shipment_id: labelResponse.shipmentId,
-              voided: false,
               voided_at: null,
               order_number: orderNumber,
               is_address_validated: addressValidated,
@@ -655,4 +655,20 @@ function getServiceCode(formData: FormData): string {
     throw new Error("Service code is required.");
   }
   return serviceCode.trim();
+}
+
+export async function deleteShippingLabel(labelID: string) {
+  const profile = await requireUserProfile();
+  if (!profile) throw new Error("No Profile Error");
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("shipping_labels")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", labelID)
+    .select();
+
+  if (error || !data) throw new Error(error?.message);
+
+  return;
 }

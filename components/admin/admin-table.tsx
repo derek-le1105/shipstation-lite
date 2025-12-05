@@ -53,8 +53,8 @@ export function AdminTable({ labels }: { labels: ShippingLabelWithProfile[] }) {
               </td>
               <td className="px-4 py-3">
                 <StatusBadge
-                  variant={label.voided ? "destructive" : "success"}
-                  title={label.voided ? "Voided" : "Active"}
+                  variant={label.voided_at ? "destructive" : "success"}
+                  title={label.voided_at ? "Voided" : "Active"}
                 />
               </td>
               <td className="px-4 py-3">
@@ -89,7 +89,7 @@ export function AdminTable({ labels }: { labels: ShippingLabelWithProfile[] }) {
                   <Button
                     size="sm"
                     className="w-full md:w-auto"
-                    disabled={!label.label_data_base64 || label.voided}
+                    disabled={!label.label_data_base64 || !!label.voided_at}
                     onClick={async () => {
                       try {
                         await printLabels([label.label_data_base64!]);

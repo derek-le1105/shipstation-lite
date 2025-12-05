@@ -173,7 +173,6 @@ export type Database = {
           tracking_number: string | null;
           units: Database["public"]["Enums"]["package_dimension_units"];
           user_id: string;
-          voided: boolean;
           voided_at: string | null;
           weight_unit: string;
           weight_value: number;
@@ -208,7 +207,6 @@ export type Database = {
           tracking_number?: string | null;
           units?: Database["public"]["Enums"]["package_dimension_units"];
           user_id: string;
-          voided: boolean;
           voided_at?: string | null;
           weight_unit: string;
           weight_value: number;
@@ -243,7 +241,6 @@ export type Database = {
           tracking_number?: string | null;
           units?: Database["public"]["Enums"]["package_dimension_units"];
           user_id?: string;
-          voided?: boolean;
           voided_at?: string | null;
           weight_unit?: string;
           weight_value?: number;

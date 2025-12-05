@@ -42,7 +42,6 @@ export type ShippingLabelRecord = {
   label_data_base64: string;
   created_at: string;
   shipment_id: number;
-  voided: boolean;
   voided_at: string | null;
   order_number?: string | null;
   is_address_validated: boolean;
@@ -103,7 +102,6 @@ const SHIPPING_LABEL_COLUMNS = [
   "label_data_base64",
   "created_at",
   "shipment_id",
-  "voided",
   "voided_at",
 ] as const satisfies ReadonlyArray<keyof ShippingLabelRecord>;
 
@@ -265,6 +263,7 @@ export async function listShippingLabelsForUser<
         : "*"
     )
     .eq("user_id", userId)
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
   if (error) {

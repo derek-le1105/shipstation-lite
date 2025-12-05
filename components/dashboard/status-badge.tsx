@@ -9,14 +9,6 @@ type BadgeVariant =
   | null
   | undefined;
 
-// export function StatusBadge({ voided }: { voided: boolean }) {
-//   return voided ? (
-//     <Badge variant="destructive">Voided</Badge>
-//   ) : (
-//     <Badge variant="success">Active</Badge>
-//   );
-// }
-
 export function StatusBadge({
   variant,
   title,
