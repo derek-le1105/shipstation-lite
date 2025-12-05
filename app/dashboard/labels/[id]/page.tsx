@@ -59,13 +59,13 @@ export default async function LabelDetailsPage({
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            {label.voided ? (
+            {voidedAt ? (
               <Tooltip>
                 <TooltipTrigger>
                   <StatusBadge variant="destructive" title="Voided" />
                 </TooltipTrigger>
                 <TooltipContent>
-                  {label.voided &&
+                  {voidedAt &&
                     "Voided on " +
                       voidedAt?.toLocaleString("en-US", {
                         year: "numeric",
@@ -100,8 +100,8 @@ export default async function LabelDetailsPage({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <VoidButton disabled={label.voided} label={label} />
-          <PrintButton label={label} disabled={label.voided} />
+          <VoidButton disabled={!!label.voided_at} label={label} />
+          <PrintButton label={label} disabled={!!label.voided_at} />
           {trackingLink ? (
             <Button asChild>
               <a href={trackingLink} target="_blank" rel="noopener noreferrer">

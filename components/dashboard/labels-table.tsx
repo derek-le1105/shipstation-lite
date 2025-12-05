@@ -10,6 +10,7 @@ import {
   FileTextIcon,
   FileSpreadsheetIcon,
   ChevronDown,
+  Trash,
 } from "lucide-react";
 
 import type {
@@ -82,6 +83,18 @@ import {
   updatePaidStatus,
   voidShippingLabel,
 } from "@/lib/actions/labels";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { deleteShippingLabel } from "@/lib/actions/shipping";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/dialog";
 
 type ColumnOptions = {
   showUserId?: boolean;
@@ -199,20 +212,20 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
       },
     },
     {
-      accessorKey: "voided",
+      accessorKey: "voided_at",
       header: "Active?",
       cell: ({ row }) => {
-        const variant = row.getValue("voided") ? "destructive" : "success";
-        const title = row.getValue("voided") ? "Voided" : "Active";
+        const variant = row.getValue("voided_at") ? "destructive" : "success";
+        const title = row.getValue("voided_at") ? "Voided" : "Active";
         return <StatusBadge variant={variant} title={title} />;
       },
     },
     {
-      accessorKey: "paid",
+      accessorKey: "paid_at",
       header: "Paid?",
       cell: ({ row }) => {
-        const variant = row.getValue("paid") ? "success" : "destructive";
-        const title = row.getValue("paid") ? "Paid" : "Unpaid";
+        const variant = row.getValue("paid_at") ? "success" : "destructive";
+        const title = row.getValue("paid_at") ? "Paid" : "Unpaid";
         return <StatusBadge variant={variant} title={title} />;
       },
     },
@@ -264,6 +277,52 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
           currency: "USD",
         }).format(shipmentCost + insuranceCost);
         return <div className="font-medium">{formatted}</div>;
+      },
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        return (
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Trash />
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Deleting Shipping Label</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to delete this shipping label? This will
+                  also void the shipping label.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    toast.promise(
+                      async () => {
+                        const { id } = row.original as ShippingLabelRecord;
+                        await deleteShippingLabel(id);
+                      },
+                      {
+                        loading: "Deleting label...",
+                        success: "Succesfully deleted label!",
+                      }
+                    );
+                  }}
+                >
+                  Delete
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        );
       },
     },
   ];
@@ -426,10 +485,9 @@ export function LabelsTable<T>({
     const res =
       selectedLabels.length > 1
         ? await bulkUpdatePaidStatus(
-            selectedLabels.map((lbl) => lbl.shipment_id),
-            type === "paid"
+            selectedLabels.map((lbl) => lbl.shipment_id)
           )
-        : await updatePaidStatus(selectedLabels[0].shipment_id, type == "paid");
+        : await updatePaidStatus(selectedLabels[0].shipment_id);
 
     return res;
   };

@@ -74,8 +74,8 @@ export function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
                     </div>
                     <div className="flex items-center gap-2 mb-1">
                       <StatusBadge
-                        variant={label.voided ? "destructive" : "success"}
-                        title={label.voided ? "Voided" : "Active"}
+                        variant={label.voided_at ? "destructive" : "success"}
+                        title={label.voided_at ? "Voided" : "Active"}
                       />
                       <span className="text-muted-foreground md:ml-0">
                         {created.toLocaleDateString("en-US", {
@@ -157,7 +157,7 @@ export function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
                           {label.ship_to_snapshot?.name ?? "N/A"}
                         </p>
                       </div>
-                      {label.voided && label.voided_at ? (
+                      {label.voided_at ? (
                         <div className="md:col-span-2 text-xs text-muted-foreground">
                           Voided on{" "}
                           {new Date(label.voided_at).toLocaleDateString(
@@ -217,7 +217,7 @@ export function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
                   <Button
                     size="sm"
                     className="w-full md:w-auto"
-                    disabled={!label.label_data_base64 || label.voided}
+                    disabled={!label.label_data_base64 || !!label.voided_at}
                     onClick={async () => {
                       try {
                         await printLabels([label.label_data_base64!]);
@@ -256,7 +256,7 @@ export function LabelHistory({ labels }: { labels: ShippingLabelRecord[] }) {
                       name="shipmentId"
                       value={label.shipment_id}
                     />
-                    <VoidButton disabled={label.voided} />
+                    <VoidButton disabled={!!label.voided_at} />
                   </form>
                 </div>
               </div>

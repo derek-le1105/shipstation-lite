@@ -42,13 +42,12 @@ export type ShippingLabelRecord = {
   label_data_base64: string;
   created_at: string;
   shipment_id: number;
-  voided: boolean;
   voided_at: string | null;
   order_number?: string | null;
   is_address_validated: boolean;
   insurance_options: InsuranceOption | null;
   advanced_options: AdvancedOptions | null;
-  paid?: boolean;
+  paid_at: string | null;
   profiles?: Omit<UserProfile, "id" | "created_at" | "updated_at">;
 };
 
@@ -103,7 +102,6 @@ const SHIPPING_LABEL_COLUMNS = [
   "label_data_base64",
   "created_at",
   "shipment_id",
-  "voided",
   "voided_at",
 ] as const satisfies ReadonlyArray<keyof ShippingLabelRecord>;
 
@@ -170,7 +168,7 @@ export async function getUserLabelStats(
   const supabase = await getClient(client);
   const { data, error } = await supabase
     .from("shipping_labels")
-    .select("total_shipment_cost,total_insurance_cost,paid")
+    .select("total_shipment_cost,total_insurance_cost,paid_at")
     .eq("user_id", userId);
 
   if (error) {
@@ -184,7 +182,7 @@ export async function getUserLabelStats(
       const total = shipmentCost + insuranceCost;
 
       acc.totalSpent += total;
-      if (label.paid) {
+      if (label.paid_at) {
         acc.totalPaid += total;
       }
       acc.labelCount += 1;
@@ -265,6 +263,7 @@ export async function listShippingLabelsForUser<
         : "*"
     )
     .eq("user_id", userId)
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -305,4 +304,12 @@ export async function listAllShippingLabels(
 
   const labels = (data ?? []) as ShippingLabelRecord[];
   return labels;
+}
+
+export async function getNextOrderNumber() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .rpc("next_shipping_label_order_number")
+    .throwOnError();
+  return data;
 }

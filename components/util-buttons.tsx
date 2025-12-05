@@ -77,7 +77,7 @@ export function VoidButton(
       }}
     >
       <input type="hidden" name="shipmentId" value={props.label.shipment_id} />
-      <VButton disabled={props.label.voided} />
+      <VButton disabled={!!props.label.voided_at} />
     </form>
   );
 }

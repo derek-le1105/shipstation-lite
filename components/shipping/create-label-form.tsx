@@ -51,6 +51,7 @@ interface CreateLabelFormProps {
   carriers: ShipStationCarrier[];
   services: ShipStationService[];
   packages: PackageRecord[];
+  nextOrderNumber: string;
 }
 
 export function useCreateLabelFormContext() {
@@ -69,6 +70,7 @@ export function CreateLabelForm({
   carriers,
   services,
   packages,
+  nextOrderNumber,
 }: CreateLabelFormProps) {
   const [formState, formAction, actionPending] = useActionState<
     CreateShippingLabelState,
@@ -115,7 +117,6 @@ export function CreateLabelForm({
             prefix="from"
             title="Ship from"
             addresses={fromAddresses}
-            mode={fromMode}
             setMode={setFromMode}
             pending={isPending}
             formRef={formRef}
@@ -124,7 +125,6 @@ export function CreateLabelForm({
             prefix="to"
             title="Ship to"
             addresses={toAddresses}
-            mode={toMode}
             setMode={setToMode}
             pending={isPending}
             formRef={formRef}
@@ -139,6 +139,7 @@ export function CreateLabelForm({
           services={services}
           setSelectedCarrier={setSelectedCarrier}
           setSelectedService={setSelectedService}
+          nextOrderNumber={nextOrderNumber}
         />
 
         <PackageDetailsSection
@@ -196,6 +197,7 @@ function ShipmentDetailsSection({
   services,
   setSelectedCarrier,
   setSelectedService,
+  nextOrderNumber,
 }: {
   isPending: boolean;
   selectedCarrier: string;
@@ -204,6 +206,7 @@ function ShipmentDetailsSection({
   services: ShipStationService[];
   setSelectedCarrier: (code: string) => void;
   setSelectedService: (code: string) => void;
+  nextOrderNumber: string;
 }) {
   return (
     <Fieldset title="Shipment Details">
@@ -259,7 +262,7 @@ function ShipmentDetailsSection({
           <Input
             id="orderNumber"
             name="orderNumber"
-            placeholder="AZ-12345"
+            placeholder={nextOrderNumber ?? "UNS-SM-#"}
             disabled={isPending}
           />
         </div>

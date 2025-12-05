@@ -160,7 +160,6 @@ export type Database = {
           length: number;
           order_number: string | null;
           package_code: string | null;
-          paid: boolean;
           paid_at: string | null;
           service_code: string;
           ship_from_snapshot: Json;
@@ -173,7 +172,6 @@ export type Database = {
           tracking_number: string | null;
           units: Database["public"]["Enums"]["package_dimension_units"];
           user_id: string;
-          voided: boolean;
           voided_at: string | null;
           weight_unit: string;
           weight_value: number;
@@ -195,7 +193,6 @@ export type Database = {
           length?: number;
           order_number?: string | null;
           package_code?: string | null;
-          paid?: boolean;
           paid_at?: string | null;
           service_code: string;
           ship_from_snapshot: Json;
@@ -208,7 +205,6 @@ export type Database = {
           tracking_number?: string | null;
           units?: Database["public"]["Enums"]["package_dimension_units"];
           user_id: string;
-          voided: boolean;
           voided_at?: string | null;
           weight_unit: string;
           weight_value: number;
@@ -230,7 +226,6 @@ export type Database = {
           length?: number;
           order_number?: string | null;
           package_code?: string | null;
-          paid?: boolean;
           paid_at?: string | null;
           service_code?: string;
           ship_from_snapshot?: Json;
@@ -243,7 +238,6 @@ export type Database = {
           tracking_number?: string | null;
           units?: Database["public"]["Enums"]["package_dimension_units"];
           user_id?: string;
-          voided?: boolean;
           voided_at?: string | null;
           weight_unit?: string;
           weight_value?: number;
@@ -283,6 +277,7 @@ export type Database = {
         Returns: undefined;
       };
       is_admin: { Args: never; Returns: boolean };
+      next_shipping_label_order_number: { Args: never; Returns: string };
     };
     Enums: {
       package_dimension_units: "inches" | "centimeters";
