@@ -4,7 +4,10 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "../supabase/server";
 import { voidLabel } from "../shipstation/client";
 
-export async function updatePaidStatus(shipment_id: number) {
+export async function updatePaidStatus(
+  shipment_id: number,
+  type: "paid" | "unpaid"
+) {
   const supabase = await createClient();
   const { data: label, error: fetchError } = await supabase
     .from("shipping_labels")
@@ -32,7 +35,7 @@ export async function updatePaidStatus(shipment_id: number) {
 
   const { data: updatedLabel, error: updateError } = await supabase
     .from("shipping_labels")
-    .update({ paid_at: new Date().toISOString() })
+    .update({ paid_at: type === "paid" ? new Date().toISOString() : null })
     .eq("shipment_id", shipment_id)
     .select("*")
     .single();
@@ -53,7 +56,10 @@ export async function updatePaidStatus(shipment_id: number) {
   };
 }
 
-export async function bulkUpdatePaidStatus(shipment_ids: number[]) {
+export async function bulkUpdatePaidStatus(
+  shipment_ids: number[],
+  type: "paid" | "unpaid"
+) {
   const supabase = await createClient();
   const { data: labels, error: fetchError } = await supabase
     .from("shipping_labels")
@@ -70,7 +76,7 @@ export async function bulkUpdatePaidStatus(shipment_ids: number[]) {
 
   const { error: updateError } = await supabase
     .from("shipping_labels")
-    .update({ paid_at: new Date().toISOString() })
+    .update({ paid_at: type === "paid" ? new Date().toISOString() : null })
     .in("shipment_id", shipment_ids)
     .select("*");
 

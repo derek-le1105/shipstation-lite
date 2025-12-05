@@ -485,9 +485,10 @@ export function LabelsTable<T>({
     const res =
       selectedLabels.length > 1
         ? await bulkUpdatePaidStatus(
-            selectedLabels.map((lbl) => lbl.shipment_id)
+            selectedLabels.map((lbl) => lbl.shipment_id),
+            type
           )
-        : await updatePaidStatus(selectedLabels[0].shipment_id);
+        : await updatePaidStatus(selectedLabels[0].shipment_id, type);
 
     return res;
   };
