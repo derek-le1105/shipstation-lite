@@ -141,7 +141,7 @@ export async function insertShippingLabel(
   return data as ShippingLabelRecord;
 }
 
-export async function getShippingLabel(
+export async function getMostRecentShippingLabel(
   userId: string,
   client?: ServerSupabaseClient
 ): Promise<ShippingLabelRecord | null> {
@@ -194,6 +194,24 @@ export async function getUserLabelStats(
   );
 
   return stats;
+}
+
+export async function getShippingLabel(labelId: string) {
+  const supabase = await getClient();
+  const { data, error } = await supabase
+    .from("shipping_labels")
+    .select("*")
+    .eq("id", labelId)
+    .maybeSingle();
+
+  if (error) {
+    if (error.code === "PGRST116") {
+      return null;
+    }
+    throw error;
+  }
+
+  return (data as ShippingLabelRecord | null) ?? null;
 }
 
 export async function getShippingLabelById(

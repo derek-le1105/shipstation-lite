@@ -473,7 +473,7 @@ export function LabelsTable<T>({
     const label = row.original as { id?: string };
 
     if (label?.id) {
-      router.push(`/dashboard/labels/${label.id}`);
+      router.push(`/${showUserId ? "admin" : "dashboard"}/labels/${label.id}`);
     }
   };
 

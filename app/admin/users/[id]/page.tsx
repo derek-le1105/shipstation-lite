@@ -10,7 +10,7 @@ import { getUserUpcharge } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { FEDEX_SERVICES } from "@/lib/shipstation/fedex";
 import {
-  getShippingLabel,
+  getMostRecentShippingLabel,
   getUserLabelStats,
 } from "@/lib/supabase/shipping-labels";
 import { User, UserPen } from "lucide-react";
@@ -33,7 +33,7 @@ export default async function UserPage({
   const { id } = await params;
   const user = await getUser(id);
   const userUpcharge = await getUserUpcharge(user.id);
-  const mostRecentLabel = await getShippingLabel(id);
+  const mostRecentLabel = await getMostRecentShippingLabel(id);
   const labelStats = await getUserLabelStats(id);
   const warehouses = await listWarehouses();
   const lastLabelDate = mostRecentLabel?.created_at
