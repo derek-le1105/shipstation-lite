@@ -8,6 +8,7 @@ export type UserProfile = {
   role: "user" | "admin";
   created_at: string;
   updated_at: string;
+  warehouse_id: number | null;
 };
 
 async function ensureProfileRecord(

@@ -29,116 +29,138 @@ import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { listProfiles } from "@/lib/supabase/profiles";
+import { Warehouse } from "@/lib/shipstation/types";
 type UserRow = Awaited<ReturnType<typeof listProfiles>>[0] & {
   upcharge: { value: number; unit: "dollars" | "percent" } | null;
 };
 
-const columns: ColumnDef<UserRow>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: "full_name",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          className="p-0"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Name
-          {column.getIsSorted() === "asc" ? (
-            <ArrowUp className="ml-2 h-4 w-4" />
-          ) : column.getIsSorted() === "desc" ? (
-            <ArrowDown className="ml-2 h-4 w-4" />
-          ) : (
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          )}
-        </Button>
-      );
+const columns = (warehouses: Warehouse[] = []): ColumnDef<UserRow>[] => {
+  return [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
     },
-    cell: ({ row }) => <div>{row.getValue("full_name")}</div>,
-  },
-  {
-    accessorKey: "email",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          className="p-0"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Email
-          {column.getIsSorted() === "asc" ? (
-            <ArrowUp className="ml-2 h-4 w-4" />
-          ) : column.getIsSorted() === "desc" ? (
-            <ArrowDown className="ml-2 h-4 w-4" />
-          ) : (
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          )}
-        </Button>
-      );
+    {
+      accessorKey: "full_name",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            className="p-0"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Name
+            {column.getIsSorted() === "asc" ? (
+              <ArrowUp className="ml-2 h-4 w-4" />
+            ) : column.getIsSorted() === "desc" ? (
+              <ArrowDown className="ml-2 h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            )}
+          </Button>
+        );
+      },
+      cell: ({ row }) => <div>{row.getValue("full_name")}</div>,
     },
-    cell: ({ row }) => <div>{row.getValue("email")}</div>,
-  },
-  {
-    accessorKey: "upcharge",
-    header: "Upcharge Value",
-    cell: ({ row }) => {
-      const upcharge = row.original.upcharge;
-      return upcharge ? (
-        <span className="font-medium">
-          {formatDollarPercent(upcharge?.value, upcharge?.unit)}
-        </span>
-      ) : (
-        "N/A"
-      );
+    {
+      accessorKey: "email",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            className="p-0"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Email
+            {column.getIsSorted() === "asc" ? (
+              <ArrowUp className="ml-2 h-4 w-4" />
+            ) : column.getIsSorted() === "desc" ? (
+              <ArrowDown className="ml-2 h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            )}
+          </Button>
+        );
+      },
+      cell: ({ row }) => <div>{row.getValue("email")}</div>,
     },
-  },
-  {
-    id: "total_labels",
-    header: "Labels",
-    cell: ({ row }) => <div>{row.original.shipping_labels.total} Labels</div>,
-  },
-  {
-    id: "total_amount",
-    header: "Amount Spent",
-    cell: ({ row }) => (
-      <div>
-        {new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency: "USD",
-        }).format(row.original.shipping_labels.total_cost)}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "role",
-    header: "Role",
-    cell: ({ row }) => <div>{row.getValue("role")}</div>,
-  },
-];
+    {
+      accessorKey: "warehouse_id",
+      header: () => <div>Ship From</div>,
+      cell: ({ row }) => {
+        const { warehouse_id } = row.original;
+        if (!warehouse_id) return <div>N/A</div>;
+        const warehouse = warehouses?.find(
+          (wh) => wh.warehouseId === row.original.warehouse_id
+        );
+        if (!warehouse) return <div>Unknown Warehouse ID {warehouse_id}</div>;
+        return <div>{warehouse.warehouseName}</div>;
+      },
+    },
+    {
+      accessorKey: "upcharge",
+      header: "Upcharge Value",
+      cell: ({ row }) => {
+        const upcharge = row.original.upcharge;
+        return upcharge ? (
+          <span className="font-medium">
+            {formatDollarPercent(upcharge?.value, upcharge?.unit)}
+          </span>
+        ) : (
+          "N/A"
+        );
+      },
+    },
+    {
+      id: "total_labels",
+      header: "Labels",
+      cell: ({ row }) => <div>{row.original.shipping_labels.total} Labels</div>,
+    },
+    {
+      id: "total_amount",
+      header: "Amount Spent",
+      cell: ({ row }) => (
+        <div>
+          {new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: "USD",
+          }).format(row.original.shipping_labels.total_cost)}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "role",
+      header: "Role",
+      cell: ({ row }) => <div>{row.getValue("role")}</div>,
+    },
+  ];
+};
 
-export function UsersTable({ profiles }: { profiles: UserRow[] }) {
+export function UsersTable({
+  profiles,
+  warehouses,
+}: {
+  profiles: UserRow[];
+  warehouses: Warehouse[];
+}) {
   const router = useRouter();
 
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -149,7 +171,7 @@ export function UsersTable({ profiles }: { profiles: UserRow[] }) {
 
   const table = useReactTable({
     data: profiles,
-    columns,
+    columns: columns(warehouses),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),

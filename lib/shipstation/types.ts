@@ -301,7 +301,7 @@ export type ShipStationOrder = {
 export type AdvancedOptions = {
   warehouseId?: number | null;
   nonMachinable?: boolean | null;
-  saturdayDelivery: boolean | null;
+  saturdayDelivery?: boolean | null;
   containsAlcohol?: boolean | null;
   mergedOrSplit?: boolean | null;
   mergedIds?: string[] | null;
@@ -337,3 +337,45 @@ export type ShipStationOrderItem = {
   createDate: string;
   modifyDate: string;
 };
+
+export interface Warehouse {
+  warehouseId: number;
+  warehouseName: string;
+  originAddress: WarehouseOriginAddress;
+  returnAddress: WarehouseReturnAddress;
+  createDate: string;
+  isDefault: boolean;
+  sellerIntegrationId: null;
+  extInventoryIdentity: null;
+  registerFedexMeter: null;
+}
+
+interface WarehouseReturnAddress {
+  name: string;
+  company: string;
+  street1: string;
+  street2: string;
+  street3: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  phone: string;
+  residential: null;
+  addressVerified: null;
+}
+
+interface WarehouseOriginAddress {
+  name: string;
+  company: string;
+  street1: string;
+  street2: string;
+  street3: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  phone: string;
+  residential: boolean;
+  addressVerified: null;
+}
