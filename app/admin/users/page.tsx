@@ -47,7 +47,10 @@ export default async function AdminUsersPage() {
           />
         </CardHeader>
         <CardContent>
-          <UsersTable profiles={profilesWithUpcharges} />
+          <UsersTable
+            profiles={profilesWithUpcharges}
+            warehouses={warehouses}
+          />
         </CardContent>
       </Card>
     </section>
