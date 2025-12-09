@@ -17,6 +17,7 @@ export async function updateProfileAction(
   const email = formData.get("email") as string;
   const full_name = formData.get("full_name") as string;
   const role = formData.get("role") as "user" | "admin";
+  const warehouse_id = parseInt(formData.get("warehouse_id") as string);
   const upcharge_value = Number(formData.get("upcharge_value"));
   const upcharge_unit = formData.get("upcharge_unit") as "dollars" | "percent";
 
@@ -27,6 +28,7 @@ export async function updateProfileAction(
       email,
       full_name,
       role,
+      warehouse_id,
     })
     .eq("id", userId)
     .select("*")

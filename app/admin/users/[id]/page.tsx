@@ -14,6 +14,7 @@ import {
   getUserLabelStats,
 } from "@/lib/supabase/shipping-labels";
 import { User, UserPen } from "lucide-react";
+import { listWarehouses } from "@/lib/shipstation/client";
 
 export const metadata = {
   title: "UNS Shipping Manager - Admin | Users",
@@ -34,6 +35,7 @@ export default async function UserPage({
   const userUpcharge = await getUserUpcharge(user.id);
   const mostRecentLabel = await getShippingLabel(id);
   const labelStats = await getUserLabelStats(id);
+  const warehouses = await listWarehouses();
   const lastLabelDate = mostRecentLabel?.created_at
     ? new Date(mostRecentLabel.created_at).toLocaleString("en-US", {
         dateStyle: "medium",
@@ -161,6 +163,7 @@ export default async function UserPage({
                 user={user}
                 upcharge={userUpcharge}
                 icon={<UserPen />}
+                warehouses={warehouses}
               />
             </CardHeader>
             <CardContent>

@@ -293,6 +293,9 @@ export async function createShippingLabelAction(
         billTo: shipTo,
         orderDate: new Date().toISOString(),
         orderStatus: "awaiting_shipment",
+        advancedOptions: {
+          warehouseId: profile?.warehouse_id,
+        },
       });
       if (!createOrderResponse) {
         throw new Error("Failed to create order in ShipStation.");

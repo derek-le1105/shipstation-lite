@@ -25,6 +25,15 @@ import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 import { UserProfile } from "@/lib/auth";
 import { UserUpcharge } from "@/lib/supabase/admin";
+import { Warehouse } from "@/lib/shipstation/types";
+
+type UserFormProps = {
+  action: (_prev: UserState, formData: FormData) => Promise<UserState>;
+  user?: UserProfile;
+  upcharge?: UserUpcharge;
+  icon?: React.ReactNode;
+  warehouses?: Warehouse[];
+};
 
 /**
  * A form component for creating or editing a user.
@@ -34,12 +43,8 @@ export default function UserForm({
   user,
   upcharge,
   icon,
-}: {
-  action: (_prev: UserState, formData: FormData) => Promise<UserState>;
-  user?: UserProfile;
-  upcharge?: UserUpcharge;
-  icon?: React.ReactNode;
-}) {
+  warehouses,
+}: UserFormProps) {
   const [state, formAction, actionPending] = useActionState<
     UserState,
     FormData
@@ -88,18 +93,47 @@ export default function UserForm({
               <Label htmlFor="email">Email</Label>
               <Input id="email" name="email" defaultValue={user?.email ?? ""} />
             </div>
-            <div className="grid gap-3">
-              <Label htmlFor="role">Role</Label>
-              <Select name="role" defaultValue={user?.role ?? "user"}>
-                <SelectTrigger className="w-[100px]">
-                  <SelectValue placeholder="Select a role"></SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid md:grid-cols-2 gap-3">
+              <div className="grid gap-3">
+                <Label htmlFor="role">Role</Label>
+                <Select name="role" defaultValue={user?.role ?? "user"}>
+                  <SelectTrigger className="w-[100px]">
+                    <SelectValue placeholder="Select a role"></SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">User</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {warehouses && (
+                <div className="grid gap-3">
+                  <Label htmlFor="role">Warehouse (Ship From)</Label>
+                  <Select name="warehouse_id" defaultValue="109427">
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {warehouses
+                        .sort((a, b) =>
+                          a.warehouseName.localeCompare(b.warehouseName)
+                        )
+                        .map((warehouse) => {
+                          return (
+                            <SelectItem
+                              key={warehouse.warehouseId}
+                              value={warehouse.warehouseId.toString()}
+                            >
+                              {warehouse.warehouseName}
+                            </SelectItem>
+                          );
+                        })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
+
             <div className="grid md:grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label htmlFor="upcharge_value">Upcharge Value</Label>

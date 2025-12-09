@@ -3,6 +3,7 @@ import { UsersTable } from "@/components/admin/users/users-table";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { createUserInviteAction } from "@/lib/actions/admin-users";
 import { requireAdminProfile } from "@/lib/auth";
+import { listWarehouses } from "@/lib/shipstation/client";
 import { listUpcharges } from "@/lib/supabase/admin";
 import { listProfiles } from "@/lib/supabase/profiles";
 import { UserPlus } from "lucide-react";
@@ -21,7 +22,7 @@ export default async function AdminUsersPage() {
 
   const profiles = await listProfiles();
   const upcharges = await listUpcharges();
-
+  const warehouses = await listWarehouses();
   const profilesWithUpcharges: ((typeof profiles)[0] & {
     upcharge: { value: number; unit: "dollars" | "percent" } | null;
   })[] = profiles.map((profile) => {
@@ -39,7 +40,11 @@ export default async function AdminUsersPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg font-semibold">Users</CardTitle>
-          <UserForm action={createUserInviteAction} icon={<UserPlus />} />
+          <UserForm
+            action={createUserInviteAction}
+            icon={<UserPlus />}
+            warehouses={warehouses}
+          />
         </CardHeader>
         <CardContent>
           <UsersTable profiles={profilesWithUpcharges} />

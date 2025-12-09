@@ -12,6 +12,7 @@ import type {
   CreateLabelForOrderPayload,
   ShipStationOrderLabel as OrderLabel,
   ListOrdersResponse,
+  Warehouse,
 } from "./types";
 
 const DEFAULT_API_BASE = "https://ssapi.shipstation.com";
@@ -160,6 +161,10 @@ export async function listPackages(carrierCode: string): Promise<Package[]> {
   return shipStationRequest<Package[]>(
     `/carriers/listpackages?${params.toString()}`
   );
+}
+
+export async function listWarehouses(): Promise<Warehouse[]> {
+  return shipStationRequest<Warehouse[]>(`/warehouses`);
 }
 
 export async function voidLabel(
