@@ -109,7 +109,10 @@ export default function UserForm({
               {warehouses && (
                 <div className="grid gap-3">
                   <Label htmlFor="role">Warehouse (Ship From)</Label>
-                  <Select name="warehouse_id" defaultValue="109427">
+                  <Select
+                    name="warehouse_id"
+                    defaultValue={user?.warehouse_id?.toString() ?? "109427"}
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
