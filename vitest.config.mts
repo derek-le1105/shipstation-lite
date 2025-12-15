@@ -14,10 +14,18 @@ export default defineConfig({
     },
   },
   test: {
+    dir: "__tests__/unit",
     environment: "jsdom",
     setupFiles: ["__tests__/setup.ts"],
     clearMocks: true,
     restoreMocks: true,
     mockReset: true,
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.{idea,git,cache,output,temp}/**",
+      "**/{coverage,playwright-report,test-results}/**",
+      "__tests__/e2e/**",
+    ],
   },
 });

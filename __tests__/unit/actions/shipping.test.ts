@@ -24,17 +24,17 @@ vi.mock("@/lib/shipstation/client", () => ({
   voidLabel: vi.fn(),
 }));
 
-vi.mock("../../lib/supabase/admin", () => ({
+vi.mock("@/lib/supabase/admin", () => ({
   getUserUpcharge: vi.fn(),
 }));
 
-vi.mock("../../lib/supabase/packages", () => ({
+vi.mock("@/lib/supabase/packages", () => ({
   createPackage: vi.fn(),
   getPackageById: vi.fn(),
   updatePackage: vi.fn(),
 }));
 
-vi.mock("../../lib/supabase/server", () => ({
+vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(),
 }));
 
@@ -54,19 +54,19 @@ import {
   voidLabel,
 } from "@/lib/shipstation/client";
 
-import { getUserUpcharge } from "../../lib/supabase/admin";
+import { getUserUpcharge } from "@/lib/supabase/admin";
 import {
   createPackage,
   getPackageById,
   updatePackage,
-} from "../../lib/supabase/packages";
-import { createClient } from "../../lib/supabase/server";
+} from "@/lib/supabase/packages";
+import { createClient } from "@/lib/supabase/server";
 
 import {
   createShippingLabelAction,
   deleteShippingLabel,
   voidShippingLabelAction,
-} from "../../lib/actions/shipping";
+} from "@/lib/actions/shipping";
 
 type MockUserProfile = Awaited<ReturnType<typeof requireUserProfile>>;
 
