@@ -258,7 +258,7 @@ function ShipmentDetailsSection({
           </Select>
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="serviceCode">Order Number</Label>
+          <Label htmlFor="orderNumber">Order Number</Label>
           <Input
             id="orderNumber"
             name="orderNumber"

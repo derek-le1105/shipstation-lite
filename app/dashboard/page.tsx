@@ -4,14 +4,12 @@ import { AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCurrentProfile } from "@/lib/auth";
 import { listUserAddresses } from "@/lib/supabase/addresses";
-// import { listShippingLabelsForUser } from "@/lib/supabase/shipping-labels";
 import { listCarriers } from "@/lib/shipstation/client";
 import {
   type ShipStationCarrier,
   type ShipStationService,
 } from "@/lib/shipstation/types";
 import { CreateLabelForm } from "@/components/shipping/create-label-form";
-// import { LabelHistory } from "@/components/dashboard/label-history";
 import { FEDEX_SERVICES } from "@/lib/shipstation/fedex";
 import { listPackages } from "@/lib/supabase/packages";
 import { getNextOrderNumber } from "@/lib/supabase/shipping-labels";
@@ -20,56 +18,6 @@ type CarrierMetadata = {
   carrier: ShipStationCarrier | null;
   services: ShipStationService[];
 };
-
-// function AddressList({
-//   title,
-//   addresses,
-// }: {
-//   title: string;
-//   addresses: AddressRecord[];
-// }) {
-//   return (
-//     <Card>
-//       <CardHeader>
-//         <CardTitle className="text-base font-semibold">{title}</CardTitle>
-//       </CardHeader>
-//       <CardContent className="space-y-4">
-//         {addresses.length === 0 ? (
-//           <p className="text-sm text-muted-foreground">
-//             No saved addresses yet.
-//           </p>
-//         ) : (
-//           addresses.map((address) => (
-//             <div
-//               key={address.id}
-//               className="border rounded-md p-4 text-sm space-y-1"
-//             >
-//               <div className="flex items-center gap-2">
-//                 <span className="font-semibold">
-//                   {address.label ?? address.contact_name ?? "Untitled"}
-//                 </span>
-//                 <Badge variant="outline">
-//                   {address.address_kind === "ship_from"
-//                     ? "Ship From"
-//                     : "Ship To"}
-//                 </Badge>
-//               </div>
-//               <div>{address.address_line1}</div>
-//               {address.address_line2 ? (
-//                 <div>{address.address_line2}</div>
-//               ) : null}
-//               <div>
-//                 {address.city}, {address.state} {address.postal_code}
-//               </div>
-//               <div>{address.country}</div>
-//               {address.phone ? <div>Phone: {address.phone}</div> : null}
-//             </div>
-//           ))
-//         )}
-//       </CardContent>
-//     </Card>
-//   );
-// }
 
 export const metadata = {
   title: "UNS Shipping Manager - Dashboard",
@@ -87,7 +35,6 @@ export default async function DashboardPage() {
       listUserAddresses(profile.id, "ship_to"),
       listPackages(profile.id),
       getNextOrderNumber(),
-      //listShippingLabelsForUser(profile.id),
     ]);
 
   let carriers: ShipStationCarrier[] = [];
@@ -141,21 +88,6 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </section>
-
-      {/* <section className="grid md:grid-cols-2 gap-6">
-        <AddressList
-          title="Saved ship-from addresses"
-          addresses={savedFromAddresses}
-        />
-        <AddressList
-          title="Saved ship-to addresses"
-          addresses={savedToAddresses}
-        />
-      </section> */}
-
-      {/* <section>
-        <LabelHistory labels={labels} />
-      </section> */}
     </div>
   );
 }
