@@ -5,6 +5,7 @@ on:
     branches: [ main, master ]
 jobs:
   test:
+    environment: production
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
