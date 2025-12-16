@@ -1,9 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAdminProfile } from "../auth";
+import { requireAdminProfile } from "@/lib/auth";
 import { UserState } from "./admin-users";
-import { createAdminClient, upsertUserUpcharge } from "../supabase/admin";
+import { createAdminClient, upsertUserUpcharge } from "@/lib/supabase/admin";
 
 export async function updateProfileAction(
   _prev: UserState,

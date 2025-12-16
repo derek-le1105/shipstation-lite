@@ -5,6 +5,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:e2e": "playwright test --ui",
+    "test:e2e:run": "playwright test",
     "supabase-gen": "npx supabase gen types typescript --project-id xmjuzvrsligwyuvpzzzk > lib/supabase/supabase.types.ts"
   },
   "dependencies": {
@@ -42,17 +46,24 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4.1.16",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.1",
     "@types/node": "^20",
     "@types/papaparse": "^5.3.16",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
     "autoprefixer": "^10.4.20",
     "eslint": "^9",
     "eslint-config-next": "^16.0.7",
+    "jsdom": "^27.3.0",
     "postcss": "^8",
     "tailwindcss": "^4",
     "tailwindcss-animate": "^1.0.7",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite-tsconfig-paths": "^6.0.1",
+    "vitest": "^4.0.15"
   }
 }

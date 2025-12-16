@@ -85,6 +85,7 @@ export function LoginForm({
                   </Link>
                 </div>
                 <Input
+                  name="Password"
                   id="password"
                   type={showPassword ? "text" : "password"}
                   required
@@ -116,7 +117,12 @@ export function LoginForm({
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button
+                name="Login"
+                type="submit"
+                className="w-full"
+                disabled={isLoading}
+              >
                 {isLoading ? "Logging in..." : "Login"}
               </Button>
             </div>

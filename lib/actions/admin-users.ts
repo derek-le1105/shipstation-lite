@@ -21,12 +21,8 @@ export async function createUserInviteAction(
     const emailRaw = formData.get("email");
     const fullNameRaw = formData.get("full_name");
     const roleRaw = formData.get("role");
-    const upchargeValueRaw = formData.get(
-      "upcharge_value"
-    ) as unknown as number;
-    const upchargeUnitRaw = formData.get("upcharge_unit") as
-      | "dollars"
-      | "percent";
+    const upchargeValueRaw = formData.get("upcharge_value");
+    const upchargeUnitRaw = formData.get("upcharge_unit");
     const email = typeof emailRaw === "string" ? emailRaw.trim() : "";
     const full_name =
       typeof fullNameRaw === "string" && fullNameRaw.trim().length > 0
@@ -35,6 +31,22 @@ export async function createUserInviteAction(
     const role = (
       typeof roleRaw === "string" ? roleRaw.toLowerCase() : "user"
     ) as "user" | "admin";
+
+    const upchargeUnit =
+      typeof upchargeUnitRaw === "string" && upchargeUnitRaw === "percent"
+        ? "percent"
+        : "dollars";
+
+    let upchargeValue = 0;
+    if (typeof upchargeValueRaw === "string" && upchargeValueRaw.trim().length) {
+      upchargeValue = Number.parseFloat(upchargeValueRaw.trim());
+      if (!Number.isFinite(upchargeValue)) {
+        return {
+          status: "error",
+          message: "Please provide a valid upcharge value.",
+        };
+      }
+    }
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return {
@@ -98,7 +110,7 @@ export async function createUserInviteAction(
     }
 
     await ensureProfileRow(admin, user.id, email, full_name, role);
-    await upsertUserUpcharge(user.id, upchargeUnitRaw, upchargeValueRaw);
+    await upsertUserUpcharge(user.id, upchargeUnit, upchargeValue);
     revalidatePath("/admin");
     return {
       status: "success",
