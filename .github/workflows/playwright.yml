@@ -18,6 +18,8 @@ jobs:
           touch .env
           echo NEXT_PUBLIC_SUPABASE_URL="${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env
           echo NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}" >> .env
+          echo TEST_USERNAME="${{ secrets.TEST_USERNAME }}" >> .env
+          echo TEST_PASSWORD="${{ secrets.TEST_PASSWORD }}" >> .env
           cat .env
     - name: Install dependencies
       run: npm ci
