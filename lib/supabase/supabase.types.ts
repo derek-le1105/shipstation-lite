@@ -279,6 +279,7 @@ export type Database = {
         Args: { command: string };
         Returns: undefined;
       };
+      get_shipping_label_order_string: { Args: never; Returns: string };
       is_admin: { Args: never; Returns: boolean };
       next_shipping_label_order_number: { Args: never; Returns: string };
     };

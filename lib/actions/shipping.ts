@@ -12,6 +12,7 @@ import {
 import {
   getNextOrderNumber,
   insertShippingLabel,
+  incrementOrderNumberSequence,
   type ShippingLabelRecord,
 } from "@/lib/supabase/shipping-labels";
 import {
@@ -267,8 +268,14 @@ export async function createShippingLabelAction(
       value: data.value,
       unit: data.unit,
     }));
-    const fromMode = (formData.get("from.mode") as AddressMode) ?? "new";
-    const toMode = (formData.get("to.mode") as AddressMode) ?? "new";
+    const fromMode =
+      (formData.get("from.addressId") as string) === "new-address"
+        ? "new"
+        : "saved";
+    const toMode =
+      (formData.get("to.addressId") as string) === "new-address"
+        ? "new"
+        : "saved";
 
     let orderNumber = formData.get("orderNumber") as string | null;
     if (!orderNumber) orderNumber = await getNextOrderNumber();
@@ -301,7 +308,6 @@ export async function createShippingLabelAction(
         throw new Error("Failed to create order in ShipStation.");
       }
     }
-
     const settled = await Promise.allSettled<CreateShippingItemResult>(
       [...Array(packagesCount)].map(async (_, index) => {
         const prefix = `package-${index}`;
@@ -314,7 +320,7 @@ export async function createShippingLabelAction(
             formData,
             profile
           );
-          if (orderNumber && createOrderResponse) {
+          if (createOrderResponse) {
             labelResponse = await createLabelForOrder({
               orderId: createOrderResponse.orderId,
               shipDate: new Date().toISOString(),
@@ -450,6 +456,8 @@ export async function createShippingLabelAction(
         : successCount === total
         ? "success"
         : "partial";
+
+    if (successCount > 0) await incrementOrderNumberSequence();
 
     revalidatePath("/dashboard");
 
