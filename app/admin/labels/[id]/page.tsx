@@ -82,7 +82,7 @@ export default async function LabelDetailsPage({
           </div>
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" asChild>
-              <Link href="/dashboard/labels">
+              <Link href="/admin/labels">
                 <ChevronLeft className="h-4 w-4" />
               </Link>
             </Button>
