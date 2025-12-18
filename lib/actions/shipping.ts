@@ -237,53 +237,56 @@ export async function voidShippingLabelAction(
   const profile = await requireUserProfile();
   const supabase = await createClient();
 
-  shipmentIds.forEach(async (shipmentId) => {
-    if (!Number.isFinite(shipmentId)) throw new Error("Invalid shipment id");
-    const { data: row, error } = await supabase
-      .from("shipping_labels")
-      .select("id, user_id, voided_at, order_id")
-      .eq("shipment_id", shipmentId)
-      .maybeSingle();
-    if (error) throw error;
-    if (!row || row.user_id !== profile.id) throw new Error("Not found");
-    if (!row.voided_at) {
-      const { approved, message } = await voidLabel(shipmentId);
-      if (!approved)
-        throw new Error(message || "Unable to void label at this time.");
-
-      const { data: updatedLabel, error: updatedLabelError } = await supabase
+  await Promise.all(
+    shipmentIds.map(async (shipmentId) => {
+      if (!Number.isFinite(shipmentId)) throw new Error("Invalid shipment id");
+      const { data: row, error } = await supabase
         .from("shipping_labels")
-        .update({ voided_at: new Date().toISOString() })
+        .select("id, user_id, voided_at, order_id")
         .eq("shipment_id", shipmentId)
-        .select("*")
-        .single();
-      if (updatedLabelError) throw updatedLabelError;
-      if (!updatedLabel.voided_at)
-        throw new Error("Failed to update label status.");
+        .maybeSingle();
+      if (error) throw error;
+      if (!row || row.user_id !== profile.id) throw new Error("Not found");
+      if (!row.voided_at) {
+        const { approved, message } = await voidLabel(shipmentId);
+        if (!approved)
+          throw new Error(message || "Unable to void label at this time.");
 
-      // Using 'order_id' column, cancel the ShipStation order if all labels with the same order_id are voided or going to be voided
-      if (row.order_id) {
-        const { data: orderData, error: orderError } = await supabase
+        const { data: updatedLabel, error: updatedLabelError } = await supabase
           .from("shipping_labels")
-          .select("shipment_id, voided_at")
-          .eq("order_id", row.order_id);
-        if (orderData === null || orderError) throw orderError;
-        const allVoided = orderData.every(
-          (label) =>
-            label.voided_at !== null || label.shipment_id === shipmentId
-        );
+          .update({ voided_at: new Date().toISOString() })
+          .eq("shipment_id", shipmentId)
+          .select("*")
+          .single();
+        if (updatedLabelError) throw updatedLabelError;
+        if (!updatedLabel.voided_at)
+          throw new Error("Failed to update label status.");
 
-        // if all labels for this order are voided, cancel the order in ShipStation
-        if (allVoided) {
-          try {
-            await cancelOrder(row.order_id);
-          } catch (error) {
-            console.log("Error cancelling ShipStation order:", error);
+        // Using 'order_id' column, cancel the ShipStation order if all labels with the same order_id
+        // are voided or going to be voided
+        if (row.order_id) {
+          const { data: orderData, error: orderError } = await supabase
+            .from("shipping_labels")
+            .select("shipment_id, voided_at")
+            .eq("order_id", row.order_id);
+          if (orderData === null || orderError) throw orderError;
+          const allVoided = orderData.every(
+            (label) =>
+              label.voided_at !== null || label.shipment_id === shipmentId
+          );
+
+          // if all labels for this order are voided, cancel the order in ShipStation
+          if (allVoided) {
+            try {
+              await cancelOrder(row.order_id);
+            } catch (error) {
+              console.log("Error cancelling ShipStation order:", error);
+            }
           }
         }
       }
-    }
-  });
+    })
+  );
 
   revalidatePath(path);
   return { success: true, message: "Labels voided successfully." };
