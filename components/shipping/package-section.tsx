@@ -450,6 +450,7 @@ function Package({
             placeholder="10"
             disabled={isPending}
             defaultValue={fields?.dimensions?.length}
+            required
           />
         </div>
         <div className="gap-2">
@@ -462,6 +463,7 @@ function Package({
             placeholder="6"
             disabled={isPending}
             defaultValue={fields?.dimensions?.width}
+            required
           />
         </div>
         <div className="gap-2">
@@ -474,6 +476,7 @@ function Package({
             placeholder="4"
             disabled={isPending}
             defaultValue={fields?.dimensions?.height}
+            required
           />
         </div>
         <div className="gap-2 col-span-3 md:col-span-1">

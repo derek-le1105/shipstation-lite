@@ -47,6 +47,7 @@ import { requireUserProfile } from "@/lib/auth";
 import { createAddress, getAddressById } from "@/lib/supabase/addresses";
 import {
   getNextOrderNumber,
+  incrementOrderNumberSequence,
   insertShippingLabel,
 } from "@/lib/supabase/shipping-labels";
 import {
@@ -249,6 +250,14 @@ describe("createShippingLabelAction", () => {
 
     expect(result.status).toBe("error");
     expect(result.message).toBe("Carrier code is required.");
+  });
+
+  it("increments the order number sequence when at least one label is created", async () => {
+    const formData = buildBaseFormData();
+
+    await createShippingLabelAction({ status: "idle" } as any, formData);
+
+    expect(vi.mocked(incrementOrderNumberSequence)).toHaveBeenCalledTimes(1);
   });
 
   it("creates an order + label-for-order and inserts upcharged totals", async () => {
