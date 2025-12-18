@@ -13,6 +13,7 @@ import type {
   ShipStationOrderLabel as OrderLabel,
   ListOrdersResponse,
   Warehouse,
+  ShipStationDeleteOrderResponse,
 } from "./types";
 
 const DEFAULT_API_BASE = "https://ssapi.shipstation.com";
@@ -174,4 +175,38 @@ export async function voidLabel(
     method: "POST",
     body: JSON.stringify({ shipmentId }),
   });
+}
+
+//endpoint is createorder because shipstation uses same endpoint to update order status when providing orderId
+export async function cancelOrder(orderId: number): Promise<ShipStationOrder> {
+  const { orderKey, orderNumber, orderDate, billTo, shipTo } =
+    await shipStationRequest<ShipStationOrder>(`/orders/${orderId}`, {
+      method: "GET",
+    });
+  if (!orderKey)
+    throw new Error(
+      `Order ${orderId} does not have an orderKey and cannot be cancelled.`
+    );
+  return shipStationRequest<ShipStationOrder>(`/orders/createorder`, {
+    method: "POST",
+    body: JSON.stringify({
+      orderKey,
+      orderNumber,
+      orderDate,
+      billTo,
+      shipTo,
+      orderStatus: "cancelled",
+    }),
+  });
+}
+
+export async function deleteOrder(
+  orderId: number
+): Promise<ShipStationDeleteOrderResponse> {
+  return shipStationRequest<ShipStationDeleteOrderResponse>(
+    `/orders/${orderId}`,
+    {
+      method: "DELETE",
+    }
+  );
 }

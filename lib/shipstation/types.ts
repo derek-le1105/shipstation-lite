@@ -151,6 +151,11 @@ export type ShipstationVoidLabelResponse = {
   message?: string;
 };
 
+export type ShipStationDeleteOrderResponse = {
+  success: boolean;
+  message: string;
+};
+
 export type ShipStationRate = {
   carrierCode: string;
   serviceCode: string;

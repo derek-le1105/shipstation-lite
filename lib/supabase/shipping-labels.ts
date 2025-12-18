@@ -49,6 +49,7 @@ export type ShippingLabelRecord = {
   advanced_options: AdvancedOptions | null;
   paid_at: string | null;
   profiles?: Omit<UserProfile, "id" | "created_at" | "updated_at">;
+  order_id?: number | null;
 };
 
 type ShippingLabelInsert = Omit<
@@ -328,7 +329,12 @@ export async function listAllShippingLabels(
 export async function getNextOrderNumber() {
   const supabase = await createClient();
   const { data } = await supabase
-    .rpc("next_shipping_label_order_number")
+    .rpc("get_shipping_label_order_string")
     .throwOnError();
   return data;
+}
+
+export async function incrementOrderNumberSequence() {
+  const supabase = await createClient();
+  await supabase.rpc("next_shipping_label_order_number").throwOnError();
 }

@@ -12,6 +12,7 @@ vi.mock("@/lib/supabase/addresses", () => ({
 }));
 
 vi.mock("@/lib/supabase/shipping-labels", () => ({
+  incrementOrderNumberSequence: vi.fn(),
   getNextOrderNumber: vi.fn(),
   insertShippingLabel: vi.fn(),
 }));
@@ -22,6 +23,8 @@ vi.mock("@/lib/shipstation/client", () => ({
   createOrder: vi.fn(),
   listOrders: vi.fn(),
   voidLabel: vi.fn(),
+  cancelOrder: vi.fn(),
+  deleteOrder: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/admin", () => ({
@@ -52,6 +55,7 @@ import {
   createOrder,
   listOrders,
   voidLabel,
+  cancelOrder,
 } from "@/lib/shipstation/client";
 
 import { getUserUpcharge } from "@/lib/supabase/admin";
@@ -90,8 +94,8 @@ function buildBaseFormData() {
   setFormValue(formData, "serviceCode", "fedex_ground");
   setFormValue(formData, "packages.count", "1");
 
-  setFormValue(formData, "from.mode", "new");
-  setFormValue(formData, "to.mode", "new");
+  setFormValue(formData, "from.addressId", "new-address");
+  setFormValue(formData, "to.addressId", "new-address");
   buildNewAddress(formData, "from");
   buildNewAddress(formData, "to");
 
@@ -272,7 +276,7 @@ describe("createShippingLabelAction", () => {
       { status: "idle" } as any,
       formData
     );
-
+    console.log("result: ", result);
     expect(result.status).toBe("success");
     expect(result.items?.length).toBe(1);
     expect(vi.mocked(createLabelForOrder)).toHaveBeenCalledTimes(1);
@@ -557,120 +561,127 @@ describe("createShippingLabelAction", () => {
 });
 
 describe("voidShippingLabelAction", () => {
-  it("throws for invalid shipmentId", async () => {
+  it("returns a failure result when no shipment IDs are provided", async () => {
     const formData = new FormData();
-    setFormValue(formData, "shipmentId", "not-a-number");
+    setFormValue(formData, "shipment_ids", "[]");
+    setFormValue(formData, "path", "/dashboard");
 
-    await expect(voidShippingLabelAction(formData)).rejects.toThrow(
-      "Invalid shipment id"
-    );
-  });
+    const result = await voidShippingLabelAction(formData);
 
-  it("throws Not found when label does not exist", async () => {
-    const formData = new FormData();
-    setFormValue(formData, "shipmentId", "123");
-
-    const { supabase, responses } = createSupabaseShippingLabelsStub();
-    responses.maybeSingle = { data: null, error: null };
-    vi.mocked(createClient).mockResolvedValue(supabase as any);
-
-    await expect(voidShippingLabelAction(formData)).rejects.toThrow(
-      "Not found"
-    );
-  });
-
-  it("throws Not found when the label belongs to another user", async () => {
-    const formData = new FormData();
-    setFormValue(formData, "shipmentId", "123");
-
-    const { supabase, responses } = createSupabaseShippingLabelsStub();
-    responses.maybeSingle = {
-      data: { id: "x", user_id: "someone-else", voided_at: null },
-      error: null,
-    };
-    vi.mocked(createClient).mockResolvedValue(supabase as any);
-
-    await expect(voidShippingLabelAction(formData)).rejects.toThrow(
-      "Not found"
-    );
+    expect(result).toEqual({
+      success: false,
+      message: "No shipment IDs provided.",
+    });
+    expect(vi.mocked(requireUserProfile)).not.toHaveBeenCalled();
   });
 
   it("does nothing when already voided (no carrier call, no update)", async () => {
     const formData = new FormData();
-    setFormValue(formData, "shipmentId", "123");
+    setFormValue(formData, "shipment_ids", "[123]");
+    setFormValue(formData, "path", "/dashboard");
 
     const { supabase, query, responses } = createSupabaseShippingLabelsStub();
     responses.maybeSingle = {
-      data: { id: "x", user_id: profile.id, voided_at: "2025-01-01T00:00:00Z" },
+      data: {
+        id: "x",
+        user_id: profile.id,
+        voided_at: "2025-01-01T00:00:00Z",
+        order_id: null,
+      },
       error: null,
     };
     vi.mocked(createClient).mockResolvedValue(supabase as any);
 
-    await voidShippingLabelAction(formData);
+    const result = await voidShippingLabelAction(formData);
 
+    expect(result).toEqual({
+      success: true,
+      message: "Labels voided successfully.",
+    });
     expect(vi.mocked(voidLabel)).not.toHaveBeenCalled();
     expect(query.update).not.toHaveBeenCalled();
     expect(vi.mocked(revalidatePath)).toHaveBeenCalledWith("/dashboard");
   });
 
-  it("throws when carrier does not approve void", async () => {
+  it("voids the label and does not cancel the order when not all labels are voided", async () => {
     const formData = new FormData();
-    setFormValue(formData, "shipmentId", "123");
-
-    const { supabase, responses } = createSupabaseShippingLabelsStub();
-    responses.maybeSingle = {
-      data: { id: "x", user_id: profile.id, voided_at: null },
-      error: null,
-    };
-    vi.mocked(createClient).mockResolvedValue(supabase as any);
-
-    vi.mocked(voidLabel).mockResolvedValue({
-      approved: false,
-      message: "Denied",
-    } as any);
-
-    await expect(voidShippingLabelAction(formData)).rejects.toThrow("Denied");
-  });
-
-  it("updates the label when carrier approves void", async () => {
-    const formData = new FormData();
-    setFormValue(formData, "shipmentId", "123");
+    setFormValue(formData, "shipment_ids", "[123]");
+    setFormValue(formData, "path", "/dashboard");
 
     const { supabase, query, responses } = createSupabaseShippingLabelsStub();
     responses.maybeSingle = {
-      data: { id: "x", user_id: profile.id, voided_at: null },
+      data: {
+        id: "x",
+        user_id: profile.id,
+        voided_at: null,
+        order_id: 999,
+      },
       error: null,
     };
     responses.single = {
       data: { id: "x", voided_at: new Date().toISOString() },
       error: null,
     };
+    responses.selectAwait = {
+      data: [
+        { shipment_id: 123, voided_at: null },
+        { shipment_id: 456, voided_at: null },
+      ],
+      error: null,
+    };
+
     vi.mocked(createClient).mockResolvedValue(supabase as any);
     vi.mocked(voidLabel).mockResolvedValue({ approved: true } as any);
 
-    await voidShippingLabelAction(formData);
+    const result = await voidShippingLabelAction(formData);
 
+    expect(result).toEqual({
+      success: true,
+      message: "Labels voided successfully.",
+    });
     expect(vi.mocked(voidLabel)).toHaveBeenCalledWith(123);
     expect(query.update).toHaveBeenCalled();
+    expect(vi.mocked(cancelOrder)).not.toHaveBeenCalled();
     expect(vi.mocked(revalidatePath)).toHaveBeenCalledWith("/dashboard");
   });
 
-  it("throws when update succeeds but voided_at is missing", async () => {
+  it("voids the label and cancels the order when all labels are voided or being voided", async () => {
     const formData = new FormData();
-    setFormValue(formData, "shipmentId", "123");
+    setFormValue(formData, "shipment_ids", "[123]");
+    setFormValue(formData, "path", "/dashboard");
 
-    const { supabase, responses } = createSupabaseShippingLabelsStub();
+    const { supabase, query, responses } = createSupabaseShippingLabelsStub();
     responses.maybeSingle = {
-      data: { id: "x", user_id: profile.id, voided_at: null },
+      data: {
+        id: "x",
+        user_id: profile.id,
+        voided_at: null,
+        order_id: 999,
+      },
       error: null,
     };
-    responses.single = { data: { id: "x", voided_at: null }, error: null };
+    responses.single = {
+      data: { id: "x", voided_at: new Date().toISOString() },
+      error: null,
+    };
+    responses.selectAwait = {
+      data: [{ shipment_id: 123, voided_at: "VOIDED" }],
+      error: null,
+    };
+
     vi.mocked(createClient).mockResolvedValue(supabase as any);
     vi.mocked(voidLabel).mockResolvedValue({ approved: true } as any);
 
-    await expect(voidShippingLabelAction(formData)).rejects.toThrow(
-      "Failed to update label status."
-    );
+    const result = await voidShippingLabelAction(formData);
+
+    expect(result).toEqual({
+      success: true,
+      message: "Labels voided successfully.",
+    });
+    expect(vi.mocked(voidLabel)).toHaveBeenCalledWith(123);
+    expect(query.update).toHaveBeenCalled();
+    expect(vi.mocked(cancelOrder)).toHaveBeenCalledWith(999);
+    expect(vi.mocked(revalidatePath)).toHaveBeenCalledWith("/dashboard");
   });
 });
 

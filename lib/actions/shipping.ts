@@ -12,12 +12,15 @@ import {
 import {
   getNextOrderNumber,
   insertShippingLabel,
+  incrementOrderNumberSequence,
   type ShippingLabelRecord,
 } from "@/lib/supabase/shipping-labels";
 import {
+  cancelOrder,
   createLabel,
   createLabelForOrder,
   createOrder,
+  deleteOrder,
   listOrders,
   voidLabel,
 } from "@/lib/shipstation/client";
@@ -221,39 +224,72 @@ export type CreateShippingLabelState = {
   items?: CreateShippingItemResult[];
 };
 
-export async function voidShippingLabelAction(formData: FormData) {
-  const shipmentId = Number(formData.get("shipmentId"));
-  if (!Number.isFinite(shipmentId)) throw new Error("Invalid shipment id");
+export async function voidShippingLabelAction(
+  formData: FormData
+): Promise<{ success: boolean; message: string }> {
+  const shipmentIds = JSON.parse(
+    formData.get("shipment_ids") as string
+  ) as number[];
+  const path = formData.get("path") as string;
+  if (!Array.isArray(shipmentIds) || shipmentIds.length === 0)
+    return { success: false, message: "No shipment IDs provided." };
 
   const profile = await requireUserProfile();
   const supabase = await createClient();
 
-  const { data: row, error } = await supabase
-    .from("shipping_labels")
-    .select("id, user_id, voided_at")
-    .eq("shipment_id", shipmentId)
-    .maybeSingle();
-  if (error) throw error;
-  if (!row || row.user_id !== profile.id) throw new Error("Not found");
+  await Promise.all(
+    shipmentIds.map(async (shipmentId) => {
+      if (!Number.isFinite(shipmentId)) throw new Error("Invalid shipment id");
+      const { data: row, error } = await supabase
+        .from("shipping_labels")
+        .select("id, user_id, voided_at, order_id")
+        .eq("shipment_id", shipmentId)
+        .maybeSingle();
+      if (error) throw error;
+      if (!row || row.user_id !== profile.id) throw new Error("Not found");
+      if (!row.voided_at) {
+        const { approved, message } = await voidLabel(shipmentId);
+        if (!approved)
+          throw new Error(message || "Unable to void label at this time.");
 
-  if (!row.voided_at) {
-    const { approved, message } = await voidLabel(shipmentId);
-    console.log(`voidLabel response for ${shipmentId}:`, { approved, message });
-    if (!approved)
-      throw new Error(message || "Unable to void label at this time.");
+        const { data: updatedLabel, error: updatedLabelError } = await supabase
+          .from("shipping_labels")
+          .update({ voided_at: new Date().toISOString() })
+          .eq("shipment_id", shipmentId)
+          .select("*")
+          .single();
+        if (updatedLabelError) throw updatedLabelError;
+        if (!updatedLabel.voided_at)
+          throw new Error("Failed to update label status.");
 
-    const { data: updatedLabel, error: updatedLabelError } = await supabase
-      .from("shipping_labels")
-      .update({ voided_at: new Date().toISOString() })
-      .eq("shipment_id", shipmentId)
-      .select("*")
-      .single();
-    if (updatedLabelError) throw updatedLabelError;
-    if (!updatedLabel.voided_at)
-      throw new Error("Failed to update label status.");
-  }
+        // Using 'order_id' column, cancel the ShipStation order if all labels with the same order_id
+        // are voided or going to be voided
+        if (row.order_id) {
+          const { data: orderData, error: orderError } = await supabase
+            .from("shipping_labels")
+            .select("shipment_id, voided_at")
+            .eq("order_id", row.order_id);
+          if (orderData === null || orderError) throw orderError;
+          const allVoided = orderData.every(
+            (label) =>
+              label.voided_at !== null || label.shipment_id === shipmentId
+          );
 
-  revalidatePath("/dashboard");
+          // if all labels for this order are voided, cancel the order in ShipStation
+          if (allVoided) {
+            try {
+              await cancelOrder(row.order_id);
+            } catch (error) {
+              console.log("Error cancelling ShipStation order:", error);
+            }
+          }
+        }
+      }
+    })
+  );
+
+  revalidatePath(path);
+  return { success: true, message: "Labels voided successfully." };
 }
 
 export async function createShippingLabelAction(
@@ -267,8 +303,14 @@ export async function createShippingLabelAction(
       value: data.value,
       unit: data.unit,
     }));
-    const fromMode = (formData.get("from.mode") as AddressMode) ?? "new";
-    const toMode = (formData.get("to.mode") as AddressMode) ?? "new";
+    const fromMode =
+      (formData.get("from.addressId") as string) === "new-address"
+        ? "new"
+        : "saved";
+    const toMode =
+      (formData.get("to.addressId") as string) === "new-address"
+        ? "new"
+        : "saved";
 
     let orderNumber = formData.get("orderNumber") as string | null;
     if (!orderNumber) orderNumber = await getNextOrderNumber();
@@ -301,7 +343,6 @@ export async function createShippingLabelAction(
         throw new Error("Failed to create order in ShipStation.");
       }
     }
-
     const settled = await Promise.allSettled<CreateShippingItemResult>(
       [...Array(packagesCount)].map(async (_, index) => {
         const prefix = `package-${index}`;
@@ -314,7 +355,7 @@ export async function createShippingLabelAction(
             formData,
             profile
           );
-          if (orderNumber && createOrderResponse) {
+          if (createOrderResponse) {
             labelResponse = await createLabelForOrder({
               orderId: createOrderResponse.orderId,
               shipDate: new Date().toISOString(),
@@ -388,6 +429,7 @@ export async function createShippingLabelAction(
               advanced_options: advancedOptions ?? {
                 saturdayDelivery: false,
               },
+              order_id: createOrderResponse?.orderId,
             });
 
             return {
@@ -450,6 +492,8 @@ export async function createShippingLabelAction(
         : successCount === total
         ? "success"
         : "partial";
+
+    if (successCount > 0) await incrementOrderNumberSequence();
 
     revalidatePath("/dashboard");
 

@@ -84,7 +84,10 @@ import {
   voidShippingLabel,
 } from "@/lib/actions/labels";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-import { deleteShippingLabel } from "@/lib/actions/shipping";
+import {
+  deleteShippingLabel,
+  voidShippingLabelAction,
+} from "@/lib/actions/shipping";
 import {
   Dialog,
   DialogClose,
@@ -386,16 +389,13 @@ export function LabelsTable<T>({
       return;
     }
 
-    const res =
-      selectedLabels.length > 1
-        ? await bulkVoidShippingLabels(
-            selectedLabels.map((lbl) => lbl.shipment_id),
-            showUserId ? "admin" : "dashboard"
-          )
-        : await voidShippingLabel(
-            selectedLabels[0].shipment_id,
-            showUserId ? "admin" : "dashboard"
-          );
+    const formData = new FormData();
+    formData.append(
+      "shipment_ids",
+      JSON.stringify(selectedLabels.map((lbl) => lbl.shipment_id))
+    );
+    formData.append("path", showUserId ? `admin/labels` : "dashboard/labels");
+    const res = await voidShippingLabelAction(formData);
     return res;
   };
 

@@ -82,7 +82,7 @@ export default async function LabelDetailsPage({
           </div>
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" asChild>
-              <Link href="/dashboard/labels">
+              <Link href="/admin/labels">
                 <ChevronLeft className="h-4 w-4" />
               </Link>
             </Button>
@@ -100,7 +100,11 @@ export default async function LabelDetailsPage({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <VoidButton disabled={!!label.voided_at} label={label} />
+          <VoidButton
+            disabled={!!label.voided_at}
+            label={label}
+            path={`admin/labels/${label.id}`}
+          />
           <PrintButton label={label} disabled={!!label.voided_at} />
           {trackingLink ? (
             <Button asChild>
