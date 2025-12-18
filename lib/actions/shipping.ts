@@ -394,6 +394,7 @@ export async function createShippingLabelAction(
               advanced_options: advancedOptions ?? {
                 saturdayDelivery: false,
               },
+              order_id: createOrderResponse?.orderId,
             });
 
             return {

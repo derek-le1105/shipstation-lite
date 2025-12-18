@@ -49,6 +49,7 @@ export type ShippingLabelRecord = {
   advanced_options: AdvancedOptions | null;
   paid_at: string | null;
   profiles?: Omit<UserProfile, "id" | "created_at" | "updated_at">;
+  order_id?: number | null;
 };
 
 type ShippingLabelInsert = Omit<

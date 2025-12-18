@@ -161,6 +161,7 @@ export type Database = {
           is_address_validated: boolean;
           label_data_base64: string | null;
           length: number;
+          order_id: number | null;
           order_number: string | null;
           package_code: string | null;
           paid_at: string | null;
@@ -194,6 +195,7 @@ export type Database = {
           is_address_validated?: boolean;
           label_data_base64?: string | null;
           length?: number;
+          order_id?: number | null;
           order_number?: string | null;
           package_code?: string | null;
           paid_at?: string | null;
@@ -227,6 +229,7 @@ export type Database = {
           is_address_validated?: boolean;
           label_data_base64?: string | null;
           length?: number;
+          order_id?: number | null;
           order_number?: string | null;
           package_code?: string | null;
           paid_at?: string | null;
