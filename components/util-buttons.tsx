@@ -26,7 +26,10 @@ export function PrintButton(
 }
 
 export function VoidButton(
-  props: React.ComponentProps<typeof Button> & { label: ShippingLabelRecord }
+  props: React.ComponentProps<typeof Button> & {
+    label: ShippingLabelRecord;
+    path?: string;
+  }
 ) {
   const VButton = ({ disabled }: { disabled: boolean }) => {
     const { pending } = useFormStatus();
@@ -60,23 +63,26 @@ export function VoidButton(
     );
   };
 
+  const handleClick = async (formData: FormData) => {
+    try {
+      formData.append(
+        "shipment_ids",
+        JSON.stringify([props.label.shipment_id])
+      );
+      formData.append("path", props.path || "");
+      await voidShippingLabelAction(formData);
+      toast.success("Label voided", {
+        description: `Shipment #${props.label.shipment_id}`,
+      });
+    } catch (error) {
+      toast.error("Could not void label", {
+        description: error instanceof Error ? error.message : String(error),
+      });
+    }
+  };
+
   return (
-    <form
-      key={props.label.id}
-      action={async (formData) => {
-        try {
-          await voidShippingLabelAction(formData);
-          toast.success("Label voided", {
-            description: `Shipment #${props.label.shipment_id}`,
-          });
-        } catch (error) {
-          toast.error("Could not void label", {
-            description: error instanceof Error ? error.message : String(error),
-          });
-        }
-      }}
-    >
-      <input type="hidden" name="shipmentId" value={props.label.shipment_id} />
+    <form key={props.label.id} action={handleClick}>
       <VButton disabled={!!props.label.voided_at} />
     </form>
   );
