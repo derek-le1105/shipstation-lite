@@ -101,6 +101,4 @@ export async function submitIssueAction(
         : "We couldn't submit your feedback. Please try again.";
     return { status: "error", message };
   }
-
-  return { status: "idle" };
 }
