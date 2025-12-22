@@ -144,7 +144,6 @@ export default function CreateLabelWizard({
             >
               <section hidden={stepIndex !== 0}>
                 <AddressSection
-                  prefix="to"
                   addresses={toAddresses}
                   setMode={setToMode}
                   pending={isPending}
@@ -184,19 +183,20 @@ export default function CreateLabelWizard({
               </section>
 
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={!canGoBack}
-                  onClick={() =>
-                    setStepIndex((current) => Math.max(0, current - 1))
-                  }
-                >
-                  Back
+                <Button type="button" variant="ghost" disabled>
+                  Save draft
                 </Button>
-                <div className="flex items-center gap-2">
-                  <Button type="button" variant="ghost">
-                    Save draft
+
+                <div className="flex items-center gap-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!canGoBack}
+                    onClick={() =>
+                      setStepIndex((current) => Math.max(0, current - 1))
+                    }
+                  >
+                    Back
                   </Button>
                   <Button
                     type={canGoNext ? "button" : "submit"}

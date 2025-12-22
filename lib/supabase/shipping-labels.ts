@@ -22,9 +22,7 @@ export type ShipStationAddressSnapshot = {
 export type ShippingLabelRecord = {
   id: string;
   user_id: string;
-  from_address_id: string | null;
   to_address_id: string | null;
-  ship_from_snapshot: ShipStationAddressSnapshot;
   ship_to_snapshot: ShipStationAddressSnapshot;
   carrier_code: string;
   service_code: string;
@@ -52,6 +50,7 @@ export type ShippingLabelRecord = {
   paid_at: string | null;
   profiles?: Omit<UserProfile, "id" | "created_at" | "updated_at">;
   order_id?: number | null;
+  ship_from_id?: number | null;
 };
 
 type ShippingLabelInsert = Omit<
@@ -84,9 +83,7 @@ export type UserLabelStats = {
 const SHIPPING_LABEL_COLUMNS = [
   "id",
   "user_id",
-  "from_address_id",
   "to_address_id",
-  "ship_from_snapshot",
   "ship_to_snapshot",
   "carrier_code",
   "service_code",

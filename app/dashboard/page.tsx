@@ -27,13 +27,11 @@ export default async function DashboardPage() {
   if (!profile) {
     redirect("/auth/login");
   }
-  const [savedFromAddresses, savedToAddresses, savedPackages, shipFrom] =
-    await Promise.all([
-      listUserAddresses(profile.id, "ship_from"),
-      listUserAddresses(profile.id, "ship_to"),
-      listPackages(profile.id),
-      fetchProfileWarehouseRecord(profile),
-    ]);
+  const [savedToAddresses, savedPackages, shipFrom] = await Promise.all([
+    listUserAddresses(profile.id, "ship_to"),
+    listPackages(profile.id),
+    fetchProfileWarehouseRecord(profile),
+  ]);
 
   let carriers: ShipStationCarrier[] = [];
   let metadata: CarrierMetadata = {

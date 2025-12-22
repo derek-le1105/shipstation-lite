@@ -22,7 +22,10 @@ export type AddressRecord = {
   created_at: string;
 };
 
-export type AddressInput = Omit<AddressRecord, "id" | "user_id" | "created_at">;
+export type AddressInput = Omit<
+  AddressRecord,
+  "id" | "user_id" | "created_at" | "address_kind"
+>;
 
 async function getClient(
   client?: ServerSupabaseClient

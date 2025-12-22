@@ -210,7 +210,8 @@ export type Database = {
           package_code: string | null;
           paid_at: string | null;
           service_code: string;
-          ship_from_snapshot: Json;
+          ship_from_id: number | null;
+          ship_from_snapshot?: Json | null;
           ship_to_snapshot: Json;
           shipment_cost: number | null;
           shipment_id: number;
@@ -244,7 +245,8 @@ export type Database = {
           package_code?: string | null;
           paid_at?: string | null;
           service_code: string;
-          ship_from_snapshot: Json;
+          ship_from_id?: number | null;
+          ship_from_snapshot?: Json | null;
           ship_to_snapshot: Json;
           shipment_cost?: number | null;
           shipment_id: number;
@@ -278,7 +280,8 @@ export type Database = {
           package_code?: string | null;
           paid_at?: string | null;
           service_code?: string;
-          ship_from_snapshot?: Json;
+          ship_from_id?: number | null;
+          ship_from_snapshot?: Json | null;
           ship_to_snapshot?: Json;
           shipment_cost?: number | null;
           shipment_id?: number;
@@ -300,6 +303,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "addresses";
             referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "shipping_labels_ship_from_id_fkey";
+            columns: ["ship_from_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["warehouseId"];
           },
           {
             foreignKeyName: "shipping_labels_to_address_id_fkey";

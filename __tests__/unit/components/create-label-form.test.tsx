@@ -1,8 +1,20 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { CreateLabelForm } from "@/components/shipping/create-label-form";
+import CreateLabelWizard from "@/components/shipping/create-label-wizard";
 import { createShippingLabelAction } from "@/lib/actions/shipping";
+import { buildAddressRecord, buildWarehouseRecord } from "../utils";
+
+vi.mock("@tanstack/react-query", () => ({
+  useQuery: vi.fn(() => ({
+    data: "UNS-SM-1",
+    isPending: false,
+    error: null,
+  })),
+  QueryClient: class QueryClient {},
+  QueryClientProvider: ({ children }: { children: React.ReactNode }) =>
+    children,
+}));
 
 vi.mock("@/lib/actions/shipping", () => ({
   createShippingLabelAction: vi.fn(
@@ -30,9 +42,11 @@ vi.mock("@/lib/actions/shipping", () => ({
 describe("CreateLabelForm", () => {
   function renderForm() {
     render(
-      <CreateLabelForm
-        fromAddresses={[]}
-        toAddresses={[]}
+      <CreateLabelWizard
+        shipFrom={buildWarehouseRecord()}
+        toAddresses={[
+          buildAddressRecord({ id: "addr-2", address_kind: "ship_to" }),
+        ]}
         carriers={[{ code: "fedex", name: "FedEx" } as any]}
         services={
           [
@@ -44,7 +58,6 @@ describe("CreateLabelForm", () => {
           ] as any
         }
         packages={[]}
-        nextOrderNumber="UNS-SM-1"
       />
     );
   }

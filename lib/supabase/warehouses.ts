@@ -17,7 +17,7 @@ export type WarehouseRecord = {
   originAddress_company: string;
   originAddress_street1: string;
   originAddress_street2: string;
-  originAddress_street3: null;
+  originAddress_street3: string;
   originAddress_city: string;
   originAddress_state: string;
   originAddress_postalCode: string;
@@ -29,13 +29,13 @@ export type WarehouseRecord = {
   returnAddress_company: string;
   returnAddress_street1: string;
   returnAddress_street2: string;
-  returnAddress_street3: null;
+  returnAddress_street3: string;
   returnAddress_city: string;
   returnAddress_state: string;
   returnAddress_postalCode: string;
   returnAddress_country: string;
   returnAddress_phone: string;
-  returnAddress_residential: null;
+  returnAddress_residential: boolean;
   returnAddress_addressVerified: null;
 };
 

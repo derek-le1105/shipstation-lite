@@ -245,7 +245,7 @@ export type CreateLabelPayload = {
   serviceCode: string;
   packageCode?: string;
   confirmation?: string;
-  shipFrom: ShipStationAddress;
+  // shipFrom: ShipStationAddress;
   shipTo: ShipStationAddress;
   weight: ShipStationWeight;
   dimensions?: {

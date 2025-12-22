@@ -55,13 +55,9 @@ const REQUIRED_ADDRESS_FIELDS = [
   "postal_code",
 ] as const;
 
-function parseAddressInput(
-  formData: FormData,
-  prefix: string,
-  kind: AddressInput["address_kind"]
-): AddressInput {
+function parseAddressInput(formData: FormData): AddressInput {
   const get = (key: string) => {
-    const value = formData.get(`${prefix}.${key}`);
+    const value = formData.get(key);
     return typeof value === "string" && value.length > 0 ? value.trim() : null;
   };
 
@@ -74,9 +70,7 @@ function parseAddressInput(
   for (const key of REQUIRED_ADDRESS_FIELDS) {
     const value = get(key);
     if (!value) {
-      throw new Error(
-        `Missing required field for ${prefix.replace(".", " ")}: ${key}`
-      );
+      throw new Error(`Missing required field for: ${key}`);
     }
   }
 
@@ -94,7 +88,6 @@ function parseAddressInput(
     country: get("country") ?? "US",
     is_residential: get("is_residential") === "on",
     is_validated: get("is_validated") === "on",
-    address_kind: kind,
   };
 }
 
@@ -298,32 +291,24 @@ export async function createShippingLabelAction(
 ): Promise<CreateShippingLabelState> {
   try {
     const profile = await requireUserProfile();
-
+    console.log("here");
     const upcharge = await getUserUpcharge(profile.id).then((data) => ({
       value: data.value,
       unit: data.unit,
     }));
-    const fromMode =
-      (formData.get("from.addressId") as string) === "new-address"
-        ? "new"
-        : "saved";
     const toMode =
-      (formData.get("to.addressId") as string) === "new-address"
-        ? "new"
-        : "saved";
+      (formData.get("addressId") as string) === "new-address" ? "new" : "saved";
 
     let orderNumber = formData.get("orderNumber") as string | null;
     if (!orderNumber) orderNumber = await getNextOrderNumber();
     const carrierCode = getCarrierCode(formData);
     const serviceCode = getServiceCode(formData);
 
-    const { shipAddress: shipFrom, addressRecord: fromAddressRecord } =
-      await processAddressMode(fromMode, "from", formData, profile);
     const {
       shipAddress: shipTo,
       addressRecord: toAddressRecord,
       addressValidated,
-    } = await processAddressMode(toMode, "to", formData, profile);
+    } = await processAddressMode(toMode, formData, profile);
 
     const packagesCount = Number(formData.get("packages.count")) || 1;
 
@@ -371,7 +356,6 @@ export async function createShippingLabelAction(
             });
           } else {
             labelResponse = await createLabel({
-              shipFrom,
               shipTo,
               carrierCode,
               serviceCode,
@@ -396,9 +380,7 @@ export async function createShippingLabelAction(
           try {
             const savedLabel = await insertShippingLabel({
               user_id: profile.id,
-              from_address_id: fromAddressRecord?.id ?? null,
               to_address_id: toAddressRecord?.id ?? null,
-              ship_from_snapshot: shipFrom,
               ship_to_snapshot: shipTo,
               length: dimensions.length,
               width: dimensions.width,
@@ -430,6 +412,7 @@ export async function createShippingLabelAction(
                 saturdayDelivery: false,
               },
               order_id: createOrderResponse?.orderId,
+              ship_from_id: profile.warehouse_id,
             });
 
             return {
@@ -602,16 +585,14 @@ function calculateUpchargeCost(
 
 async function processAddressMode(
   mode: AddressMode,
-  prefix: "from" | "to",
   formData: FormData,
   profile: UserProfile
 ) {
   let shipAddress: ShipStationAddress;
   let addressRecord: AddressRecord | null = null;
-  const addressValidated: boolean =
-    formData.get(`${prefix}.is_validated`) === "on";
+  const addressValidated: boolean = formData.get("is_validated") === "on";
   if (mode === "saved") {
-    const addressId = formData.get(`${prefix}.addressId`);
+    const addressId = formData.get("addressId");
     if (typeof addressId !== "string" || addressId.trim().length === 0) {
       throw new Error("A saved sender address must be selected.");
     }
@@ -623,10 +604,10 @@ async function processAddressMode(
 
     shipAddress = recordToShipStationAddress(addressRecord);
   } else {
-    const input = parseAddressInput(formData, prefix, `ship_${prefix}`);
+    const input = parseAddressInput(formData);
     shipAddress = inputToShipStationAddress(input);
 
-    const shouldSave = formData.get(`${prefix}.save`) === "on";
+    const shouldSave = formData.get("save") === "on";
     if (shouldSave) {
       addressRecord = await createAddress(profile.id, input);
     }

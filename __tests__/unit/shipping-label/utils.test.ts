@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import type { ShipStationRatesRequest } from "@/lib/shipstation/types";
-import type { AddressRecord } from "@/lib/supabase/addresses";
 import type { PackageRecord } from "@/lib/supabase/packages";
 import {
   areRateRequestsEqual,
@@ -11,32 +10,10 @@ import {
   resolveAddressFromForm,
   savePackageToFormData,
 } from "@/lib/shipping-label/utils";
+import { buildAddressRecord, buildWarehouseRecord } from "../utils";
 
 function setField(formData: FormData, key: string, value: string) {
   formData.set(key, value);
-}
-
-function buildAddressRecord(overrides?: Partial<AddressRecord>): AddressRecord {
-  return {
-    id: "addr-1",
-    user_id: "user-1",
-    label: "Warehouse",
-    contact_name: "Jane Doe",
-    company: null,
-    phone: null,
-    email: null,
-    address_line1: "123 Main St",
-    address_line2: null,
-    city: "Austin",
-    state: "TX",
-    postal_code: "78701",
-    country: "US",
-    is_residential: false,
-    is_validated: true,
-    address_kind: "ship_from",
-    created_at: new Date().toISOString(),
-    ...overrides,
-  };
 }
 
 describe("parseCheckboxValue", () => {
@@ -98,7 +75,9 @@ describe("resolveAddressFromForm", () => {
       }),
     ];
     setField(formData, "to.addressId", "addr-2");
-    expect(resolveAddressFromForm(formData, "to", savedAddresses, "new")).toBeNull();
+    expect(
+      resolveAddressFromForm(formData, "to", savedAddresses, "new")
+    ).toBeNull();
   });
 
   it("returns a new address from form fields and defaults country to US", () => {
@@ -160,9 +139,8 @@ describe("buildRatesRequest", () => {
     base.delete("carrierCode");
     expect(
       buildRatesRequest(0, base, {
-        fromAddresses: [],
+        shipFrom: buildWarehouseRecord(),
         toAddresses: [],
-        fromMode: "new",
         toMode: "new",
       })
     ).toBeNull();
@@ -172,9 +150,8 @@ describe("buildRatesRequest", () => {
     setField(badWeight, `package-0.weight.value`, "0");
     expect(
       buildRatesRequest(0, badWeight, {
-        fromAddresses: [],
+        shipFrom: buildWarehouseRecord(),
         toAddresses: [],
-        fromMode: "new",
         toMode: "new",
       })
     ).toBeNull();
@@ -183,9 +160,9 @@ describe("buildRatesRequest", () => {
     setField(badUnit, `package-0.weight.unit`, "kg");
     expect(
       buildRatesRequest(0, badUnit, {
-        fromAddresses: [],
+        shipFrom: buildWarehouseRecord(),
+
         toAddresses: [],
-        fromMode: "new",
         toMode: "new",
       })
     ).toBeNull();
@@ -202,9 +179,8 @@ describe("buildRatesRequest", () => {
     setField(formData, "package-0.dimensions.unit", "inches");
 
     const result = buildRatesRequest(0, formData, {
-      fromAddresses: [],
+      shipFrom: buildWarehouseRecord(),
       toAddresses: [],
-      fromMode: "new",
       toMode: "new",
     });
 
@@ -212,9 +188,9 @@ describe("buildRatesRequest", () => {
       carrierCode: "fedex",
       serviceCode: "fedex_ground",
       packageCode: "package",
-      fromPostalCode: "78701",
-      fromCity: "Austin",
-      fromState: "TX",
+      fromPostalCode: "12345",
+      fromCity: "TEST CITY",
+      fromState: "CA",
       toPostalCode: "98101",
       toCountry: "CA",
       toCity: "Seattle",
@@ -233,9 +209,8 @@ describe("buildRatesRequest", () => {
     setField(formData, "package-0.dimensions.unit", "inches");
 
     const result = buildRatesRequest(0, formData, {
-      fromAddresses: [],
+      shipFrom: buildWarehouseRecord(),
       toAddresses: [],
-      fromMode: "new",
       toMode: "new",
     });
 
@@ -245,21 +220,10 @@ describe("buildRatesRequest", () => {
 
   it("supports saved address modes via params fallback", () => {
     const formData = buildBaseFormData();
-    setField(formData, "from.mode", "saved");
-    setField(formData, "from.addressId", "from-1");
 
     setField(formData, "to.mode", "saved");
     setField(formData, "to.addressId", "to-1");
 
-    const fromAddresses = [
-      buildAddressRecord({
-        id: "from-1",
-        city: "From City",
-        state: "FC",
-        postal_code: "11111",
-        country: "US",
-      }),
-    ];
     const toAddresses = [
       buildAddressRecord({
         id: "to-1",
@@ -272,17 +236,16 @@ describe("buildRatesRequest", () => {
     ];
 
     const result = buildRatesRequest(0, formData, {
-      fromAddresses,
+      shipFrom: buildWarehouseRecord(),
       toAddresses,
-      fromMode: "saved",
       toMode: "saved",
     });
 
     expect(result).toEqual(
       expect.objectContaining({
-        fromPostalCode: "11111",
-        fromCity: "From City",
-        fromState: "FC",
+        fromPostalCode: "12345",
+        fromCity: "TEST CITY",
+        fromState: "CA",
         toPostalCode: "22222",
         toCity: "To City",
         toState: "TC",
@@ -296,12 +259,20 @@ describe("buildRatesRequest", () => {
 describe("compareDimensions", () => {
   it("handles undefined dimensions", () => {
     expect(compareDimensions(undefined, undefined)).toBe(true);
-    expect(compareDimensions(undefined, { length: 1, width: 1, height: 1, units: "inches" })).toBe(
-      false
-    );
-    expect(compareDimensions({ length: 1, width: 1, height: 1, units: "inches" }, undefined)).toBe(
-      false
-    );
+    expect(
+      compareDimensions(undefined, {
+        length: 1,
+        width: 1,
+        height: 1,
+        units: "inches",
+      })
+    ).toBe(false);
+    expect(
+      compareDimensions(
+        { length: 1, width: 1, height: 1, units: "inches" },
+        undefined
+      )
+    ).toBe(false);
   });
 
   it("compares dimension equality", () => {
@@ -395,4 +366,3 @@ describe("savePackageToFormData", () => {
     expect(formData.get("package-0.weight.unit")).toBe("pounds");
   });
 });
-
