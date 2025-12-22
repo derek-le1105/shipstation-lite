@@ -22,7 +22,9 @@ jobs:
           echo NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}" >> .env
           echo TEST_USERNAME="${{ secrets.TEST_USERNAME }}" >> .env
           echo TEST_PASSWORD="${{ secrets.TEST_PASSWORD }}" >> .env
-          cat .env
+          echo SHIPSTATION_API_KEY="${{ secrets.SHIPSTATION_API_KEY }}" >> .env
+          echo SHIPSTATION_API_SECRET="${{ secrets.SHIPSTATION_API_SECRET }}" >> .env
+          echo SHIPSTATION_API_X_PARTNER_KEY="${{ secrets.SHIPSTATION_API_X_PARTNER_KEY }}" >> .env
     - name: Install dependencies
       run: npm ci
     - name: Install Playwright Browsers
