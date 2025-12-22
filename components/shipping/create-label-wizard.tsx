@@ -26,9 +26,10 @@ import {
 import { AddressMode } from "./types";
 import { printLabels } from "@/lib/utils";
 import useCreateLabelStepping from "@/lib/hooks/useCreateLabelStepping";
+import { WarehouseRecord } from "@/lib/supabase/warehouses";
 
 type CreateLabelWizardProps = {
-  fromAddresses: AddressRecord[];
+  shipFrom: WarehouseRecord;
   toAddresses: AddressRecord[];
   carriers: ShipStationCarrier[];
   services: ShipStationService[];
@@ -36,7 +37,7 @@ type CreateLabelWizardProps = {
 };
 
 export default function CreateLabelWizard({
-  fromAddresses,
+  shipFrom,
   toAddresses,
   carriers,
   services,
@@ -57,9 +58,6 @@ export default function CreateLabelWizard({
   const [transitionPending, startTransition] = useTransition();
   const isPending = transitionPending || actionPending;
 
-  const [fromMode, setFromMode] = useState<AddressMode>(
-    fromAddresses.length > 0 ? "saved" : "new"
-  );
   const [toMode, setToMode] = useState<AddressMode>(
     toAddresses.length > 0 ? "saved" : "new"
   );
@@ -158,9 +156,8 @@ export default function CreateLabelWizard({
                 <PackageDetailsSection
                   isPending={isPending}
                   packages={packages}
-                  fromAddresses={fromAddresses}
+                  shipFrom={shipFrom}
                   toAddresses={toAddresses}
-                  fromMode={fromMode}
                   toMode={toMode}
                   selectedCarrier={selectedCarrier}
                   selectedService={selectedService}

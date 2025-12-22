@@ -28,6 +28,7 @@ import { AddressRecord } from "@/lib/supabase/addresses";
 import { AddressMode } from "./types";
 import { useCreateLabelFormContext } from "@/components/providers/create-label-provider";
 import SwitchLabel from "../switch-label";
+import { WarehouseRecord } from "@/lib/supabase/warehouses";
 
 const RATE_DEBOUNCE_MS = 1500;
 const USD_FORMATTER = new Intl.NumberFormat("en-US", {
@@ -44,9 +45,8 @@ type RateState =
 interface PackageDetailsSectionProps {
   isPending: boolean;
   packages: PackageRecord[];
-  fromAddresses: AddressRecord[];
+  shipFrom: WarehouseRecord;
   toAddresses: AddressRecord[];
-  fromMode: AddressMode;
   toMode: AddressMode;
   selectedCarrier: string | null;
   selectedService: string | null;
@@ -55,9 +55,8 @@ interface PackageDetailsSectionProps {
 export function PackageDetailsSection({
   isPending,
   packages,
-  fromAddresses,
+  shipFrom,
   toAddresses,
-  fromMode,
   toMode,
   selectedCarrier,
   selectedService,
@@ -79,9 +78,8 @@ export function PackageDetailsSection({
               index={index}
               packages={packages}
               handlePackageRemove={handlePackageRemove}
-              fromAddresses={fromAddresses}
+              shipFrom={shipFrom}
               toAddresses={toAddresses}
-              fromMode={fromMode}
               toMode={toMode}
               selectedCarrier={selectedCarrier}
               selectedService={selectedService}
@@ -135,9 +133,8 @@ function Package({
   index,
   packages,
   handlePackageRemove,
-  fromAddresses,
+  shipFrom,
   toAddresses,
-  fromMode,
   toMode,
   selectedCarrier,
   selectedService,
@@ -147,9 +144,8 @@ function Package({
   index: number;
   packages: PackageRecord[];
   handlePackageRemove: (index: number) => void;
-  fromAddresses: AddressRecord[];
+  shipFrom: WarehouseRecord;
   toAddresses: AddressRecord[];
-  fromMode: AddressMode;
   toMode: AddressMode;
   selectedCarrier: string | null;
   selectedService: string | null;
@@ -218,9 +214,8 @@ function Package({
       savePackageToFormData(formData, index, currPackage);
     }
     const nextRequest = buildRatesRequest(index, formData, {
-      fromAddresses,
+      shipFrom,
       toAddresses,
-      fromMode,
       toMode,
     });
     setRateRequest((current) =>
@@ -231,9 +226,8 @@ function Package({
     packages,
     formRef,
     index,
-    fromAddresses,
+    shipFrom,
     toAddresses,
-    fromMode,
     toMode,
   ]);
 

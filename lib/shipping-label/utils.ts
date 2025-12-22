@@ -2,6 +2,7 @@ import type { ShipStationRatesRequest } from "@/lib/shipstation/types";
 import type { AddressRecord } from "@/lib/supabase/addresses";
 import { AddressMode } from "@/components/shipping/types";
 import { PackageRecord } from "../supabase/packages";
+import { WarehouseRecord } from "../supabase/warehouses";
 
 type RateDimensions = ShipStationRatesRequest["dimensions"];
 
@@ -77,9 +78,8 @@ export function buildRatesRequest(
   index: number,
   formData: FormData,
   params: {
-    fromAddresses: AddressRecord[];
+    shipFrom: WarehouseRecord;
     toAddresses: AddressRecord[];
-    fromMode: AddressMode;
     toMode: AddressMode;
   }
 ): ShipStationRatesRequest | null {
@@ -91,24 +91,15 @@ export function buildRatesRequest(
     (formData.get("serviceCode") as string | null)?.trim() ?? "";
   if (!serviceCode) return null;
 
-  const fromAddress = resolveAddressFromForm(
-    formData,
-    "from",
-    params.fromAddresses,
-    params.fromMode
-  );
-  const toAddress = resolveAddressFromForm(
-    formData,
-    "to",
-    params.toAddresses,
-    params.toMode
-  );
+  const { shipFrom, toAddresses, toMode } = params;
+
+  const toAddress = resolveAddressFromForm(formData, "to", toAddresses, toMode);
 
   // for (const [key, value] of formData.entries()) {
   //   console.log(`Form field: ${key}, Value: ${value}`);
   // }
 
-  if (!fromAddress || !toAddress) return null;
+  if (!toAddress) return null;
 
   const weightValueRaw =
     (formData.get(`package-${index}.weight.value`) as string | null)?.trim() ??
@@ -165,9 +156,9 @@ export function buildRatesRequest(
     carrierCode,
     serviceCode,
     packageCode: "package",
-    fromPostalCode: fromAddress.postalCode,
-    fromCity: fromAddress.city,
-    fromState: fromAddress.state,
+    fromPostalCode: shipFrom?.originAddress_postalCode,
+    fromCity: shipFrom?.originAddress_city,
+    fromState: shipFrom?.originAddress_state,
     toPostalCode: toAddress.postalCode,
     toCountry: toAddress.country.toUpperCase(),
     toCity: toAddress.city,

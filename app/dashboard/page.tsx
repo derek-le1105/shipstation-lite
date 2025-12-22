@@ -9,8 +9,8 @@ import {
 } from "@/lib/shipstation/types";
 import { FEDEX_SERVICES } from "@/lib/shipstation/fedex";
 import { listPackages } from "@/lib/supabase/packages";
-import { getNextOrderNumber } from "@/lib/supabase/shipping-labels";
 import CreateLabelWizard from "@/components/shipping/create-label-wizard";
+import { fetchProfileWarehouseRecord } from "@/lib/supabase/warehouses";
 
 type CarrierMetadata = {
   carrier: ShipStationCarrier | null;
@@ -27,12 +27,12 @@ export default async function DashboardPage() {
   if (!profile) {
     redirect("/auth/login");
   }
-  const [savedFromAddresses, savedToAddresses, savedPackages, nextOrderNumber] =
+  const [savedFromAddresses, savedToAddresses, savedPackages, shipFrom] =
     await Promise.all([
       listUserAddresses(profile.id, "ship_from"),
       listUserAddresses(profile.id, "ship_to"),
       listPackages(profile.id),
-      getNextOrderNumber(),
+      fetchProfileWarehouseRecord(profile),
     ]);
 
   let carriers: ShipStationCarrier[] = [];
@@ -62,7 +62,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-10">
       <CreateLabelWizard
-        fromAddresses={savedFromAddresses}
+        shipFrom={shipFrom}
         toAddresses={savedToAddresses}
         carriers={carriers}
         services={metadata.services}
