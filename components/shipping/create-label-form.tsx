@@ -37,6 +37,7 @@ import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { PackageRecord } from "@/lib/supabase/packages";
 import { PackageDetailsSection } from "./package-section";
 import CreateLabelProvider from "../providers/create-label-provider";
+import useNextOrderNumber from "@/hooks/use-next-order-number";
 
 interface CreateLabelFormProps {
   fromAddresses: AddressRecord[];
@@ -44,7 +45,6 @@ interface CreateLabelFormProps {
   carriers: ShipStationCarrier[];
   services: ShipStationService[];
   packages: PackageRecord[];
-  nextOrderNumber: string;
 }
 
 export function CreateLabelForm({
@@ -53,7 +53,6 @@ export function CreateLabelForm({
   carriers,
   services,
   packages,
-  nextOrderNumber,
 }: CreateLabelFormProps) {
   const [formState, formAction, actionPending] = useActionState<
     CreateShippingLabelState,
@@ -95,26 +94,39 @@ export function CreateLabelForm({
         action={onSubmit}
         className="space-y-6"
       >
-        <div className="grid gap-6 lg:grid-cols-2">
-          <AddressSection
+        <div className="grid gap-6 lg:grid-cols-4">
+          {/* <AddressSection
             prefix="from"
             title="Ship from"
             addresses={fromAddresses}
             setMode={setFromMode}
             pending={isPending}
             formRef={formRef}
-          />
-          <AddressSection
-            prefix="to"
-            title="Ship to"
-            addresses={toAddresses}
-            setMode={setToMode}
-            pending={isPending}
-            formRef={formRef}
-          />
+          /> */}
+          <div className="col-span-3">
+            <AddressSection
+              prefix="to"
+              title="Ship to"
+              addresses={toAddresses}
+              setMode={setToMode}
+              pending={isPending}
+              formRef={formRef}
+            />
+          </div>
+          <div className="col-span-1">
+            <ShipmentDetailsSection
+              isPending={isPending}
+              selectedCarrier={selectedCarrier}
+              selectedService={selectedService}
+              carriers={carriers}
+              services={services}
+              setSelectedCarrier={setSelectedCarrier}
+              setSelectedService={setSelectedService}
+            />
+          </div>
         </div>
 
-        <ShipmentDetailsSection
+        {/* <ShipmentDetailsSection
           isPending={isPending}
           selectedCarrier={selectedCarrier}
           selectedService={selectedService}
@@ -123,7 +135,7 @@ export function CreateLabelForm({
           setSelectedCarrier={setSelectedCarrier}
           setSelectedService={setSelectedService}
           nextOrderNumber={nextOrderNumber}
-        />
+        /> */}
 
         <PackageDetailsSection
           isPending={isPending}
@@ -180,7 +192,6 @@ function ShipmentDetailsSection({
   services,
   setSelectedCarrier,
   setSelectedService,
-  nextOrderNumber,
 }: {
   isPending: boolean;
   selectedCarrier: string;
@@ -189,11 +200,11 @@ function ShipmentDetailsSection({
   services: ShipStationService[];
   setSelectedCarrier: (code: string) => void;
   setSelectedService: (code: string) => void;
-  nextOrderNumber: string;
 }) {
+  const { data, isPending: orderNumberPending, error } = useNextOrderNumber();
   return (
     <Fieldset title="Shipment Details">
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="flex flex-col gap-4">
         <div className="grid gap-2">
           <Label htmlFor="carrier">Carrier</Label>
           <Select
@@ -245,8 +256,8 @@ function ShipmentDetailsSection({
           <Input
             id="orderNumber"
             name="orderNumber"
-            placeholder={nextOrderNumber ?? "UNS-SM-#"}
-            disabled={isPending}
+            placeholder={data ?? "UNS-SM-#"}
+            disabled={isPending || orderNumberPending}
           />
         </div>
       </div>

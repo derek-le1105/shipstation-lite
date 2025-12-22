@@ -1,3 +1,5 @@
+"use server";
+
 import { UserProfile } from "../auth";
 import { AdvancedOptions, InsuranceOption } from "../shipstation/types";
 import { createClient } from "./server";
