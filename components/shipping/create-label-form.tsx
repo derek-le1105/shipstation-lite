@@ -1,9 +1,7 @@
 "use client";
 
 import {
-  createContext,
   useActionState,
-  useContext,
   useEffect,
   useRef,
   useState,
@@ -38,12 +36,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { PackageRecord } from "@/lib/supabase/packages";
 import { PackageDetailsSection } from "./package-section";
-
-type CreateLabelFormCtx = {
-  formRef: React.RefObject<HTMLFormElement | null>;
-};
-
-const CreateLabelFormContext = createContext<CreateLabelFormCtx | null>(null);
+import CreateLabelProvider from "../providers/create-label-provider";
 
 interface CreateLabelFormProps {
   fromAddresses: AddressRecord[];
@@ -52,16 +45,6 @@ interface CreateLabelFormProps {
   services: ShipStationService[];
   packages: PackageRecord[];
   nextOrderNumber: string;
-}
-
-export function useCreateLabelFormContext() {
-  const context = useContext(CreateLabelFormContext);
-  if (!context) {
-    throw new Error(
-      "useCreateLabelFormContext must be used within a CreateLabelFormProvider"
-    );
-  }
-  return context;
 }
 
 export function CreateLabelForm({
@@ -105,7 +88,7 @@ export function CreateLabelForm({
   };
 
   return (
-    <CreateLabelFormContext.Provider value={{ formRef }}>
+    <CreateLabelProvider formRef={formRef}>
       <form
         id="create-label-form"
         ref={formRef}
@@ -185,7 +168,7 @@ export function CreateLabelForm({
 
         <FormResponseMessage formState={formState} />
       </form>
-    </CreateLabelFormContext.Provider>
+    </CreateLabelProvider>
   );
 }
 
