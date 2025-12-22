@@ -35,6 +35,7 @@ export function AddressSection({
   pending: boolean;
   formRef: React.RefObject<HTMLFormElement | null>;
 }) {
+  const [openAddressSection, setOpenAddressSection] = useState<boolean>(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string>(
     addresses[0]?.id
   );
@@ -155,6 +156,12 @@ export function AddressSection({
   }, [validAddressStatus]);
 
   useEffect(() => {
+    const addressSectionLocalStorage = localStorage.getItem(
+      `openAddressSection-prefix`
+    );
+  }, []);
+
+  useEffect(() => {
     if (!selectedAddress) return;
     const { is_residential, is_validated } = selectedAddress;
     setIsResidential(is_residential);
@@ -175,7 +182,7 @@ export function AddressSection({
             </span>
           </div>
           <div className="flex align-center gap-8">
-            <p className="font-semibold">Contact: </p>
+            <span className="font-semibold">Contact: </span>
             <span>
               {address?.contact_name} -{" "}
               {formatPhoneNumber(address?.phone ?? "")}
@@ -186,7 +193,7 @@ export function AddressSection({
   }, [addresses, selectedAddressId]);
 
   return (
-    <Fieldset title={title} description={AddressDescription}>
+    <>
       <div className="grid gap-2">
         <Label htmlFor={`${prefix}-addressId`}>Select address</Label>
         <Select
@@ -217,18 +224,19 @@ export function AddressSection({
         </Select>
       </div>
 
-      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-        <div className="min-w-0 gap-2 col-span-2">
-          <Label htmlFor={`${prefix}-label`}>Nickname</Label>
-          <Input
-            id={`${prefix}-label`}
-            name={`${prefix}.label`}
-            placeholder={"Warehouse A"}
-            disabled={pending}
-            defaultValue={selectedAddress?.label ?? ""}
-          />
-        </div>
-        <div className="min-w-0 gap-2 col-span-2">
+      <div className="grid gap-5 md:grid-cols-6">
+        {!selectedAddress && (
+          <div className="min-w-0 space-y-2 col-span-full md:col-span-3">
+            <Label htmlFor={`${prefix}-label`}>Nickname</Label>
+            <Input
+              id={`${prefix}-label`}
+              name={`${prefix}.label`}
+              placeholder={"Warehouse A"}
+              disabled={pending}
+            />
+          </div>
+        )}
+        <div className="min-w-0 space-y-2 col-span-full md:col-span-3">
           <Label htmlFor={`${prefix}-contact_name`}>
             Contact Name <span className="text-red-500">*</span>
           </Label>
@@ -241,7 +249,7 @@ export function AddressSection({
             defaultValue={selectedAddress?.contact_name ?? ""}
           />
         </div>
-        <div className="min-w-0 gap-2 md:col-span-2">
+        <div className="min-w-0 space-y-2 col-span-full md:col-span-3">
           <Label htmlFor={`${prefix}-company`}>Company</Label>
           <Input
             id={`${prefix}-company`}
@@ -251,7 +259,7 @@ export function AddressSection({
             defaultValue={selectedAddress?.company ?? ""}
           />
         </div>
-        <div className="min-w-0 gap-2 md:col-span-2">
+        <div className="min-w-0 space-y-2 col-span-full md:col-span-3">
           <Label htmlFor={`${prefix}-phone`}>
             Phone <span className="text-red-500">*</span>
           </Label>
@@ -264,7 +272,7 @@ export function AddressSection({
             defaultValue={formatPhoneNumber(selectedAddress?.phone ?? "")}
           />
         </div>
-        <div className="min-w-0 gap-2 col-span-full">
+        <div className="min-w-0 space-y-2 col-span-full md:col-span-3">
           <Label htmlFor={`${prefix}-email`}>Email</Label>
           <Input
             id={`${prefix}-email`}
@@ -275,7 +283,7 @@ export function AddressSection({
             defaultValue={selectedAddress?.email ?? ""}
           />
         </div>
-        <div className="min-w-0 gap-2 col-span-2 md:col-span-4">
+        <div className="min-w-0 space-y-2 col-span-full md:col-span-4">
           <Label htmlFor={`${prefix}-address_line1`}>
             Address Line 1 <span className="text-red-500">*</span>
           </Label>
@@ -288,7 +296,7 @@ export function AddressSection({
             defaultValue={selectedAddress?.address_line1 ?? ""}
           />
         </div>
-        <div className="min-w-0 gap-2 col-span-2 md:col-span-4">
+        <div className="min-w-0 space-y-2 col-span-full md:col-span-2">
           <Label htmlFor={`${prefix}-address_line2`}>Address Line 2</Label>
           <Input
             id={`${prefix}-address_line2`}
@@ -298,7 +306,7 @@ export function AddressSection({
             defaultValue={selectedAddress?.address_line2 ?? ""}
           />
         </div>
-        <div className="min-w-0 gap-2 col-span-2">
+        <div className="min-w-0 space-y-2 col-span-full md:col-span-3">
           <Label htmlFor={`${prefix}-city`}>
             City <span className="text-red-500">*</span>
           </Label>
@@ -311,7 +319,7 @@ export function AddressSection({
             defaultValue={selectedAddress?.city ?? ""}
           />
         </div>
-        <div className="min-w-0 gap-2">
+        <div className="min-w-0 space-y-2 col-span-full md:col-span-1">
           <Label htmlFor={`${prefix}.state`}>
             State <span className="text-red-500">*</span>
           </Label>
@@ -336,7 +344,7 @@ export function AddressSection({
             </SelectContent>
           </Select>
         </div>
-        <div className="min-w-0 gap-2">
+        <div className="min-w-0 space-y-2 col-span-full md:col-span-2">
           <Label htmlFor={`${prefix}-postal_code`}>
             Postal Code <span className="text-red-500">*</span>
           </Label>
@@ -349,7 +357,7 @@ export function AddressSection({
             defaultValue={selectedAddress?.postal_code ?? ""}
           />
         </div>
-        <div className="flex justify-between items-center gap-2 col-span-full min-w-0">
+        <div className="flex flex-col gap-3 rounded-md border border-border/60 bg-muted/20 p-3 md:flex-row md:items-center md:justify-between col-span-full">
           <Label
             htmlFor={`${prefix}.is_residential`}
             className="text-sm text-muted-foreground"
@@ -369,7 +377,7 @@ export function AddressSection({
           </div>
         </div>
         {!selectedAddress && (
-          <div className="flex justify-between items-center gap-2 col-span-full min-w-0">
+          <div className="flex flex-col gap-3 rounded-md border border-border/60 bg-muted/20 p-3 md:flex-row md:items-center md:justify-between col-span-full">
             <Label
               htmlFor={`${prefix}-is_residential`}
               className="text-sm text-muted-foreground"
@@ -389,7 +397,7 @@ export function AddressSection({
             </div>
           </div>
         )}
-        <div className="flex justify-between items-center gap-2 col-span-full min-w-0">
+        <div className="flex flex-col gap-3 rounded-md border border-border/60 bg-muted/20 p-3 md:flex-row md:items-center md:justify-between col-span-full">
           <div className="flex items-center gap-2">
             <Label
               htmlFor={`${prefix}.is_residential`}
@@ -431,6 +439,6 @@ export function AddressSection({
           )}
         </div>
       </div>
-    </Fieldset>
+    </>
   );
 }

@@ -69,7 +69,7 @@ export function PackageDetailsSection({
   };
 
   return (
-    <Fieldset title="Package Details">
+    <>
       <input type="hidden" name="packages.count" value={packageIds.length} />
       {packageIds.map((packageId, index) => {
         return (
@@ -104,7 +104,7 @@ export function PackageDetailsSection({
           Add Package
         </Button>
       </div>
-    </Fieldset>
+    </>
   );
 }
 
