@@ -161,8 +161,32 @@ export function AddressSection({
     setValidAddressStatus(is_validated ? "valid" : "idle");
   }, [selectedAddress]);
 
+  const AddressDescription = useMemo(() => {
+    const address = addresses.find(({ id }) => id === selectedAddressId);
+    if (!address) return <></>;
+    else
+      return (
+        <div className="grid grid-cols-2">
+          <div className="flex align-center gap-8">
+            <p className="font-semibold">Address: </p>
+            <span>
+              {address?.address_line1} {address?.address_line2}, {address?.city}
+              , {address?.state}, {address?.postal_code}
+            </span>
+          </div>
+          <div className="flex align-center gap-8">
+            <p className="font-semibold">Contact: </p>
+            <span>
+              {address?.contact_name} -{" "}
+              {formatPhoneNumber(address?.phone ?? "")}
+            </span>
+          </div>
+        </div>
+      );
+  }, [addresses, selectedAddressId]);
+
   return (
-    <Fieldset title={title}>
+    <Fieldset title={title} description={AddressDescription}>
       <div className="grid gap-2">
         <Label htmlFor={`${prefix}-addressId`}>Select address</Label>
         <Select

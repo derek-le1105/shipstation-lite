@@ -74,6 +74,42 @@ export type Database = {
         };
         Relationships: [];
       };
+      app_feedback: {
+        Row: {
+          created_at: string;
+          details: string;
+          id: string;
+          issue_section: string;
+          issue_type: string;
+          resolved_at: string | null;
+          status: string;
+          subject: string;
+          user_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          details: string;
+          id?: string;
+          issue_section: string;
+          issue_type: string;
+          resolved_at?: string | null;
+          status?: string;
+          subject: string;
+          user_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          details?: string;
+          id?: string;
+          issue_section?: string;
+          issue_type?: string;
+          resolved_at?: string | null;
+          status?: string;
+          subject?: string;
+          user_id?: string | null;
+        };
+        Relationships: [];
+      };
       packages: {
         Row: {
           created_at: string;
@@ -287,6 +323,7 @@ export type Database = {
       next_shipping_label_order_number: { Args: never; Returns: string };
     };
     Enums: {
+      feedback_source: "web" | "ios" | "android" | "other";
       package_dimension_units: "inches" | "centimeters";
       package_weight_units: "pounds" | "ounces" | "grams";
       upcharging_unit: "dollars" | "percent";
@@ -421,6 +458,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      feedback_source: ["web", "ios", "android", "other"],
       package_dimension_units: ["inches", "centimeters"],
       package_weight_units: ["pounds", "ounces", "grams"],
       upcharging_unit: ["dollars", "percent"],

@@ -26,7 +26,7 @@ import {
 } from "@/lib/shipping-label/utils";
 import { AddressRecord } from "@/lib/supabase/addresses";
 import { AddressMode } from "./types";
-import { useCreateLabelFormContext } from "./create-label-form";
+import { useCreateLabelFormContext } from "@/components/providers/create-label-provider";
 import SwitchLabel from "../switch-label";
 
 const RATE_DEBOUNCE_MS = 1500;

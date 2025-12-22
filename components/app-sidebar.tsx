@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Shield, type LucideIcon } from "lucide-react";
+import { Home, Shield, type LucideIcon, Send } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/user-dropdown";
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/sidebar";
 import { UserProfile } from "@/lib/auth";
 import { useMemo } from "react";
+import { NavSecondary } from "./nav-secondary";
 
 export interface Navigation {
   /**
@@ -53,6 +54,12 @@ export interface Navigation {
   }[];
 }
 
+export type SecondaryNavigation = {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+};
+
 const NAV_MAIN: Navigation[] = [
   {
     title: "Dashboard",
@@ -85,6 +92,10 @@ const NAV_MAIN: Navigation[] = [
   },
 ];
 
+const NAV_SECONDARY: SecondaryNavigation[] = [
+  { title: "Feedback", url: "/feedback", icon: Send },
+];
+
 export function AppSidebar({ profile }: { profile: UserProfile }) {
   const navMain = useMemo(() => {
     return NAV_MAIN.filter((item) => {
@@ -105,7 +116,7 @@ export function AppSidebar({ profile }: { profile: UserProfile }) {
     <Sidebar className="top-(--header-height) h-[calc(100svh-var(--header-height))]!">
       <SidebarContent>
         <NavMain items={navMain} />
-        {/* <NavSecondary items={NAV_SECONDARY} className="mt-auto" /> */}
+        <NavSecondary items={NAV_SECONDARY} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />
