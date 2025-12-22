@@ -22,20 +22,17 @@ import { formatPhoneNumber } from "@/lib/utils";
 
 export function AddressSection({
   prefix,
-  title,
   addresses,
   setMode,
   pending,
   formRef,
 }: {
   prefix: "from" | "to";
-  title: string;
   addresses: AddressRecord[];
   setMode: (mode: AddressMode) => void;
   pending: boolean;
   formRef: React.RefObject<HTMLFormElement | null>;
 }) {
-  const [openAddressSection, setOpenAddressSection] = useState<boolean>(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string>(
     addresses[0]?.id
   );
@@ -45,7 +42,7 @@ export function AddressSection({
 
   const [validAddressStatus, setValidAddressStatus] = useState<
     "idle" | "validating" | "valid" | "invalid"
-  >("idle");
+  >("invalid");
 
   const addressFormUpdated = useCallback(() => {
     if (!formRef.current) return;
@@ -156,41 +153,11 @@ export function AddressSection({
   }, [validAddressStatus]);
 
   useEffect(() => {
-    const addressSectionLocalStorage = localStorage.getItem(
-      `openAddressSection-prefix`
-    );
-  }, []);
-
-  useEffect(() => {
     if (!selectedAddress) return;
     const { is_residential, is_validated } = selectedAddress;
     setIsResidential(is_residential);
     setValidAddressStatus(is_validated ? "valid" : "idle");
   }, [selectedAddress]);
-
-  const AddressDescription = useMemo(() => {
-    const address = addresses.find(({ id }) => id === selectedAddressId);
-    if (!address) return <></>;
-    else
-      return (
-        <div className="grid grid-cols-2">
-          <div className="flex align-center gap-8">
-            <p className="font-semibold">Address: </p>
-            <span>
-              {address?.address_line1} {address?.address_line2}, {address?.city}
-              , {address?.state}, {address?.postal_code}
-            </span>
-          </div>
-          <div className="flex align-center gap-8">
-            <span className="font-semibold">Contact: </span>
-            <span>
-              {address?.contact_name} -{" "}
-              {formatPhoneNumber(address?.phone ?? "")}
-            </span>
-          </div>
-        </div>
-      );
-  }, [addresses, selectedAddressId]);
 
   return (
     <>
@@ -357,7 +324,7 @@ export function AddressSection({
             defaultValue={selectedAddress?.postal_code ?? ""}
           />
         </div>
-        <div className="flex flex-col gap-3 rounded-md border border-border/60 bg-muted/20 p-3 md:flex-row md:items-center md:justify-between col-span-full">
+        <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-muted/20 p-3 col-span-full md:col-span-2">
           <Label
             htmlFor={`${prefix}.is_residential`}
             className="text-sm text-muted-foreground"
@@ -377,7 +344,7 @@ export function AddressSection({
           </div>
         </div>
         {!selectedAddress && (
-          <div className="flex flex-col gap-3 rounded-md border border-border/60 bg-muted/20 p-3 md:flex-row md:items-center md:justify-between col-span-full">
+          <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-muted/20 p-3 col-span-full md:col-span-2">
             <Label
               htmlFor={`${prefix}-is_residential`}
               className="text-sm text-muted-foreground"
@@ -397,7 +364,7 @@ export function AddressSection({
             </div>
           </div>
         )}
-        <div className="flex flex-col gap-3 rounded-md border border-border/60 bg-muted/20 p-3 md:flex-row md:items-center md:justify-between col-span-full">
+        <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-muted/20 p-3 col-span-full md:col-span-2">
           <div className="flex items-center gap-2">
             <Label
               htmlFor={`${prefix}.is_residential`}
@@ -405,33 +372,32 @@ export function AddressSection({
             >
               Address Status
             </Label>
-            {validAddressStatus !== "valid" && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <TriangleAlert className="text-sm text-yellow-500" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <span>
-                    If this address is not validated, a correction fee of $17
-                    might be applied.
-                  </span>
-                </TooltipContent>
-              </Tooltip>
-            )}
           </div>
           <input
             type="hidden"
             name={`${prefix}.is_validated`}
             value={validAddressStatus === "valid" ? "on" : "off"}
           />
+
           {validAddressStatus !== "valid" ? (
-            <Button
-              type="button"
-              className="cursor-pointer"
-              onClick={handleValidateAddress}
-            >
-              {ValidateButton}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  className="cursor-pointer"
+                  onClick={handleValidateAddress}
+                  size={"sm"}
+                >
+                  {ValidateButton}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                <span>
+                  If this address is not validated, a correction fee of $17
+                  might be applied.
+                </span>
+              </TooltipContent>
+            </Tooltip>
           ) : (
             <span className="text-sm font-medium text-emerald-600">
               Validated

@@ -1,7 +1,14 @@
-import { createContext, ReactNode, useContext } from "react";
+"use client";
+
+import {
+  createContext,
+  useContext,
+  type ReactNode,
+  type RefObject,
+} from "react";
 
 type CreateLabelFormCtx = {
-  formRef: React.RefObject<HTMLFormElement | null>;
+  formRef: RefObject<HTMLFormElement | null>;
 };
 
 const CreateLabelFormContext = createContext<CreateLabelFormCtx | null>(null);
@@ -22,7 +29,7 @@ export function useCreateLabelFormContext() {
   const context = useContext(CreateLabelFormContext);
   if (!context) {
     throw new Error(
-      "useCreateLabelFormContext must be used within a CreateLabelFormProvider"
+      "useCreateLabelFormContext must be used within a CreateLabelProvider"
     );
   }
   return context;

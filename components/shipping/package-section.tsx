@@ -204,8 +204,12 @@ function Package({
   );
 
   const updateRateRequest = useCallback(() => {
-    if (!formRef.current) return;
-    const formData = new FormData(formRef.current);
+    const form =
+      formRef.current ??
+      (document.getElementById("create-label-form") as HTMLFormElement | null);
+    if (!form) return;
+    const formData = new FormData(form);
+
     if (selectedPackageId !== "new-package") {
       const currPackage = packages.find((p) => p.id === selectedPackageId);
       if (!currPackage) throw new Error("Selected package not found");
@@ -234,8 +238,7 @@ function Package({
   ]);
 
   useEffect(() => {
-    const form = formRef.current;
-    if (!form) return;
+    let attachedForm: HTMLFormElement | null = null;
 
     const handleFormChange = () => {
       if (formEventTimeoutRef.current !== null) {
@@ -247,12 +250,47 @@ function Package({
       }, 0);
     };
 
-    form.addEventListener("input", handleFormChange);
-    form.addEventListener("change", handleFormChange);
+    const attach = () => {
+      const form =
+        formRef.current ??
+        (document.getElementById(
+          "create-label-form"
+        ) as HTMLFormElement | null);
+      if (!form) return false;
+      if (attachedForm === form) return true;
+
+      attachedForm = form;
+      form.addEventListener("input", handleFormChange);
+      form.addEventListener("change", handleFormChange);
+      return true;
+    };
+
+    // `ref.current` changes don't trigger effects; poll briefly until the form mounts.
+    if (!attach()) {
+      const interval = window.setInterval(() => {
+        if (attach()) {
+          window.clearInterval(interval);
+        }
+      }, 50);
+
+      return () => {
+        window.clearInterval(interval);
+        if (attachedForm) {
+          attachedForm.removeEventListener("input", handleFormChange);
+          attachedForm.removeEventListener("change", handleFormChange);
+        }
+        if (formEventTimeoutRef.current !== null) {
+          window.clearTimeout(formEventTimeoutRef.current);
+          formEventTimeoutRef.current = null;
+        }
+      };
+    }
 
     return () => {
-      form.removeEventListener("input", handleFormChange);
-      form.removeEventListener("change", handleFormChange);
+      if (attachedForm) {
+        attachedForm.removeEventListener("input", handleFormChange);
+        attachedForm.removeEventListener("change", handleFormChange);
+      }
       if (formEventTimeoutRef.current !== null) {
         window.clearTimeout(formEventTimeoutRef.current);
         formEventTimeoutRef.current = null;

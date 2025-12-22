@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useActionState,
-  useMemo,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
+import { useActionState, useRef, useState, useTransition } from "react";
 import { AlertCircleIcon, Loader2, Truck } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,30 +25,7 @@ import {
 } from "@/lib/actions/shipping";
 import { AddressMode } from "./types";
 import { printLabels } from "@/lib/utils";
-
-type WizardStep = {
-  title: string;
-  description: string;
-};
-
-const STEPS: WizardStep[] = [
-  {
-    title: "Shipping details",
-    description: "Confirm who the label is going to and from.",
-  },
-  {
-    title: "Package details",
-    description: "Enter weight and dimensions for each package.",
-  },
-  {
-    title: "Carrier & service",
-    description: "Pick the carrier, service, and delivery options.",
-  },
-  {
-    title: "Review & create",
-    description: "Double-check details before creating the label.",
-  },
-];
+import useCreateLabelStepping from "@/lib/hooks/useCreateLabelStepping";
 
 type CreateLabelWizardProps = {
   fromAddresses: AddressRecord[];
@@ -71,13 +42,9 @@ export default function CreateLabelWizard({
   services,
   packages,
 }: CreateLabelWizardProps) {
-  const [stepIndex, setStepIndex] = useState(0);
-  const totalSteps = STEPS.length;
-  const currentStep = STEPS[stepIndex]!;
-  const progress = useMemo(() => {
-    if (totalSteps === 0) return 0;
-    return Math.round(((stepIndex + 1) / totalSteps) * 100);
-  }, [stepIndex, totalSteps]);
+  const { shippingSteps, stepIndex, setStepIndex, progress, totalSteps } =
+    useCreateLabelStepping();
+  const currentStep = shippingSteps[stepIndex]!;
 
   const canGoBack = stepIndex > 0;
   const canGoNext = stepIndex < totalSteps - 1;
@@ -109,77 +76,70 @@ export default function CreateLabelWizard({
 
   return (
     <div className="space-y-6">
-      {/* <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Create a shipping label
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Follow the steps below to generate a label. You can move back at any
-          time.
-        </p>
-      </header> */}
-
-      <Card>
-        <CardHeader className="space-y-3">
-          <CardTitle className="text-lg">Progress</CardTitle>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>
-                Step {stepIndex + 1} of {totalSteps}
-              </span>
-              <span>{progress}% complete</span>
-            </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-primary transition-all"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="hidden md:grid gap-4 md:grid-cols-4">
-            {STEPS.map((step, index) => {
-              const state =
-                index === stepIndex
-                  ? "current"
-                  : index < stepIndex
-                  ? "complete"
-                  : "upcoming";
-              return (
+      <CreateLabelProvider formRef={formRef}>
+        <Card>
+          <CardHeader className="space-y-3">
+            <CardTitle className="text-lg">Progress</CardTitle>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>
+                  Step {stepIndex + 1} of {totalSteps}
+                </span>
+                <span>{progress}% complete</span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                 <div
-                  key={step.title}
-                  className="rounded-lg border border-border/60 bg-card px-4 py-3"
-                >
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span className="uppercase tracking-wide">
-                      Step {index + 1}
-                    </span>
-                    <span className="rounded-full border border-border px-2 py-0.5">
-                      {state}
-                    </span>
+                  className="h-full rounded-full bg-primary transition-all"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="hidden md:grid gap-4 md:grid-cols-4">
+              {shippingSteps.map((step, index) => {
+                const state =
+                  index === stepIndex
+                    ? "current"
+                    : index < stepIndex
+                    ? "complete"
+                    : "upcoming";
+                return (
+                  <div
+                    key={step.title}
+                    className="cursor-pointer rounded-lg border border-border/60 bg-card px-4 py-3 transition-transform hover:bg-muted/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99]"
+                    onClick={() => {
+                      setStepIndex(index);
+                    }}
+                  >
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span className="uppercase tracking-wide">
+                        Step {index + 1}
+                      </span>
+                      <span className="rounded-full border border-border px-2 py-0.5">
+                        {state}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-sm font-semibold">{step.title}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {step.description}
+                    </p>
                   </div>
-                  <p className="mt-3 text-sm font-semibold">{step.title}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {step.description}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
 
-          <Separator />
+            <Separator />
 
-          <div className="space-y-2">
-            <h2 className="text-lg font-semibold">{currentStep.title}</h2>
-            <p className="text-sm text-muted-foreground">
-              {currentStep.description}
-            </p>
-          </div>
+            <div className="space-y-2">
+              <h2 className="text-lg font-semibold">{currentStep.title}</h2>
+              <p className="text-sm text-muted-foreground">
+                {currentStep.description}
+              </p>
+            </div>
 
-          <CreateLabelProvider formRef={formRef}>
             <form
-              id="create-label-wizard-form"
+              id="create-label-form"
               ref={formRef}
               action={onSubmit}
               className="space-y-8"
@@ -187,7 +147,6 @@ export default function CreateLabelWizard({
               <section hidden={stepIndex !== 0}>
                 <AddressSection
                   prefix="to"
-                  title="Ship to"
                   addresses={toAddresses}
                   setMode={setToMode}
                   pending={isPending}
@@ -285,9 +244,9 @@ export default function CreateLabelWizard({
 
               <FormResponseMessage formState={formState} />
             </form>
-          </CreateLabelProvider>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </CreateLabelProvider>
     </div>
   );
 }
