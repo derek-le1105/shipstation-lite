@@ -426,9 +426,9 @@ export function ReviewSection({
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-2 md:grid-cols-5">
-        <div className="col-span-2">
-          <Fieldset title="Ship From">
+      <div className="grid gap-2 md:grid-cols-5 items-stretch">
+        <div className="h-full md:col-span-2">
+          <Fieldset title="Ship From" className="h-full">
             <ReviewRow label="Name" value={shipFrom.originAddress_name} />
             <ReviewRow
               label="Company"
@@ -447,8 +447,8 @@ export function ReviewSection({
             />
           </Fieldset>
         </div>
-        <div className="col-span-2">
-          <Fieldset title="Ship to">
+        <div className="h-full md:col-span-2">
+          <Fieldset title="Ship to" className="h-full">
             <ReviewRow label="Name" value={snapshot.to.contactName} />
             <ReviewRow
               label="Company"
@@ -464,8 +464,8 @@ export function ReviewSection({
           </Fieldset>
         </div>
 
-        <div className="col-span-1">
-          <Fieldset title="Shipment">
+        <div className="min-h-0 h-full w-full md:col-span-1">
+          <Fieldset title="Shipment" className="h-full w-full">
             <ReviewRow label="Carrier" value={carrierLabel} />
             <ReviewRow label="Service" value={serviceLabel} />
             <ReviewRow
@@ -489,10 +489,12 @@ export function ReviewSection({
                 key={`review-package-${pkg.index}`}
                 className="rounded-lg border border-border/60 bg-card p-4"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-wrap items-center gap-4">
-                    <p className="font-semibold">Package {pkg.index + 1}</p>
-                    <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2 md:flex-nowrap">
+                    <p className="shrink-0 font-semibold">
+                      Package {pkg.index + 1}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 md:flex-nowrap">
                       {pkg.insuranceProvider &&
                       pkg.insuranceProvider !== "none" ? (
                         <Badge variant="success">
@@ -507,11 +509,11 @@ export function ReviewSection({
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-end gap-4">
-                    <div className="text-sm text-muted-foreground">
+                  <div className="flex w-full items-center justify-between md:justify-end gap-4">
+                    <div className="shrink-0 pt-1 text-sm text-muted-foreground">
                       Estimated Quote:
                     </div>
-                    <div className="text-right">
+                    <div className="min-w-0 text-right">
                       {quote.status === "loading" ? (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -582,7 +584,7 @@ export function ReviewSection({
             );
           })}
 
-          <div className="flex flex-wrap items-center justify-end gap-4 rounded-lg border border-dashed border-border/70 bg-muted/40 p-4">
+          <div className="flex flex-col items-start gap-1 rounded-lg border border-dashed border-border/70 bg-muted/40 p-4 sm:flex-row sm:items-center sm:justify-end sm:gap-4">
             <p className="text-sm text-muted-foreground">Estimated Total:</p>
             <p className="text-lg font-semibold">
               {totalQuote !== null ? USD_FORMATTER.format(totalQuote) : "—"}

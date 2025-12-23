@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 import {
   Collapsible,
   CollapsibleContent,
@@ -10,16 +11,21 @@ import { Button } from "./button";
 
 import { ChevronsUpDown } from "lucide-react";
 
-type Props = { title: string; children: React.ReactNode };
+type Props = {
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+  contentClassName?: string;
+};
 
-export function Fieldset({ title, children }: Props) {
+export function Fieldset({ title, children, className, contentClassName }: Props) {
   return (
-    <fieldset className="space-y-1 rounded-lg border p-4">
+    <fieldset className={cn("space-y-1 rounded-lg border p-4", className)}>
       <legend className="px-2 text-lg font-semibold uppercase tracking-wide">
         {title}
       </legend>
 
-      <div className="grid gap-2">{children}</div>
+      <div className={cn("grid gap-2", contentClassName)}>{children}</div>
     </fieldset>
   );
 }
