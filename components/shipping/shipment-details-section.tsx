@@ -44,7 +44,7 @@ export function ShipmentDetailsSection({
           value={selectedCarrier}
           onValueChange={(value) => setSelectedCarrier(value)}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full" id="carrier">
             <SelectValue placeholder="Select a carrier" />
           </SelectTrigger>
           <SelectContent>
@@ -64,7 +64,7 @@ export function ShipmentDetailsSection({
           value={selectedService}
           onValueChange={(value) => setSelectedService(value)}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full" id="serviceCode">
             <SelectValue placeholder="Select a service" />
           </SelectTrigger>
           <SelectContent>
