@@ -28,6 +28,8 @@ import { printLabels } from "@/lib/utils";
 import useCreateLabelStepping from "@/lib/hooks/useCreateLabelStepping";
 import { WarehouseRecord } from "@/lib/supabase/warehouses";
 import { ReviewSection } from "./review-section";
+import WizardProgressBar from "./wizard-progress-bar";
+import WizardStepCards from "./wizard-step-cards";
 
 type CreateLabelWizardProps = {
   shipFrom: WarehouseRecord;
@@ -44,13 +46,6 @@ export default function CreateLabelWizard({
   services,
   packages,
 }: CreateLabelWizardProps) {
-  const { shippingSteps, stepIndex, setStepIndex, progress, totalSteps } =
-    useCreateLabelStepping();
-  const currentStep = shippingSteps[stepIndex]!;
-
-  const canGoBack = stepIndex > 0;
-  const canGoNext = stepIndex < totalSteps - 1;
-
   const formRef = useRef<HTMLFormElement>(null);
   const [formState, formAction, actionPending] = useActionState<
     CreateShippingLabelState,
@@ -58,6 +53,13 @@ export default function CreateLabelWizard({
   >(createShippingLabelAction, { status: "idle" });
   const [transitionPending, startTransition] = useTransition();
   const isPending = transitionPending || actionPending;
+
+  const { shippingSteps, stepIndex, handleStepChange, progress, totalSteps } =
+    useCreateLabelStepping(formRef);
+  const currentStep = shippingSteps[stepIndex]!;
+
+  const canGoBack = stepIndex > 0;
+  const canGoNext = stepIndex < totalSteps - 1;
 
   const [toMode, setToMode] = useState<AddressMode>(
     toAddresses.length > 0 ? "saved" : "new"
@@ -79,58 +81,17 @@ export default function CreateLabelWizard({
         <Card>
           <CardHeader className="space-y-3">
             <CardTitle className="text-lg">Create a shipping label</CardTitle>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span data-testid="wizard-step-indicator">
-                  Step {stepIndex + 1} of {totalSteps}
-                </span>
-                <span data-testid="wizard-progress-text">
-                  {progress}% complete
-                </span>
-              </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-primary transition-all"
-                  data-testid="wizard-progress-bar"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            </div>
+            <WizardProgressBar
+              stepIndex={stepIndex}
+              totalSteps={totalSteps}
+              progress={progress}
+            />
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="hidden md:grid gap-4 md:grid-cols-4">
-              {shippingSteps.map((step, index) => {
-                const state =
-                  index === stepIndex
-                    ? "current"
-                    : index < stepIndex
-                    ? "complete"
-                    : "upcoming";
-                return (
-                  <div
-                    key={step.title}
-                    data-testid={`wizard-step-card-${index + 1}`}
-                    className="cursor-pointer rounded-lg border border-border/60 bg-card px-4 py-3 transition-transform hover:bg-muted/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99]"
-                    onClick={() => {
-                      setStepIndex(index);
-                    }}
-                  >
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span className="uppercase tracking-wide">
-                        Step {index + 1}
-                      </span>
-                      <span className="rounded-full border border-border px-2 py-0.5">
-                        {state}
-                      </span>
-                    </div>
-                    <p className="mt-3 text-sm font-semibold">{step.title}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {step.description}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
+            <WizardStepCards
+              shippingSteps={shippingSteps}
+              handleStepChange={handleStepChange}
+            />
 
             <Separator />
 
@@ -206,7 +167,7 @@ export default function CreateLabelWizard({
                     variant="outline"
                     disabled={!canGoBack}
                     onClick={() =>
-                      setStepIndex((current) => Math.max(0, current - 1))
+                      handleStepChange(Math.min(totalSteps - 1, stepIndex - 1))
                     }
                   >
                     Back
@@ -220,8 +181,8 @@ export default function CreateLabelWizard({
                       disabled={isPending}
                       onClick={(event) => {
                         event.preventDefault();
-                        setStepIndex((current) =>
-                          Math.min(totalSteps - 1, current + 1)
+                        handleStepChange(
+                          Math.min(totalSteps - 1, stepIndex + 1)
                         );
                       }}
                     >
