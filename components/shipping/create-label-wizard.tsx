@@ -1,6 +1,12 @@
 "use client";
 
-import { useActionState, useRef, useState, useTransition } from "react";
+import {
+  useActionState,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { AlertCircleIcon, Loader2, Truck } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,6 +36,12 @@ import { WarehouseRecord } from "@/lib/supabase/warehouses";
 import { ReviewSection } from "./review-section";
 import WizardProgressBar from "./wizard-progress-bar";
 import WizardStepCards from "./wizard-step-cards";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../ui/tooltip";
 
 type CreateLabelWizardProps = {
   shipFrom: WarehouseRecord;
@@ -74,6 +86,16 @@ export default function CreateLabelWizard({
       formAction(formData);
     });
   };
+
+  const invalidStep = useMemo(
+    () => shippingSteps.find(({ state }) => state === "warning"),
+    [shippingSteps]
+  );
+
+  const isValidInputs = useMemo(
+    () => shippingSteps.some(({ state }) => state !== "complete"),
+    [shippingSteps]
+  );
 
   return (
     <div className="space-y-6" data-testid="create-label-wizard">
@@ -189,24 +211,37 @@ export default function CreateLabelWizard({
                       Next
                     </Button>
                   ) : (
-                    <Button
-                      key="wizard-submit"
-                      data-testid="wizard-next"
-                      type="submit"
-                      disabled={isPending}
-                    >
-                      {isPending ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Processing...
-                        </>
-                      ) : (
-                        <>
-                          <Truck className="mr-2 h-4 w-4" />
-                          Create label
-                        </>
-                      )}
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger
+                          asChild
+                          className="disabled:pointer-events-auto"
+                        >
+                          <Button
+                            key="wizard-submit"
+                            data-testid="wizard-next"
+                            type="submit"
+                            disabled={isPending || isValidInputs}
+                          >
+                            {isPending ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Processing...
+                              </>
+                            ) : (
+                              <>
+                                <Truck className="mr-2 h-4 w-4" />
+                                Create label
+                              </>
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          You have unresolved warnings in {invalidStep?.title},
+                          please resolve them first.
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
                 </div>
               </div>

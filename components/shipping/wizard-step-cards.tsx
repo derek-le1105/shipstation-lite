@@ -12,7 +12,7 @@ export default function WizardStepCards({
   return (
     <div className="hidden md:grid gap-4 md:grid-cols-4">
       {shippingSteps.map((step, index) => {
-        const { state, title, description } = step;
+        const { state, title, description, warningMessage } = step;
         const isWarning = state === "warning";
         const isComplete = state === "complete";
         return (
@@ -45,7 +45,13 @@ export default function WizardStepCards({
               </span>
             </div>
             <p className="mt-3 text-sm font-semibold">{title}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+            <p
+              className={`mt-1 text-xs text-muted-foreground ${
+                !!warningMessage && "underline text-warning"
+              }`}
+            >
+              {warningMessage === "" ? description : warningMessage}
+            </p>
           </div>
         );
       })}

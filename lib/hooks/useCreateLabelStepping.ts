@@ -5,7 +5,7 @@ export type WizardStep = {
   description: string;
   state: "current" | "complete" | "upcoming" | "warning";
   warningMessage: string;
-  requiredFields: string[];
+  requiredFields: RegExp[];
 };
 
 const STEPS: WizardStep[] = [
@@ -15,12 +15,12 @@ const STEPS: WizardStep[] = [
     state: "current",
     warningMessage: "",
     requiredFields: [
-      "contact_name",
-      "phone",
-      "address_line1",
-      "city",
-      "state",
-      "postal_code",
+      /^contact_name$/,
+      /^phone$/,
+      /^address_line1$/,
+      /^city$/,
+      /^state$/,
+      /^postal_code$/,
     ],
   },
   {
@@ -29,10 +29,10 @@ const STEPS: WizardStep[] = [
     state: "upcoming",
     warningMessage: "",
     requiredFields: [
-      "package-0.dimensions.length",
-      "package-0.dimensions.width",
-      "package-0.dimensions.height",
-      "package-0.weight.value",
+      /^package-\d+\.dimensions\.length$/,
+      /^package-\d+\.dimensions\.width$/,
+      /^package-\d+\.dimensions\.height$/,
+      /^package-\d+\.weight\.value$/,
     ],
   },
   {
@@ -40,7 +40,7 @@ const STEPS: WizardStep[] = [
     description: "Pick the carrier, service, and delivery options.",
     state: "upcoming",
     warningMessage: "",
-    requiredFields: ["carrierCode", "serviceCode"],
+    requiredFields: [/^carrierCode$/, /^serviceCode$/],
   },
   {
     title: "Review & Create",
@@ -66,27 +66,30 @@ export default function useCreateLabelStepping(
   const validateStep = (
     formData: FormData,
     step: WizardStep
-  ): { state: "warning" | "complete"; errorMessage: string } => {
-    const missing = step?.requiredFields.filter((key) => {
-      const value = formData.get(key);
-      return typeof value !== "string" || value.trim().length === 0;
+  ): { state: "warning" | "complete"; warningMessage: string } => {
+    const entries = Array.from(formData.entries());
+    const missing = step.requiredFields.filter((pattern) => {
+      const filtered = entries.filter(([key]) => pattern.test(key));
+      //in cases like packages where multiple packages have similar required fields
+      //iterate over every matched key and validate
+      return !filtered.every(
+        ([key, value]) =>
+          pattern.test(key) &&
+          typeof value === "string" &&
+          value.trim().length > 0
+      );
     });
     return {
       state: missing.length ? "warning" : "complete",
-      errorMessage: missing.length ? "Missing required fields" : "",
+      warningMessage: missing.length ? "Missing required fields" : "",
     };
   };
 
   const handleStepChange = (newIndex: number) => {
     if (!formRef.current) return;
     const formData = new FormData(formRef.current);
-    console.log("formData: ", formData);
     const newSteps = shippingSteps.map((step, index) => {
-      if (newIndex > index) {
-        let a = { ...step, ...validateStep(formData, step) };
-        console.log("step: ", a);
-        return a;
-      }
+      if (newIndex > index) return { ...step, ...validateStep(formData, step) };
       return step;
     });
     setShippingSteps(newSteps);

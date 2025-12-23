@@ -473,7 +473,9 @@ function Package({
           />
         </div>
         <div className="gap-2">
-          <Label htmlFor="dimensions-length">Length</Label>
+          <Label htmlFor="dimensions-length">
+            Length <span className="text-red-500">*</span>
+          </Label>
           <Input
             id="dimensions-length"
             name={`package-${index}.dimensions.length`}
@@ -486,7 +488,9 @@ function Package({
           />
         </div>
         <div className="gap-2">
-          <Label htmlFor="dimensions-width">Width</Label>
+          <Label htmlFor="dimensions-width">
+            Width <span className="text-red-500">*</span>
+          </Label>
           <Input
             id="dimensions-width"
             name={`package-${index}.dimensions.width`}
@@ -499,7 +503,9 @@ function Package({
           />
         </div>
         <div className="gap-2">
-          <Label htmlFor="dimensions-height">Height</Label>
+          <Label htmlFor="dimensions-height">
+            Height <span className="text-red-500">*</span>
+          </Label>
           <Input
             id="dimensions-height"
             name={`package-${index}.dimensions.height`}
@@ -512,7 +518,9 @@ function Package({
           />
         </div>
         <div className="gap-2 col-span-3 md:col-span-1">
-          <Label htmlFor="dimensions-unit">Dimension Unit</Label>
+          <Label htmlFor="dimensions-unit">
+            Dimension Unit <span className="text-red-500">*</span>
+          </Label>
           <Select
             name={`package-${index}.dimensions.unit`}
             disabled={isPending}
@@ -528,7 +536,9 @@ function Package({
           </Select>
         </div>
         <div className="gap-2 col-span-1">
-          <Label htmlFor="weight-value">Weight</Label>
+          <Label htmlFor="weight-value">
+            Weight <span className="text-red-500">*</span>
+          </Label>
           <Input
             id="weight-value"
             name={`package-${index}.weight.value`}
@@ -541,7 +551,9 @@ function Package({
           />
         </div>
         <div className="gap-2 col-span-2 md:col-span-1">
-          <Label htmlFor="weight-unit">Weight unit</Label>
+          <Label htmlFor="weight-unit">
+            Weight Unit <span className="text-red-500">*</span>
+          </Label>
           <Select
             name={`package-${index}.weight.unit`}
             disabled={isPending}

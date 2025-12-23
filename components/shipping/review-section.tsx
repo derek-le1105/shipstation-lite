@@ -490,11 +490,9 @@ export function ReviewSection({
                 className="rounded-lg border border-border/60 bg-card p-4"
               >
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2 md:flex-nowrap">
-                    <p className="shrink-0 font-semibold">
-                      Package {pkg.index + 1}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2 md:flex-nowrap">
+                  <div className="flex flex-row items-center gap-x-3 gap-y-2">
+                    <p className="font-semibold">Package {pkg.index + 1}</p>
+                    <div className="flex flex-wrap items-center gap-2">
                       {pkg.insuranceProvider &&
                       pkg.insuranceProvider !== "none" ? (
                         <Badge variant="success">
