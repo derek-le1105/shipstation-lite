@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { CreateLabelForm } from "@/components/shipping/create-label-form";
 import CreateLabelWizard from "@/components/shipping/create-label-wizard";
 import { createShippingLabelAction } from "@/lib/actions/shipping";
 import { buildAddressRecord, buildWarehouseRecord } from "../utils";
@@ -40,6 +41,47 @@ vi.mock("@/lib/actions/shipping", () => ({
 }));
 
 describe("CreateLabelForm", () => {
+  function renderForm() {
+    render(
+      <CreateLabelForm
+        shipFrom={buildWarehouseRecord()}
+        toAddresses={[buildAddressRecord({ id: "addr-2" })]}
+        carriers={[{ code: "fedex", name: "FedEx" } as any]}
+        services={
+          [
+            {
+              code: "fedex_ground",
+              carrierCode: "fedex",
+              name: "FedEx Ground",
+            },
+          ] as any
+        }
+        packages={[]}
+      />
+    );
+  }
+
+  it("submits using createShippingLabelAction and renders success response", async () => {
+    renderForm();
+
+    const form = document.getElementById(
+      "create-label-form"
+    ) as HTMLFormElement | null;
+    expect(form).not.toBeNull();
+
+    if (!form) return;
+
+    fireEvent.submit(form);
+
+    await waitFor(() => {
+      expect(vi.mocked(createShippingLabelAction)).toHaveBeenCalledTimes(1);
+    });
+
+    await screen.findByText("Label created successfully.");
+  });
+});
+
+describe("CreateLabelWizard", () => {
   function renderForm() {
     render(
       <CreateLabelWizard
