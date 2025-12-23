@@ -28,11 +28,20 @@ export function resolveAddressFromForm(
   savedAddresses: AddressRecord[],
   fallbackMode: AddressMode
 ): RateAddress | null {
+  const getPrefixedOrFallback = (key: string) => {
+    const prefixed = formData.get(`${prefix}.${key}`);
+    if (prefixed !== null) return prefixed;
+
+    if (prefix !== "to") return null;
+
+    return formData.get(key);
+  };
+
   const modeValue =
     (formData.get(`${prefix}.mode`) as AddressMode | null) ?? fallbackMode;
 
   if (modeValue === "saved") {
-    const addressId = formData.get(`${prefix}.addressId`);
+    const addressId = getPrefixedOrFallback("addressId");
     if (!addressId) return null;
 
     const address = savedAddresses.find((item) => item.id === addressId);
@@ -53,13 +62,22 @@ export function resolveAddressFromForm(
     };
   }
 
-  const city = (formData.get(`${prefix}.city`) as string | null)?.trim() ?? "";
+  const city =
+    (getPrefixedOrFallback("city") as string | null)?.trim() ??
+    (formData.get(`${prefix}.city`) as string | null)?.trim() ??
+    "";
   const state =
-    (formData.get(`${prefix}.state`) as string | null)?.trim() ?? "";
+    (getPrefixedOrFallback("state") as string | null)?.trim() ??
+    (formData.get(`${prefix}.state`) as string | null)?.trim() ??
+    "";
   const postalCode =
-    (formData.get(`${prefix}.postal_code`) as string | null)?.trim() ?? "";
+    (getPrefixedOrFallback("postal_code") as string | null)?.trim() ??
+    (formData.get(`${prefix}.postal_code`) as string | null)?.trim() ??
+    "";
   const country =
-    (formData.get(`${prefix}.country`) as string | null)?.trim() ?? "US";
+    (getPrefixedOrFallback("country") as string | null)?.trim() ??
+    (formData.get(`${prefix}.country`) as string | null)?.trim() ??
+    "US";
 
   if (!city || !state || !postalCode || !country) {
     return null;
@@ -70,7 +88,9 @@ export function resolveAddressFromForm(
     state,
     postalCode,
     country,
-    residential: parseCheckboxValue(formData.get(`${prefix}.is_residential`)),
+    residential: parseCheckboxValue(
+      getPrefixedOrFallback("is_residential") ?? formData.get(`${prefix}.is_residential`)
+    ),
   };
 }
 

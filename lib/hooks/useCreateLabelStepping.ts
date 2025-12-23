@@ -7,19 +7,19 @@ type WizardStep = {
 
 const STEPS: WizardStep[] = [
   {
-    title: "Shipping details",
+    title: "Shipping Details",
     description: "Confirm who the label is going to and from.",
   },
   {
-    title: "Package details",
+    title: "Package Details",
     description: "Enter weight and dimensions for each package.",
   },
   {
-    title: "Carrier & service",
+    title: "Carrier & Service",
     description: "Pick the carrier, service, and delivery options.",
   },
   {
-    title: "Review & create",
+    title: "Review & Create",
     description: "Double-check details before creating the label.",
   },
 ];

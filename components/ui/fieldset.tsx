@@ -10,15 +10,29 @@ import { Button } from "./button";
 
 import { ChevronsUpDown } from "lucide-react";
 
-export function Fieldset({
+type Props = { title: string; children: React.ReactNode };
+
+export function Fieldset({ title, children }: Props) {
+  return (
+    <fieldset className="space-y-1 rounded-lg border p-4">
+      <legend className="px-2 text-lg font-semibold uppercase tracking-wide">
+        {title}
+      </legend>
+
+      <div className="grid gap-2">{children}</div>
+    </fieldset>
+  );
+}
+
+type CollapsibleFieldsetProps = Props & {
+  description?: React.ReactNode;
+};
+
+export function CollapsibleFieldset({
   title,
   description,
   children,
-}: {
-  title: string;
-  description?: React.ReactNode;
-  children: React.ReactNode;
-}) {
+}: CollapsibleFieldsetProps) {
   const [isOpen, setIsOpen] = useState(true);
 
   return (

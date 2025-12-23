@@ -27,6 +27,7 @@ import { AddressMode } from "./types";
 import { printLabels } from "@/lib/utils";
 import useCreateLabelStepping from "@/lib/hooks/useCreateLabelStepping";
 import { WarehouseRecord } from "@/lib/supabase/warehouses";
+import { ReviewSection } from "./review-section";
 
 type CreateLabelWizardProps = {
   shipFrom: WarehouseRecord;
@@ -73,21 +74,24 @@ export default function CreateLabelWizard({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="create-label-wizard">
       <CreateLabelProvider formRef={formRef}>
         <Card>
           <CardHeader className="space-y-3">
-            <CardTitle className="text-lg">Progress</CardTitle>
+            <CardTitle className="text-lg">Create a shipping label</CardTitle>
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>
+                <span data-testid="wizard-step-indicator">
                   Step {stepIndex + 1} of {totalSteps}
                 </span>
-                <span>{progress}% complete</span>
+                <span data-testid="wizard-progress-text">
+                  {progress}% complete
+                </span>
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                 <div
                   className="h-full rounded-full bg-primary transition-all"
+                  data-testid="wizard-progress-bar"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -105,6 +109,7 @@ export default function CreateLabelWizard({
                 return (
                   <div
                     key={step.title}
+                    data-testid={`wizard-step-card-${index + 1}`}
                     className="cursor-pointer rounded-lg border border-border/60 bg-card px-4 py-3 transition-transform hover:bg-muted/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99]"
                     onClick={() => {
                       setStepIndex(index);
@@ -176,10 +181,17 @@ export default function CreateLabelWizard({
               </section>
 
               <section hidden={stepIndex !== 3}>
-                <div className="rounded-lg border border-dashed border-border/70 bg-muted/40 p-6 text-center text-sm text-muted-foreground">
-                  Review your shipping details, package details, and service
-                  selections before creating the label.
-                </div>
+                <ReviewSection
+                  visible={stepIndex === 3}
+                  shipFrom={shipFrom}
+                  toAddresses={toAddresses}
+                  toMode={toMode}
+                  carriers={carriers}
+                  services={services}
+                  selectedCarrier={selectedCarrier}
+                  selectedService={selectedService}
+                  formRef={formRef}
+                />
               </section>
 
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -189,6 +201,7 @@ export default function CreateLabelWizard({
 
                 <div className="flex items-center gap-4">
                   <Button
+                    data-testid="wizard-back"
                     type="button"
                     variant="outline"
                     disabled={!canGoBack}
@@ -199,6 +212,7 @@ export default function CreateLabelWizard({
                     Back
                   </Button>
                   <Button
+                    data-testid="wizard-next"
                     type={canGoNext ? "button" : "submit"}
                     disabled={isPending}
                     onClick={() => {
