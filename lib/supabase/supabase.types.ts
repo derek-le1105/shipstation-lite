@@ -16,7 +16,7 @@ export type Database = {
     Tables: {
       addresses: {
         Row: {
-          address_kind: string;
+          address_kind?: string;
           address_line1: string;
           address_line2: string | null;
           city: string;
@@ -35,7 +35,7 @@ export type Database = {
           user_id: string;
         };
         Insert: {
-          address_kind: string;
+          address_kind?: string;
           address_line1: string;
           address_line2?: string | null;
           city: string;

@@ -211,32 +211,42 @@ export default function CreateLabelWizard({
                   >
                     Back
                   </Button>
-                  <Button
-                    data-testid="wizard-next"
-                    type={canGoNext ? "button" : "submit"}
-                    disabled={isPending}
-                    onClick={() => {
-                      if (canGoNext) {
+
+                  {canGoNext ? (
+                    <Button
+                      key="wizard-next"
+                      data-testid="wizard-next"
+                      type="button"
+                      disabled={isPending}
+                      onClick={(event) => {
+                        event.preventDefault();
                         setStepIndex((current) =>
                           Math.min(totalSteps - 1, current + 1)
                         );
-                      }
-                    }}
-                  >
-                    {isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : canGoNext ? (
-                      "Next"
-                    ) : (
-                      <>
-                        <Truck className="mr-2 h-4 w-4" />
-                        Create label
-                      </>
-                    )}
-                  </Button>
+                      }}
+                    >
+                      Next
+                    </Button>
+                  ) : (
+                    <Button
+                      key="wizard-submit"
+                      data-testid="wizard-next"
+                      type="submit"
+                      disabled={isPending}
+                    >
+                      {isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Truck className="mr-2 h-4 w-4" />
+                          Create label
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
 
