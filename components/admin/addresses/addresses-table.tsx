@@ -20,7 +20,6 @@ export function AddressTable({ addresses }: { addresses: AddressRecord[] }) {
             {/* <th className="px-4 py-3 text-left">User ID</th> */}
             <th className="px-4 py-3 text-left">Name/Label</th>
             <th className="px-4 py-3 text-left">Address</th>
-            <th className="px-4 py-3 text-left">Kind</th>
             <th className="px-4 py-3 text-left">Status</th>
             <th className="px-4 py-3 text-left">Actions</th>
           </tr>
@@ -32,8 +31,6 @@ export function AddressTable({ addresses }: { addresses: AddressRecord[] }) {
             const status = `${
               address.is_residential ? "Residential" : "Business"
             } / ${address.is_validated ? "Validated" : "Unvalidated"}`;
-            const kind =
-              address.address_kind === "ship_from" ? "Ship From" : "Ship To";
 
             return (
               <tr key={address.id} className="border-t border-border/60">
@@ -53,9 +50,6 @@ export function AddressTable({ addresses }: { addresses: AddressRecord[] }) {
                 </td>
                 <td className="px-4 py-3">
                   <span className="font-medium">{formatAddress(address)}</span>
-                </td>
-                <td className="px-4 py-3">
-                  <span className="font-medium">{kind}</span>
                 </td>
                 <td className="px-4 py-3">
                   <span className="font-medium">{status}</span>

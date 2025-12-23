@@ -15,10 +15,7 @@ export default async function AddressPage() {
     redirect("/auth/login");
   }
 
-  const [shipFromAddresses, shipToAddresses] = await Promise.all([
-    listUserAddresses(profile.id, "ship_from"),
-    listUserAddresses(profile.id, "ship_to"),
-  ]);
+  const [shipToAddresses] = await Promise.all([listUserAddresses(profile.id)]);
 
   return (
     <div className="space-y-10">
@@ -30,7 +27,7 @@ export default async function AddressPage() {
         </p>
       </section>
 
-      <AddressManager shipFrom={shipFromAddresses} shipTo={shipToAddresses} />
+      <AddressManager shipTo={shipToAddresses} />
     </div>
   );
 }

@@ -20,7 +20,6 @@ export function buildAddressRecord(
     country: "US",
     is_residential: false,
     is_validated: true,
-    address_kind: "ship_from",
     created_at: new Date().toISOString(),
     ...overrides,
   };

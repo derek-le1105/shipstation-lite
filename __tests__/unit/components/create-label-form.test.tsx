@@ -44,9 +44,7 @@ describe("CreateLabelForm", () => {
     render(
       <CreateLabelWizard
         shipFrom={buildWarehouseRecord()}
-        toAddresses={[
-          buildAddressRecord({ id: "addr-2", address_kind: "ship_to" }),
-        ]}
+        toAddresses={[buildAddressRecord({ id: "addr-2" })]}
         carriers={[{ code: "fedex", name: "FedEx" } as any]}
         services={
           [

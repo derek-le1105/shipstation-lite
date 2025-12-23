@@ -22,16 +22,6 @@ export type AddressMutationState =
     }
   | { status: "error"; message: string };
 
-function parseAddressKind(
-  value: FormDataEntryValue | null
-): AddressInput["address_kind"] {
-  if (value === "ship_from" || value === "ship_to") {
-    return value;
-  }
-
-  throw new Error("A valid address type is required.");
-}
-
 function parseCheckbox(value: FormDataEntryValue | null): boolean {
   if (typeof value !== "string") {
     return false;
@@ -50,10 +40,7 @@ function toNullable(value: string | null): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-function parseAddressInput(
-  formData: FormData,
-  kind: AddressInput["address_kind"]
-): AddressInput {
+function parseAddressInput(formData: FormData): AddressInput {
   const getString = (key: string): string | null => {
     const raw = formData.get(key);
     return typeof raw === "string" ? raw.trim() : null;
@@ -87,7 +74,6 @@ function parseAddressInput(
     country: getString("country") ?? "US",
     is_residential: parseCheckbox(formData.get("is_residential")),
     is_validated: parseCheckbox(formData.get("is_validated")),
-    address_kind: kind,
   };
 }
 
@@ -111,8 +97,7 @@ export async function createAddressAction(
   console.log(Array.from(formData.entries()));
   try {
     const profile = await requireUserProfile();
-    const kind = parseAddressKind(formData.get("address_kind"));
-    const input = parseAddressInput(formData, kind);
+    const input = parseAddressInput(formData);
     const address = await createAddress(profile.id, input);
     revalidateAddressPaths();
 
@@ -145,10 +130,7 @@ export async function updateAddressAction(
       throw new Error("Address not found.");
     }
 
-    const kind = parseAddressKind(
-      formData.get("address_kind") ?? address.address_kind
-    );
-    const input = parseAddressInput(formData, kind);
+    const input = parseAddressInput(formData);
     const updated = await updateAddress(address.id, profile.id, input);
 
     revalidateAddressPaths();

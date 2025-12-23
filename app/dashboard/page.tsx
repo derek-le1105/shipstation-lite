@@ -28,7 +28,7 @@ export default async function DashboardPage() {
     redirect("/auth/login");
   }
   const [savedToAddresses, savedPackages, shipFrom] = await Promise.all([
-    listUserAddresses(profile.id, "ship_to"),
+    listUserAddresses(profile.id),
     listPackages(profile.id),
     fetchProfileWarehouseRecord(profile),
   ]);
