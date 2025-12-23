@@ -179,7 +179,6 @@ export default async function LabelDetailsPage({
         </Card>
 
         <div className="space-y-6">
-          <AddressCard title="Ship from" address={label.ship_from_snapshot} />
           <AddressCard title="Ship to" address={label.ship_to_snapshot} />
         </div>
       </div>
