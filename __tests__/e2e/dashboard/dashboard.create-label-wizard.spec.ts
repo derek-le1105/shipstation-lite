@@ -52,7 +52,7 @@ async function fillPackageDetails(page: Page) {
   await page.getByLabel("Length").fill("5");
   await page.getByLabel("Width").fill("5");
   await page.getByLabel("Height").fill("5");
-  await page.getByLabel(/^Weight$/).fill("2");
+  await page.getByLabel("Weight").fill("2");
 }
 
 async function selectCarrierAndService(page: Page) {
@@ -150,15 +150,6 @@ test.describe("create-label-wizard", () => {
     await expect(page.getByText("Step 5 of 4")).toHaveCount(0);
   });
 
-  test("expected failure example: incorrect total steps", async ({ page }) => {
-    test.fail(true, "Example of an expected-failing assertion.");
-
-    await gotoDashboardOrSkip(page);
-    await expect(page.getByTestId("wizard-step-indicator")).toHaveText(
-      "Step 1 of 5"
-    );
-  });
-
   test("creates a shipping label and shows success feedback", async ({
     page,
   }) => {
@@ -197,7 +188,7 @@ test.describe("create-label-wizard", () => {
     await page.getByLabel("Length").fill("5");
     await page.getByLabel("Width").fill("5");
     await page.getByLabel("Height").fill("5");
-    await page.getByLabel(/^Weight$/).fill("0");
+    await page.getByLabel("Weight").fill("0");
 
     await page.getByTestId("wizard-next").click();
 

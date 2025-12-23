@@ -93,7 +93,7 @@ export default function CreateLabelWizard({
   );
 
   const isValidInputs = useMemo(
-    () => shippingSteps.some(({ state }) => state !== "complete"),
+    () => shippingSteps.slice(0, 2).some(({ state }) => state !== "complete"),
     [shippingSteps]
   );
 

@@ -480,7 +480,7 @@ function Package({
             id="dimensions-length"
             name={`package-${index}.dimensions.length`}
             type="number"
-            min="0"
+            min="1"
             placeholder="10"
             disabled={isPending}
             defaultValue={fields?.dimensions?.length}
@@ -495,7 +495,7 @@ function Package({
             id="dimensions-width"
             name={`package-${index}.dimensions.width`}
             type="number"
-            min="0"
+            min="1"
             placeholder="6"
             disabled={isPending}
             defaultValue={fields?.dimensions?.width}
@@ -510,7 +510,7 @@ function Package({
             id="dimensions-height"
             name={`package-${index}.dimensions.height`}
             type="number"
-            min="0"
+            min="1"
             placeholder="4"
             disabled={isPending}
             defaultValue={fields?.dimensions?.height}
@@ -543,7 +543,7 @@ function Package({
             id="weight-value"
             name={`package-${index}.weight.value`}
             type="number"
-            min="0"
+            min="1"
             placeholder="16"
             required
             disabled={isPending}
