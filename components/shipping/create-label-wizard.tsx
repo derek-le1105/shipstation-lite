@@ -177,11 +177,7 @@ export default function CreateLabelWizard({
                 />
               </section>
 
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <Button type="button" variant="ghost" disabled>
-                  Save draft
-                </Button>
-
+              <div className="flex flex-wrap items-center justify-end gap-3">
                 <div className="flex items-center gap-4">
                   <Button
                     data-testid="wizard-back"

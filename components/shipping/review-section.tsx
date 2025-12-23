@@ -490,8 +490,10 @@ export function ReviewSection({
                 className="rounded-lg border border-border/60 bg-card p-4"
               >
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div className="flex flex-row items-center gap-x-3 gap-y-2">
-                    <p className="font-semibold">Package {pkg.index + 1}</p>
+                  <div className="flex items-center gap-x-3 gap-y-2">
+                    <p className="font-semibold whitespace-nowrap">
+                      Package {pkg.index + 1}
+                    </p>
                     <div className="flex flex-wrap items-center gap-2">
                       {pkg.insuranceProvider &&
                       pkg.insuranceProvider !== "none" ? (
@@ -507,8 +509,8 @@ export function ReviewSection({
                     </div>
                   </div>
 
-                  <div className="flex w-full items-center justify-between md:justify-end gap-4">
-                    <div className="shrink-0 pt-1 text-sm text-muted-foreground">
+                  <div className="flex w-full items-baseline justify-between gap-4 md:justify-end">
+                    <div className="shrink-0 text-sm text-muted-foreground">
                       Estimated Quote:
                     </div>
                     <div className="min-w-0 text-right">
