@@ -155,37 +155,36 @@ export function AddressSection({
 
   return (
     <>
-      <div className="grid gap-2">
-        <Label htmlFor="addressId">Select address</Label>
-        <Select
-          name="addressId"
-          disabled={addresses.length === 0 || pending}
-          required={addresses.length > 0}
-          defaultValue={addresses[0]?.id ?? ""}
-          onValueChange={(value) => {
-            const mode = value === "new-address" ? "new" : "saved";
-            setMode(mode);
-            setSelectedAddressId(value);
-          }}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select an address" />
-          </SelectTrigger>
-          <SelectContent>
-            {addresses.map((address) => (
-              <SelectItem key={address.id} value={address.id}>
-                {address.label ??
-                  address.contact_name ??
-                  address.address_line1 ??
-                  ""}
-              </SelectItem>
-            ))}
-            <SelectItem value="new-address">Create New Address</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
       <div className="grid gap-5 md:grid-cols-6">
+        <div className="min-w-0 space-y-2 col-span-full">
+          <Label htmlFor="addressId">Select address</Label>
+          <Select
+            name="addressId"
+            disabled={addresses.length === 0 || pending}
+            required={addresses.length > 0}
+            defaultValue={addresses[0]?.id ?? ""}
+            onValueChange={(value) => {
+              const mode = value === "new-address" ? "new" : "saved";
+              setMode(mode);
+              setSelectedAddressId(value);
+            }}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select an address" />
+            </SelectTrigger>
+            <SelectContent>
+              {addresses.map((address) => (
+                <SelectItem key={address.id} value={address.id}>
+                  {address.label ??
+                    address.contact_name ??
+                    address.address_line1 ??
+                    ""}
+                </SelectItem>
+              ))}
+              <SelectItem value="new-address">Create New Address</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         {!selectedAddress && (
           <div className="min-w-0 space-y-2 col-span-full md:col-span-3">
             <Label htmlFor="label">Nickname</Label>
