@@ -107,7 +107,12 @@ test.describe("create-label-wizard", () => {
       await expect(page.getByTestId("wizard-progress-text")).toHaveText(
         `${step * 25}% complete`
       );
-
+      if (step === 2) {
+        await page.getByLabel("Length").fill("5");
+        await page.getByLabel("Width").fill("5");
+        await page.getByLabel("Height").fill("5");
+        await page.getByLabel("Weight").fill("5");
+      }
       if (step < 4) {
         await expect(page.getByTestId("wizard-next")).toHaveText("Next");
         await page.getByTestId("wizard-next").click();
@@ -222,15 +227,6 @@ test.describe("create-label-wizard", () => {
     await page.getByLabel("Height").fill("5");
     await page.getByLabel("Weight").fill("0");
 
-    await page.getByTestId("wizard-next").click();
-
-    await selectCarrierAndService(page);
-
-    await page.getByTestId("wizard-next").click();
-    await page.getByTestId("wizard-next").click();
-
-    await expect(page.getByText(/Unable to create label/i)).toBeVisible({
-      timeout: 30_000,
-    });
+    await expect(page.getByText(/Must be at least 1./i)).toBeVisible();
   });
 });
