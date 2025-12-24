@@ -30,8 +30,21 @@ export function AddressSection({
   pending: boolean;
   formRef: React.RefObject<HTMLFormElement | null>;
 }) {
+  type AddressFormValues = {
+    label: string;
+    contact_name: string;
+    company: string;
+    phone: string;
+    email: string;
+    address_line1: string;
+    address_line2: string;
+    city: string;
+    state: string;
+    postal_code: string;
+  };
+
   const [selectedAddressId, setSelectedAddressId] = useState<string>(
-    addresses[0]?.id
+    addresses[0]?.id ?? ""
   );
   const [isResidential, setIsResidential] = useState(false);
   const [saveAddress, setSaveAddress] = useState(false);
@@ -75,6 +88,35 @@ export function AddressSection({
     if (!address) return null;
     return address;
   }, [addresses, selectedAddressId]);
+
+  const buildFormValues = useCallback(
+    (address: AddressRecord | null): AddressFormValues => ({
+      label: address?.label ?? "",
+      contact_name: address?.contact_name ?? "",
+      company: address?.company ?? "",
+      phone: formatPhoneNumber(address?.phone ?? ""),
+      email: address?.email ?? "",
+      address_line1: address?.address_line1 ?? "",
+      address_line2: address?.address_line2 ?? "",
+      city: address?.city ?? "",
+      state: address?.state ?? "",
+      postal_code: address?.postal_code ?? "",
+    }),
+    []
+  );
+
+  const [formValues, setFormValues] = useState<AddressFormValues>(() =>
+    buildFormValues(selectedAddress)
+  );
+
+  const handleFieldChange = useCallback(
+    (field: keyof AddressFormValues) =>
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        const { value } = event.target;
+        setFormValues((current) => ({ ...current, [field]: value }));
+      },
+    []
+  );
 
   useEffect(() => {
     const form = formRef.current;
@@ -147,11 +189,18 @@ export function AddressSection({
   }, [validAddressStatus]);
 
   useEffect(() => {
-    if (!selectedAddress) return;
+    setFormValues(buildFormValues(selectedAddress));
+    if (!selectedAddress) {
+      setIsResidential(false);
+      setSaveAddress(false);
+      setValidAddressStatus("idle");
+      return;
+    }
     const { is_residential, is_validated } = selectedAddress;
     setIsResidential(is_residential);
+    setSaveAddress(false);
     setValidAddressStatus(is_validated ? "valid" : "idle");
-  }, [selectedAddress]);
+  }, [selectedAddress, buildFormValues]);
 
   return (
     <>
@@ -162,7 +211,7 @@ export function AddressSection({
             name="addressId"
             disabled={addresses.length === 0 || pending}
             required={addresses.length > 0}
-            defaultValue={addresses[0]?.id ?? ""}
+            value={selectedAddressId}
             onValueChange={(value) => {
               const mode = value === "new-address" ? "new" : "saved";
               setMode(mode);
@@ -193,6 +242,8 @@ export function AddressSection({
               name="label"
               placeholder={"Warehouse A"}
               disabled={pending}
+              value={formValues.label}
+              onChange={handleFieldChange("label")}
             />
           </div>
         )}
@@ -206,7 +257,8 @@ export function AddressSection({
             placeholder="Jane Smith"
             required
             disabled={pending}
-            defaultValue={selectedAddress?.contact_name ?? ""}
+            value={formValues.contact_name}
+            onChange={handleFieldChange("contact_name")}
           />
         </div>
         <div className="min-w-0 space-y-2 col-span-full md:col-span-3">
@@ -216,7 +268,8 @@ export function AddressSection({
             name="company"
             placeholder={selectedAddress ? "" : "Acme Corp"}
             disabled={pending}
-            defaultValue={selectedAddress?.company ?? ""}
+            value={formValues.company}
+            onChange={handleFieldChange("company")}
           />
         </div>
         <div className="min-w-0 space-y-2 col-span-full md:col-span-3">
@@ -229,7 +282,8 @@ export function AddressSection({
             placeholder={selectedAddress ? "" : "555-123-4567"}
             required
             disabled={pending}
-            defaultValue={formatPhoneNumber(selectedAddress?.phone ?? "")}
+            value={formValues.phone}
+            onChange={handleFieldChange("phone")}
           />
         </div>
         <div className="min-w-0 space-y-2 col-span-full md:col-span-3">
@@ -240,7 +294,8 @@ export function AddressSection({
             type="email"
             placeholder={selectedAddress ? "" : "warehouse@example.com"}
             disabled={pending}
-            defaultValue={selectedAddress?.email ?? ""}
+            value={formValues.email}
+            onChange={handleFieldChange("email")}
           />
         </div>
         <div className="min-w-0 space-y-2 col-span-full md:col-span-4">
@@ -253,7 +308,8 @@ export function AddressSection({
             placeholder={selectedAddress ? "" : "123 Market St"}
             required
             disabled={pending}
-            defaultValue={selectedAddress?.address_line1 ?? ""}
+            value={formValues.address_line1}
+            onChange={handleFieldChange("address_line1")}
           />
         </div>
         <div className="min-w-0 space-y-2 col-span-full md:col-span-2">
@@ -263,7 +319,8 @@ export function AddressSection({
             name="address_line2"
             placeholder={selectedAddress ? "" : "Suite 200"}
             disabled={pending}
-            defaultValue={selectedAddress?.address_line2 ?? ""}
+            value={formValues.address_line2}
+            onChange={handleFieldChange("address_line2")}
           />
         </div>
         <div className="min-w-0 space-y-2 col-span-full md:col-span-3">
@@ -276,14 +333,22 @@ export function AddressSection({
             placeholder={selectedAddress ? "" : "Rosemead"}
             required
             disabled={pending}
-            defaultValue={selectedAddress?.city ?? ""}
+            value={formValues.city}
+            onChange={handleFieldChange("city")}
           />
         </div>
         <div className="min-w-0 space-y-2 col-span-full md:col-span-1">
           <Label htmlFor="state">
             State <span className="text-red-500">*</span>
           </Label>
-          <Select name="state" required defaultValue={selectedAddress?.state}>
+          <Select
+            name="state"
+            required
+            value={formValues.state || undefined}
+            onValueChange={(value) =>
+              setFormValues((current) => ({ ...current, state: value }))
+            }
+          >
             <SelectTrigger className="w-full" id="state" name="state">
               <SelectValue placeholder="California" />
             </SelectTrigger>
@@ -306,7 +371,8 @@ export function AddressSection({
             placeholder={selectedAddress ? "" : "73301"}
             required
             disabled={pending}
-            defaultValue={selectedAddress?.postal_code ?? ""}
+            value={formValues.postal_code}
+            onChange={handleFieldChange("postal_code")}
           />
         </div>
         <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-muted/20 p-3 col-span-full md:col-span-2">

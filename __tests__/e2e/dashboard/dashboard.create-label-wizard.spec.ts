@@ -150,6 +150,38 @@ test.describe("create-label-wizard", () => {
     await expect(page.getByText("Step 5 of 4")).toHaveCount(0);
   });
 
+  test("switching address selection populates and clears address fields", async ({
+    page,
+  }) => {
+    await gotoDashboardOrSkip(page);
+
+    await page.getByRole("combobox").first().click();
+
+    const savedOptions = page
+      .getByRole("option")
+      .filter({ hasNotText: "Create New Address" });
+    const savedOptionsCount = await savedOptions.count();
+
+    test.skip(!savedOptionsCount, "No saved addresses available to test.");
+
+    await savedOptions.first().click();
+
+    await expect(page.getByLabel(/Contact Name/i)).not.toHaveValue("");
+    await expect(page.getByLabel(/Phone/i)).not.toHaveValue("");
+    await expect(page.getByLabel(/Address Line 1/i)).not.toHaveValue("");
+    await expect(page.getByLabel(/City/i)).not.toHaveValue("");
+    await expect(page.getByLabel(/Postal Code/i)).not.toHaveValue("");
+
+    await page.getByRole("combobox").first().click();
+    await page.getByRole("option", { name: "Create New Address" }).click();
+
+    await expect(page.getByLabel(/Contact Name/i)).toHaveValue("");
+    await expect(page.getByLabel(/Phone/i)).toHaveValue("");
+    await expect(page.getByLabel(/Address Line 1/i)).toHaveValue("");
+    await expect(page.getByLabel(/City/i)).toHaveValue("");
+    await expect(page.getByLabel(/Postal Code/i)).toHaveValue("");
+  });
+
   test("creates a shipping label and shows success feedback", async ({
     page,
   }) => {
