@@ -23,7 +23,7 @@ export default function WizardStepCards({
               isWarning
                 ? "border-warning/70 bg-warning/10"
                 : isComplete
-                ? "border-success/70 bg-success/10"
+                ? "border-success/70 bg-success/10 dark:border-success/90 dark:bg-success/50"
                 : "border-border/60 bg-card"
             } px-4 py-3 transition-transform hover:bg-muted/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99]`}
             onClick={() => {
@@ -37,7 +37,7 @@ export default function WizardStepCards({
                   isWarning
                     ? "border-warning/60 text-warning"
                     : isComplete
-                    ? "border-success/60 text-success"
+                    ? "border-success/60 text-success dark:border-emerald-400/50 dark:bg-emerald-400/10 dark:text-emerald-200"
                     : "border-border"
                 }`}
               >
