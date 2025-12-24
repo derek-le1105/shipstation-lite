@@ -2,6 +2,8 @@
 
 import {
   useActionState,
+  useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -66,8 +68,14 @@ export default function CreateLabelWizard({
   const [transitionPending, startTransition] = useTransition();
   const isPending = transitionPending || actionPending;
 
-  const { shippingSteps, stepIndex, handleStepChange, progress, totalSteps } =
-    useCreateLabelStepping(formRef);
+  const {
+    shippingSteps,
+    stepIndex,
+    handleStepChange,
+    refreshStepState,
+    progress,
+    totalSteps,
+  } = useCreateLabelStepping(formRef);
   const currentStep = shippingSteps[stepIndex]!;
 
   const canGoBack = stepIndex > 0;
@@ -92,10 +100,61 @@ export default function CreateLabelWizard({
     [shippingSteps]
   );
 
+  console.log(shippingSteps);
+
   const isValidInputs = useMemo(
-    () => shippingSteps.slice(0, 2).some(({ state }) => state !== "complete"),
+    () => shippingSteps.slice(0, 2).every(({ state }) => state === "complete"),
     [shippingSteps]
   );
+
+  const [packageStepInvalid, setPackageStepInvalid] = useState(false);
+
+  const evaluatePackageStepValidity = useCallback(() => {
+    const form = formRef.current;
+    if (!form) return;
+    const selectors = [
+      'input[name^="package-"][name$=".dimensions.length"]',
+      'input[name^="package-"][name$=".dimensions.width"]',
+      'input[name^="package-"][name$=".dimensions.height"]',
+      'input[name^="package-"][name$=".weight.value"]',
+    ];
+    const inputs = Array.from(
+      form.querySelectorAll<HTMLInputElement>(selectors.join(","))
+    );
+    if (inputs.length === 0) {
+      setPackageStepInvalid(false);
+      return;
+    }
+    setPackageStepInvalid(inputs.some((input) => !input.checkValidity()));
+  }, [formRef]);
+
+  useEffect(() => {
+    if (stepIndex !== 1) {
+      setPackageStepInvalid(false);
+      return;
+    }
+    evaluatePackageStepValidity();
+
+    const form = formRef.current;
+    if (!form) return;
+
+    const handleFormChange = () => {
+      evaluatePackageStepValidity();
+    };
+
+    form.addEventListener("input", handleFormChange);
+    form.addEventListener("change", handleFormChange);
+
+    return () => {
+      form.removeEventListener("input", handleFormChange);
+      form.removeEventListener("change", handleFormChange);
+    };
+  }, [stepIndex, evaluatePackageStepValidity, formRef]);
+
+  useEffect(() => {
+    if (stepIndex !== 1) return;
+    refreshStepState(1);
+  }, [packageStepInvalid, refreshStepState, stepIndex]);
 
   return (
     <div className="space-y-6" data-testid="create-label-wizard">
@@ -196,7 +255,9 @@ export default function CreateLabelWizard({
                       key="wizard-next"
                       data-testid="wizard-next"
                       type="button"
-                      disabled={isPending}
+                      disabled={
+                        isPending || (stepIndex === 1 && packageStepInvalid)
+                      }
                       onClick={(event) => {
                         event.preventDefault();
                         handleStepChange(
@@ -207,37 +268,50 @@ export default function CreateLabelWizard({
                       Next
                     </Button>
                   ) : (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger
-                          asChild
-                          className="disabled:pointer-events-auto"
+                    (() => {
+                      const isSubmitDisabled = isPending || !isValidInputs;
+                      const submitButton = (
+                        <Button
+                          key="wizard-submit"
+                          data-testid="wizard-next"
+                          type="submit"
+                          disabled={isSubmitDisabled}
                         >
-                          <Button
-                            key="wizard-submit"
-                            data-testid="wizard-next"
-                            type="submit"
-                            disabled={isPending || isValidInputs}
-                          >
-                            {isPending ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Processing...
-                              </>
-                            ) : (
-                              <>
-                                <Truck className="mr-2 h-4 w-4" />
-                                Create label
-                              </>
-                            )}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          You have unresolved warnings in {invalidStep?.title},
-                          please resolve them first.
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                          {isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <Truck className="mr-2 h-4 w-4" />
+                              Create label
+                            </>
+                          )}
+                        </Button>
+                      );
+
+                      if (!isSubmitDisabled) {
+                        return submitButton;
+                      }
+
+                      return (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger
+                              asChild
+                              className="disabled:pointer-events-auto"
+                            >
+                              {submitButton}
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              You have unresolved warnings in{" "}
+                              {invalidStep?.title}, please resolve them first.
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      );
+                    })()
                   )}
                 </div>
               </div>

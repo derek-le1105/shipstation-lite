@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -128,6 +129,11 @@ type PkgFields = {
   };
 };
 
+const positiveNumberSchema = z.preprocess(
+  (value) => (typeof value === "string" ? Number(value) : value),
+  z.number().min(1, "Must be at least 1.")
+);
+
 function Package({
   isPending,
   index,
@@ -165,6 +171,32 @@ function Package({
 
   const formEventTimeoutRef = useRef<number | null>(null);
 
+  type DimensionField = "length" | "width" | "height" | "weight";
+  const [fieldErrors, setFieldErrors] = useState<
+    Record<DimensionField, string>
+  >({
+    length: "",
+    width: "",
+    height: "",
+    weight: "",
+  });
+
+  const validatePositiveNumber = useCallback((value: string) => {
+    const result = positiveNumberSchema.safeParse(value);
+    if (result.success) return "";
+    return result.error.issues[0]?.message ?? "Enter a number of 1 or more.";
+  }, []);
+
+  const handleNumberValidation = useCallback(
+    (field: DimensionField) =>
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        const message = validatePositiveNumber(event.target.value);
+        event.currentTarget.setCustomValidity(message);
+        setFieldErrors((current) => ({ ...current, [field]: message }));
+      },
+    [validatePositiveNumber]
+  );
+
   const handlePackageChange = useCallback(
     (value: string) => {
       if (value === selectedPackageId) return;
@@ -198,6 +230,10 @@ function Package({
     },
     [selectedPackageId, packages]
   );
+
+  useEffect(() => {
+    setFieldErrors({ length: "", width: "", height: "", weight: "" });
+  }, [selectedPackageId]);
 
   const updateRateRequest = useCallback(() => {
     const form =
@@ -485,7 +521,12 @@ function Package({
             disabled={isPending}
             defaultValue={fields?.dimensions?.length}
             required
+            aria-invalid={!!fieldErrors.length}
+            onChange={handleNumberValidation("length")}
           />
+          {fieldErrors.length ? (
+            <p className="text-xs text-destructive">{fieldErrors.length}</p>
+          ) : null}
         </div>
         <div className="gap-2">
           <Label htmlFor="dimensions-width">
@@ -500,7 +541,12 @@ function Package({
             disabled={isPending}
             defaultValue={fields?.dimensions?.width}
             required
+            aria-invalid={!!fieldErrors.width}
+            onChange={handleNumberValidation("width")}
           />
+          {fieldErrors.width ? (
+            <p className="text-xs text-destructive">{fieldErrors.width}</p>
+          ) : null}
         </div>
         <div className="gap-2">
           <Label htmlFor="dimensions-height">
@@ -515,7 +561,12 @@ function Package({
             disabled={isPending}
             defaultValue={fields?.dimensions?.height}
             required
+            aria-invalid={!!fieldErrors.height}
+            onChange={handleNumberValidation("height")}
           />
+          {fieldErrors.height ? (
+            <p className="text-xs text-destructive">{fieldErrors.height}</p>
+          ) : null}
         </div>
         <div className="gap-2 col-span-3 md:col-span-1">
           <Label htmlFor="dimensions-unit">
@@ -548,7 +599,12 @@ function Package({
             required
             disabled={isPending}
             defaultValue={fields?.weight?.value}
+            aria-invalid={!!fieldErrors.weight}
+            onChange={handleNumberValidation("weight")}
           />
+          {fieldErrors.weight ? (
+            <p className="text-xs text-destructive">{fieldErrors.weight}</p>
+          ) : null}
         </div>
         <div className="gap-2 col-span-2 md:col-span-1">
           <Label htmlFor="weight-unit">
