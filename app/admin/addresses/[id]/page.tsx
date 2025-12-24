@@ -104,16 +104,6 @@ export default async function AdminAddressPage({
               <div className="space-y-2">
                 <div className="grid gap-1">
                   <span className="text-xs font-medium text-muted-foreground">
-                    Kind
-                  </span>
-                  <span className="font-medium">
-                    {address.address_kind === "ship_from"
-                      ? "Ship From"
-                      : "Ship To"}
-                  </span>
-                </div>
-                <div className="grid gap-1">
-                  <span className="text-xs font-medium text-muted-foreground">
                     Status
                   </span>
                   <span className="font-medium">{status}</span>

@@ -18,7 +18,6 @@ export type AddressRecord = {
   country: string;
   is_residential: boolean;
   is_validated: boolean;
-  address_kind: "ship_from" | "ship_to";
   created_at: string;
 };
 
@@ -50,7 +49,6 @@ export async function listAllAddresses(
 
 export async function listUserAddresses(
   userId: string,
-  kind?: AddressRecord["address_kind"],
   client?: ServerSupabaseClient
 ): Promise<AddressRecord[]> {
   const supabase = await getClient(client);
@@ -62,10 +60,6 @@ export async function listUserAddresses(
     .order("created_at", {
       ascending: false,
     });
-
-  if (kind) {
-    query = query.eq("address_kind", kind);
-  }
 
   const { data, error } = await query;
 

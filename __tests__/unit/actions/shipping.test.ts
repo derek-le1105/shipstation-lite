@@ -79,13 +79,13 @@ function setFormValue(formData: FormData, key: string, value: string) {
   formData.set(key, value);
 }
 
-function buildNewAddress(formData: FormData, prefix: "from" | "to") {
-  setFormValue(formData, `${prefix}.contact_name`, "Jane Doe");
-  setFormValue(formData, `${prefix}.address_line1`, "123 Main St");
-  setFormValue(formData, `${prefix}.city`, "Austin");
-  setFormValue(formData, `${prefix}.state`, "TX");
-  setFormValue(formData, `${prefix}.postal_code`, "78701");
-  setFormValue(formData, `${prefix}.country`, "US");
+function buildNewAddress(formData: FormData) {
+  setFormValue(formData, `contact_name`, "Jane Doe");
+  setFormValue(formData, `address_line1`, "123 Main St");
+  setFormValue(formData, `city`, "Austin");
+  setFormValue(formData, `state`, "TX");
+  setFormValue(formData, `postal_code`, "78701");
+  setFormValue(formData, `country`, "US");
 }
 
 function buildBaseFormData() {
@@ -95,10 +95,8 @@ function buildBaseFormData() {
   setFormValue(formData, "serviceCode", "fedex_ground");
   setFormValue(formData, "packages.count", "1");
 
-  setFormValue(formData, "from.addressId", "new-address");
-  setFormValue(formData, "to.addressId", "new-address");
-  buildNewAddress(formData, "from");
-  buildNewAddress(formData, "to");
+  setFormValue(formData, "addressId", "new-address");
+  buildNewAddress(formData);
 
   setFormValue(formData, "package-0.id", "new-package");
   setFormValue(formData, "package-0.weight.value", "2.5");

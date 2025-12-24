@@ -16,7 +16,7 @@ export type Database = {
     Tables: {
       addresses: {
         Row: {
-          address_kind: string;
+          address_kind?: string;
           address_line1: string;
           address_line2: string | null;
           city: string;
@@ -35,7 +35,7 @@ export type Database = {
           user_id: string;
         };
         Insert: {
-          address_kind: string;
+          address_kind?: string;
           address_line1: string;
           address_line2?: string | null;
           city: string;
@@ -180,7 +180,15 @@ export type Database = {
           updated_at?: string;
           warehouse_id?: number | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "profiles_warehouse_id_fkey";
+            columns: ["warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["warehouseId"];
+          }
+        ];
       };
       shipping_labels: {
         Row: {
@@ -202,7 +210,8 @@ export type Database = {
           package_code: string | null;
           paid_at: string | null;
           service_code: string;
-          ship_from_snapshot: Json;
+          ship_from_id: number | null;
+          ship_from_snapshot?: Json | null;
           ship_to_snapshot: Json;
           shipment_cost: number | null;
           shipment_id: number;
@@ -236,7 +245,8 @@ export type Database = {
           package_code?: string | null;
           paid_at?: string | null;
           service_code: string;
-          ship_from_snapshot: Json;
+          ship_from_id?: number | null;
+          ship_from_snapshot?: Json | null;
           ship_to_snapshot: Json;
           shipment_cost?: number | null;
           shipment_id: number;
@@ -270,7 +280,8 @@ export type Database = {
           package_code?: string | null;
           paid_at?: string | null;
           service_code?: string;
-          ship_from_snapshot?: Json;
+          ship_from_id?: number | null;
+          ship_from_snapshot?: Json | null;
           ship_to_snapshot?: Json;
           shipment_cost?: number | null;
           shipment_id?: number;
@@ -294,6 +305,13 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "shipping_labels_ship_from_id_fkey";
+            columns: ["ship_from_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["warehouseId"];
+          },
+          {
             foreignKeyName: "shipping_labels_to_address_id_fkey";
             columns: ["to_address_id"];
             isOneToOne: false;
@@ -308,6 +326,108 @@ export type Database = {
             referencedColumns: ["id"];
           }
         ];
+      };
+      warehouses: {
+        Row: {
+          createDate: string | null;
+          extInventoryIdentity: number | null;
+          isDefault: boolean | null;
+          originAddress_addressVerified: boolean | null;
+          originAddress_city: string | null;
+          originAddress_company: string | null;
+          originAddress_country: string | null;
+          originAddress_name: string | null;
+          originAddress_phone: string | null;
+          originAddress_postalCode: string | null;
+          originAddress_residential: boolean | null;
+          originAddress_state: string | null;
+          originAddress_street1: string | null;
+          originAddress_street2: string | null;
+          originAddress_street3: string | null;
+          registerFedexMeter: boolean | null;
+          returnAddress_addressVerified: boolean | null;
+          returnAddress_city: string | null;
+          returnAddress_company: string | null;
+          returnAddress_country: string | null;
+          returnAddress_name: string | null;
+          returnAddress_phone: string | null;
+          returnAddress_postalCode: string | null;
+          returnAddress_residential: boolean | null;
+          returnAddress_state: string | null;
+          returnAddress_street1: string | null;
+          returnAddress_street2: string | null;
+          returnAddress_street3: string | null;
+          sellerIntegrationId: number | null;
+          warehouseId: number;
+          warehouseName: string | null;
+        };
+        Insert: {
+          createDate?: string | null;
+          extInventoryIdentity?: number | null;
+          isDefault?: boolean | null;
+          originAddress_addressVerified?: boolean | null;
+          originAddress_city?: string | null;
+          originAddress_company?: string | null;
+          originAddress_country?: string | null;
+          originAddress_name?: string | null;
+          originAddress_phone?: string | null;
+          originAddress_postalCode?: string | null;
+          originAddress_residential?: boolean | null;
+          originAddress_state?: string | null;
+          originAddress_street1?: string | null;
+          originAddress_street2?: string | null;
+          originAddress_street3?: string | null;
+          registerFedexMeter?: boolean | null;
+          returnAddress_addressVerified?: boolean | null;
+          returnAddress_city?: string | null;
+          returnAddress_company?: string | null;
+          returnAddress_country?: string | null;
+          returnAddress_name?: string | null;
+          returnAddress_phone?: string | null;
+          returnAddress_postalCode?: string | null;
+          returnAddress_residential?: boolean | null;
+          returnAddress_state?: string | null;
+          returnAddress_street1?: string | null;
+          returnAddress_street2?: string | null;
+          returnAddress_street3?: string | null;
+          sellerIntegrationId?: number | null;
+          warehouseId?: number;
+          warehouseName?: string | null;
+        };
+        Update: {
+          createDate?: string | null;
+          extInventoryIdentity?: number | null;
+          isDefault?: boolean | null;
+          originAddress_addressVerified?: boolean | null;
+          originAddress_city?: string | null;
+          originAddress_company?: string | null;
+          originAddress_country?: string | null;
+          originAddress_name?: string | null;
+          originAddress_phone?: string | null;
+          originAddress_postalCode?: string | null;
+          originAddress_residential?: boolean | null;
+          originAddress_state?: string | null;
+          originAddress_street1?: string | null;
+          originAddress_street2?: string | null;
+          originAddress_street3?: string | null;
+          registerFedexMeter?: boolean | null;
+          returnAddress_addressVerified?: boolean | null;
+          returnAddress_city?: string | null;
+          returnAddress_company?: string | null;
+          returnAddress_country?: string | null;
+          returnAddress_name?: string | null;
+          returnAddress_phone?: string | null;
+          returnAddress_postalCode?: string | null;
+          returnAddress_residential?: boolean | null;
+          returnAddress_state?: string | null;
+          returnAddress_street1?: string | null;
+          returnAddress_street2?: string | null;
+          returnAddress_street3?: string | null;
+          sellerIntegrationId?: number | null;
+          warehouseId?: number;
+          warehouseName?: string | null;
+        };
+        Relationships: [];
       };
     };
     Views: {

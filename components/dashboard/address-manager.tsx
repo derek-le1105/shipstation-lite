@@ -38,11 +38,8 @@ import { validateAddress } from "@/lib/fedex/lib";
 import { toast } from "sonner";
 
 type AddressManagerProps = {
-  shipFrom: AddressRecord[];
   shipTo: AddressRecord[];
 };
-
-type AddressKind = AddressRecord["address_kind"];
 
 type FeedbackState =
   | { variant: "success"; message: string }
@@ -53,34 +50,23 @@ const initialAddressMutationState: AddressMutationState = {
   status: "idle",
 };
 
-export function AddressManager({ shipFrom, shipTo }: AddressManagerProps) {
+export function AddressManager({ shipTo }: AddressManagerProps) {
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <AddressKindSection
-        title="Ship-from addresses"
-        description="Update the locations you originate shipments from."
-        kind="ship_from"
-        initialAddresses={shipFrom}
-      />
-      <AddressKindSection
-        title="Ship-to addresses"
-        description="Maintain the destinations you frequently ship to."
-        kind="ship_to"
-        initialAddresses={shipTo}
-      />
-    </div>
+    <AddressKindSection
+      title="Addresses"
+      description="Maintain the destinations you frequently ship to."
+      initialAddresses={shipTo}
+    />
   );
 }
 
 function AddressKindSection({
   title,
   description,
-  kind,
   initialAddresses,
 }: {
   title: string;
   description: string;
-  kind: AddressKind;
   initialAddresses: AddressRecord[];
 }) {
   const [createState, createAction, createPending] = useActionState<
@@ -216,13 +202,13 @@ function AddressKindSection({
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid gap-2">
-          <Label htmlFor={`${kind}-select`}>Choose address</Label>
+          <Label htmlFor={`select`}>Choose address</Label>
           <Select
             value={selectedId}
             onValueChange={setSelectedId}
             disabled={currentAddresses.length === 0 && selectedId !== "new"}
           >
-            <SelectTrigger id={`${kind}-select`}>
+            <SelectTrigger id={`select`}>
               <SelectValue placeholder="Select an address" />
             </SelectTrigger>
             <SelectContent>
@@ -245,22 +231,17 @@ function AddressKindSection({
         </div>
 
         <form
-          id={`${kind}-form`}
-          key={`${kind}-${selectedId}`}
+          id="address-form"
+          key={selectedId}
           action={selectedId === "new" ? createAction : updateAction}
           className="space-y-6"
           ref={formRef}
         >
-          <input type="hidden" name="address_kind" value={kind} />
           {selectedId !== "new" ? (
             <input type="hidden" name="address_id" value={selectedId} />
           ) : null}
 
-          <AddressFields
-            addressKind={kind}
-            address={selectedAddress}
-            formRef={formRef}
-          />
+          <AddressFields address={selectedAddress} formRef={formRef} />
 
           <div className="space-y-4">
             {feedback ? (
@@ -320,11 +301,9 @@ function AddressKindSection({
 }
 
 function AddressFields({
-  addressKind,
   address,
   formRef,
 }: {
-  addressKind: AddressInput["address_kind"];
   address: AddressRecord | null;
   formRef: React.RefObject<HTMLFormElement | null>;
 }) {
@@ -338,7 +317,7 @@ function AddressFields({
     try {
       setValidAddressStatus("validating");
       const formData = new FormData();
-      const form = document.getElementById(addressKind + "-form");
+      const form = document.getElementById("address-form");
       if (form) {
         const formElement = form as HTMLFormElement;
         const currentFormData = new FormData(formElement);
@@ -414,20 +393,20 @@ function AddressFields({
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <div className="grid gap-2">
-        <Label htmlFor={`${addressKind}-label`}>Nickname</Label>
+        <Label htmlFor="label">Nickname</Label>
         <Input
-          id={`${addressKind}-label`}
+          id="label"
           name="label"
           placeholder="Warehouse A"
           defaultValue={address?.label ?? ""}
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`${addressKind}-contact_name`}>
+        <Label htmlFor="contact_name">
           Contact Name <span className="text-red-500">*</span>
         </Label>
         <Input
-          id={`${addressKind}-contact_name`}
+          id="contact_name"
           name="contact_name"
           placeholder="Jane Smith"
           defaultValue={address?.contact_name ?? ""}
@@ -435,20 +414,20 @@ function AddressFields({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`${addressKind}-company`}>Company</Label>
+        <Label htmlFor="company">Company</Label>
         <Input
-          id={`${addressKind}-company`}
+          id="company"
           name="company"
           placeholder="Acme Corp"
           defaultValue={address?.company ?? ""}
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`${addressKind}-phone`}>
+        <Label htmlFor="phone">
           Phone <span className="text-red-500">*</span>
         </Label>
         <Input
-          id={`${addressKind}-phone`}
+          id="phone"
           name="phone"
           placeholder="555-123-4567"
           defaultValue={address?.phone ?? ""}
@@ -456,9 +435,9 @@ function AddressFields({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`${addressKind}-email`}>Email</Label>
+        <Label htmlFor="email">Email</Label>
         <Input
-          id={`${addressKind}-email`}
+          id="email"
           name="email"
           type="email"
           placeholder="warehouse@example.com"
@@ -466,11 +445,11 @@ function AddressFields({
         />
       </div>
       <div className="grid gap-2 md:col-span-2">
-        <Label htmlFor={`${addressKind}-address_line1`}>
+        <Label htmlFor="address_line1">
           Address Line 1 <span className="text-red-500">*</span>
         </Label>
         <Input
-          id={`${addressKind}-address_line1`}
+          id="address_line1"
           name="address_line1"
           placeholder="123 Market St"
           defaultValue={address?.address_line1 ?? ""}
@@ -478,20 +457,20 @@ function AddressFields({
         />
       </div>
       <div className="grid gap-2 md:col-span-2">
-        <Label htmlFor={`${addressKind}-address_line2`}>Address Line 2</Label>
+        <Label htmlFor="address_line2">Address Line 2</Label>
         <Input
-          id={`${addressKind}-address_line2`}
+          id="address_line2"
           name="address_line2"
           placeholder="Suite 200"
           defaultValue={address?.address_line2 ?? ""}
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`${addressKind}-city`}>
+        <Label htmlFor="city">
           City <span className="text-red-500">*</span>
         </Label>
         <Input
-          id={`${addressKind}-city`}
+          id="city"
           name="city"
           placeholder="Austin"
           defaultValue={address?.city ?? ""}
@@ -499,11 +478,11 @@ function AddressFields({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`${addressKind}-state`}>
+        <Label htmlFor="state">
           State / Province <span className="text-red-500">*</span>
         </Label>
         <Input
-          id={`${addressKind}-state`}
+          id="state"
           name="state"
           placeholder="TX"
           defaultValue={address?.state ?? ""}
@@ -511,11 +490,11 @@ function AddressFields({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`${addressKind}-postal_code`}>
+        <Label htmlFor="postal_code">
           Postal Code <span className="text-red-500">*</span>
         </Label>
         <Input
-          id={`${addressKind}-postal_code`}
+          id="postal_code"
           name="postal_code"
           placeholder="73301"
           defaultValue={address?.postal_code ?? ""}
@@ -523,11 +502,11 @@ function AddressFields({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`${addressKind}-country`}>
+        <Label htmlFor="country">
           Country <span className="text-red-500">*</span>
         </Label>
         <Input
-          id={`${addressKind}-country`}
+          id="country"
           name="country"
           placeholder="US"
           defaultValue={address?.country ?? "US"}
@@ -540,13 +519,13 @@ function AddressFields({
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
-              id={`${addressKind}-is_residential`}
+              id="is_residential"
               name="is_residential"
               value="true"
               defaultChecked={address?.is_residential ?? false}
             />
             <Label
-              htmlFor={`${addressKind}-is_residential`}
+              htmlFor="is_residential"
               className="text-sm text-muted-foreground"
             >
               Residential address

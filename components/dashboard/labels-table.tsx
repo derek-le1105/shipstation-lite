@@ -161,22 +161,6 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
       ),
     },
     {
-      id: "origin_city",
-      header: "Origin City",
-      accessorFn: (row) => {
-        const { ship_from_snapshot } = row as ShippingLabelRecord;
-        return `${ship_from_snapshot.city}, ${ship_from_snapshot.state}`;
-      },
-    },
-    {
-      id: "origin_zip",
-      header: "Origin Zip",
-      accessorFn: (row) => {
-        const { ship_from_snapshot } = row as ShippingLabelRecord;
-        return ship_from_snapshot.postalCode;
-      },
-    },
-    {
       id: "delivery_city",
       header: "Delivery City",
       accessorFn: (row) => {
@@ -406,22 +390,16 @@ export function LabelsTable<T>({
         "label_data_base64" | "user_id" | "from_address_id" | "to_address_id"
       >[]
     ) => {
-      return exportData.map(
-        ({ ship_from_snapshot, ship_to_snapshot, id, ...rest }) => {
-          const origin_zip = ship_from_snapshot.postalCode;
-          const origin_city = `${ship_from_snapshot.city}, ${ship_from_snapshot.state}`;
-          const delivery_zip = ship_to_snapshot.postalCode;
-          const delivery_city = `${ship_to_snapshot.city}, ${ship_to_snapshot.state}`;
-          return {
-            id,
-            origin_city,
-            origin_zip,
-            delivery_city,
-            delivery_zip,
-            ...rest,
-          };
-        }
-      );
+      return exportData.map(({ ship_to_snapshot, id, ...rest }) => {
+        const delivery_zip = ship_to_snapshot.postalCode;
+        const delivery_city = `${ship_to_snapshot.city}, ${ship_to_snapshot.state}`;
+        return {
+          id,
+          delivery_city,
+          delivery_zip,
+          ...rest,
+        };
+      });
     };
 
     const selectedRows = table.getSelectedRowModel().rows;
@@ -431,13 +409,8 @@ export function LabelsTable<T>({
         ? table.getFilteredSelectedRowModel()
         : table.getFilteredRowModel()
     ).rows.map(({ original }) => {
-      const {
-        label_data_base64,
-        user_id,
-        from_address_id,
-        to_address_id,
-        ...rest
-      } = original as ShippingLabelRecord;
+      const { label_data_base64, user_id, to_address_id, ...rest } =
+        original as ShippingLabelRecord;
       return { ...rest };
     });
     switch (type) {
@@ -705,53 +678,5 @@ export function LabelsTable<T>({
         </div>
       </div>
     </div>
-  );
-}
-
-function ShippingSnapShotHoverCard(
-  shipSnapshot: ShippingLabelRecord["ship_from_snapshot" | "ship_to_snapshot"]
-) {
-  const cityState = [shipSnapshot.city, shipSnapshot.state]
-    .filter(Boolean)
-    .join(", ");
-  const postalCountry = [shipSnapshot.postalCode, shipSnapshot.country]
-    .filter(Boolean)
-    .join(" | ");
-
-  const street =
-    shipSnapshot.street1 +
-    (shipSnapshot.street2 ? `, ${shipSnapshot.street2}` : "");
-  return (
-    <HoverCard>
-      <HoverCardTrigger className="cursor-pointer text-foreground underline underline-offset-4">
-        {cityState || shipSnapshot.city || "View origin"}
-      </HoverCardTrigger>
-      <HoverCardContent className="w-64 space-y-3 text-sm">
-        <div className="space-y-1">
-          {shipSnapshot.name && (
-            <div className="font-medium">{shipSnapshot.name}</div>
-          )}
-          {shipSnapshot.company && (
-            <div className="text-muted-foreground">{shipSnapshot.company}</div>
-          )}
-        </div>
-        <div className="space-y-1 leading-relaxed">
-          <div>{street}</div>
-          {cityState && <div>{cityState}</div>}
-          {postalCountry && <div>{postalCountry}</div>}
-        </div>
-        {shipSnapshot.phone && (
-          <div className="text-muted-foreground">
-            Phone: {formatPhoneNumber(shipSnapshot.phone)}
-          </div>
-        )}
-        {shipSnapshot.residential !== null &&
-          shipSnapshot.residential !== undefined && (
-            <Badge variant="secondary">
-              {shipSnapshot.residential ? "Residential" : "Commercial"}
-            </Badge>
-          )}
-      </HoverCardContent>
-    </HoverCard>
   );
 }

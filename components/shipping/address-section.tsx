@@ -2,7 +2,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AddressMode } from "./types";
 import { AddressRecord } from "@/lib/supabase/addresses";
-import { Fieldset } from "../ui/fieldset";
 import {
   Select,
   SelectContent,
@@ -21,22 +20,31 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { formatPhoneNumber } from "@/lib/utils";
 
 export function AddressSection({
-  prefix,
-  title,
   addresses,
   setMode,
   pending,
   formRef,
 }: {
-  prefix: "from" | "to";
-  title: string;
   addresses: AddressRecord[];
   setMode: (mode: AddressMode) => void;
   pending: boolean;
   formRef: React.RefObject<HTMLFormElement | null>;
 }) {
+  type AddressFormValues = {
+    label: string;
+    contact_name: string;
+    company: string;
+    phone: string;
+    email: string;
+    address_line1: string;
+    address_line2: string;
+    city: string;
+    state: string;
+    postal_code: string;
+  };
+
   const [selectedAddressId, setSelectedAddressId] = useState<string>(
-    addresses[0]?.id
+    addresses[0]?.id ?? ""
   );
   const [isResidential, setIsResidential] = useState(false);
   const [saveAddress, setSaveAddress] = useState(false);
@@ -44,7 +52,7 @@ export function AddressSection({
 
   const [validAddressStatus, setValidAddressStatus] = useState<
     "idle" | "validating" | "valid" | "invalid"
-  >("idle");
+  >("invalid");
 
   const addressFormUpdated = useCallback(() => {
     if (!formRef.current) return;
@@ -60,8 +68,7 @@ export function AddressSection({
         const formElement = form as HTMLFormElement;
         const currentFormData = new FormData(formElement);
         for (const [key, value] of currentFormData.entries()) {
-          if (key.startsWith(`${prefix}.`))
-            formData.append(key.slice(prefix.length + 1), value);
+          formData.append(key, value);
         }
       }
       const { valid, issues } = await validateAddress(formData);
@@ -81,6 +88,35 @@ export function AddressSection({
     if (!address) return null;
     return address;
   }, [addresses, selectedAddressId]);
+
+  const buildFormValues = useCallback(
+    (address: AddressRecord | null): AddressFormValues => ({
+      label: address?.label ?? "",
+      contact_name: address?.contact_name ?? "",
+      company: address?.company ?? "",
+      phone: formatPhoneNumber(address?.phone ?? ""),
+      email: address?.email ?? "",
+      address_line1: address?.address_line1 ?? "",
+      address_line2: address?.address_line2 ?? "",
+      city: address?.city ?? "",
+      state: address?.state ?? "",
+      postal_code: address?.postal_code ?? "",
+    }),
+    []
+  );
+
+  const [formValues, setFormValues] = useState<AddressFormValues>(() =>
+    buildFormValues(selectedAddress)
+  );
+
+  const handleFieldChange = useCallback(
+    (field: keyof AddressFormValues) =>
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        const { value } = event.target;
+        setFormValues((current) => ({ ...current, [field]: value }));
+      },
+    []
+  );
 
   useEffect(() => {
     const form = formRef.current;
@@ -107,9 +143,7 @@ export function AddressSection({
       const name = target?.name;
       if (!name) return;
 
-      const [namePrefix, key] = name.split(".");
-      if (namePrefix !== prefix) return; // ignore changes from other sections
-      if (!watchedSuffixes.has(key)) return; // ignore non-watched fields
+      if (!watchedSuffixes.has(name)) return; // ignore non-watched fields
 
       if (formEventTimeoutRef.current !== null) {
         window.clearTimeout(formEventTimeoutRef.current);
@@ -131,7 +165,7 @@ export function AddressSection({
         formEventTimeoutRef.current = null;
       }
     };
-  }, [formRef, addressFormUpdated, prefix]);
+  }, [formRef, addressFormUpdated]);
 
   const ValidateButton = useMemo(() => {
     switch (validAddressStatus) {
@@ -155,176 +189,167 @@ export function AddressSection({
   }, [validAddressStatus]);
 
   useEffect(() => {
-    if (!selectedAddress) return;
+    setFormValues(buildFormValues(selectedAddress));
+    if (!selectedAddress) {
+      setIsResidential(false);
+      setSaveAddress(false);
+      setValidAddressStatus("idle");
+      return;
+    }
     const { is_residential, is_validated } = selectedAddress;
     setIsResidential(is_residential);
+    setSaveAddress(false);
     setValidAddressStatus(is_validated ? "valid" : "idle");
-  }, [selectedAddress]);
-
-  const AddressDescription = useMemo(() => {
-    const address = addresses.find(({ id }) => id === selectedAddressId);
-    if (!address) return <></>;
-    else
-      return (
-        <div className="grid grid-cols-2">
-          <div className="flex align-center gap-8">
-            <p className="font-semibold">Address: </p>
-            <span>
-              {address?.address_line1} {address?.address_line2}, {address?.city}
-              , {address?.state}, {address?.postal_code}
-            </span>
-          </div>
-          <div className="flex align-center gap-8">
-            <p className="font-semibold">Contact: </p>
-            <span>
-              {address?.contact_name} -{" "}
-              {formatPhoneNumber(address?.phone ?? "")}
-            </span>
-          </div>
-        </div>
-      );
-  }, [addresses, selectedAddressId]);
+  }, [selectedAddress, buildFormValues]);
 
   return (
-    <Fieldset title={title} description={AddressDescription}>
-      <div className="grid gap-2">
-        <Label htmlFor={`${prefix}-addressId`}>Select address</Label>
-        <Select
-          name={`${prefix}.addressId`}
-          disabled={addresses.length === 0 || pending}
-          required={addresses.length > 0}
-          defaultValue={addresses[0]?.id ?? ""}
-          onValueChange={(value) => {
-            const mode = value === "new-address" ? "new" : "saved";
-            setMode(mode);
-            setSelectedAddressId(value);
-          }}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select an address" />
-          </SelectTrigger>
-          <SelectContent>
-            {addresses.map((address) => (
-              <SelectItem key={address.id} value={address.id}>
-                {address.label ??
-                  address.contact_name ??
-                  address.address_line1 ??
-                  ""}
-              </SelectItem>
-            ))}
-            <SelectItem value="new-address">Create New Address</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-        <div className="min-w-0 gap-2 col-span-2">
-          <Label htmlFor={`${prefix}-label`}>Nickname</Label>
-          <Input
-            id={`${prefix}-label`}
-            name={`${prefix}.label`}
-            placeholder={"Warehouse A"}
-            disabled={pending}
-            defaultValue={selectedAddress?.label ?? ""}
-          />
+    <>
+      <div className="grid gap-5 md:grid-cols-6">
+        <div className="min-w-0 space-y-2 col-span-full">
+          <Label htmlFor="addressId">Select address</Label>
+          <Select
+            name="addressId"
+            disabled={addresses.length === 0 || pending}
+            required={addresses.length > 0}
+            value={selectedAddressId}
+            onValueChange={(value) => {
+              const mode = value === "new-address" ? "new" : "saved";
+              setMode(mode);
+              setSelectedAddressId(value);
+            }}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select an address" />
+            </SelectTrigger>
+            <SelectContent>
+              {addresses.map((address) => (
+                <SelectItem key={address.id} value={address.id}>
+                  {address.label ??
+                    address.contact_name ??
+                    address.address_line1 ??
+                    ""}
+                </SelectItem>
+              ))}
+              <SelectItem value="new-address">Create New Address</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <div className="min-w-0 gap-2 col-span-2">
-          <Label htmlFor={`${prefix}-contact_name`}>
+        {!selectedAddress && (
+          <div className="min-w-0 space-y-2 col-span-full md:col-span-3">
+            <Label htmlFor="label">Nickname</Label>
+            <Input
+              id="label"
+              name="label"
+              placeholder={"Warehouse A"}
+              disabled={pending}
+              value={formValues.label}
+              onChange={handleFieldChange("label")}
+            />
+          </div>
+        )}
+        <div className="min-w-0 space-y-2 col-span-full md:col-span-3">
+          <Label htmlFor="contact_name">
             Contact Name <span className="text-red-500">*</span>
           </Label>
           <Input
-            id={`${prefix}-contact_name`}
-            name={`${prefix}.contact_name`}
+            id="contact_name"
+            name="contact_name"
             placeholder="Jane Smith"
             required
             disabled={pending}
-            defaultValue={selectedAddress?.contact_name ?? ""}
+            value={formValues.contact_name}
+            onChange={handleFieldChange("contact_name")}
           />
         </div>
-        <div className="min-w-0 gap-2 md:col-span-2">
-          <Label htmlFor={`${prefix}-company`}>Company</Label>
+        <div className="min-w-0 space-y-2 col-span-full md:col-span-3">
+          <Label htmlFor="company">Company</Label>
           <Input
-            id={`${prefix}-company`}
-            name={`${prefix}.company`}
+            id="company"
+            name="company"
             placeholder={selectedAddress ? "" : "Acme Corp"}
             disabled={pending}
-            defaultValue={selectedAddress?.company ?? ""}
+            value={formValues.company}
+            onChange={handleFieldChange("company")}
           />
         </div>
-        <div className="min-w-0 gap-2 md:col-span-2">
-          <Label htmlFor={`${prefix}-phone`}>
+        <div className="min-w-0 space-y-2 col-span-full md:col-span-3">
+          <Label htmlFor="phone">
             Phone <span className="text-red-500">*</span>
           </Label>
           <Input
-            id={`${prefix}-phone`}
-            name={`${prefix}.phone`}
+            id="phone"
+            name="phone"
             placeholder={selectedAddress ? "" : "555-123-4567"}
             required
             disabled={pending}
-            defaultValue={formatPhoneNumber(selectedAddress?.phone ?? "")}
+            value={formValues.phone}
+            onChange={handleFieldChange("phone")}
           />
         </div>
-        <div className="min-w-0 gap-2 col-span-full">
-          <Label htmlFor={`${prefix}-email`}>Email</Label>
+        <div className="min-w-0 space-y-2 col-span-full md:col-span-3">
+          <Label htmlFor="email">Email</Label>
           <Input
-            id={`${prefix}-email`}
-            name={`${prefix}.email`}
+            id="email"
+            name="email"
             type="email"
             placeholder={selectedAddress ? "" : "warehouse@example.com"}
             disabled={pending}
-            defaultValue={selectedAddress?.email ?? ""}
+            value={formValues.email}
+            onChange={handleFieldChange("email")}
           />
         </div>
-        <div className="min-w-0 gap-2 col-span-2 md:col-span-4">
-          <Label htmlFor={`${prefix}-address_line1`}>
+        <div className="min-w-0 space-y-2 col-span-full md:col-span-4">
+          <Label htmlFor="address_line1">
             Address Line 1 <span className="text-red-500">*</span>
           </Label>
           <Input
-            id={`${prefix}-address_line1`}
-            name={`${prefix}.address_line1`}
+            id="address_line1"
+            name="address_line1"
             placeholder={selectedAddress ? "" : "123 Market St"}
             required
             disabled={pending}
-            defaultValue={selectedAddress?.address_line1 ?? ""}
+            value={formValues.address_line1}
+            onChange={handleFieldChange("address_line1")}
           />
         </div>
-        <div className="min-w-0 gap-2 col-span-2 md:col-span-4">
-          <Label htmlFor={`${prefix}-address_line2`}>Address Line 2</Label>
+        <div className="min-w-0 space-y-2 col-span-full md:col-span-2">
+          <Label htmlFor="address_line2">Address Line 2</Label>
           <Input
-            id={`${prefix}-address_line2`}
-            name={`${prefix}.address_line2`}
+            id="address_line2"
+            name="address_line2"
             placeholder={selectedAddress ? "" : "Suite 200"}
             disabled={pending}
-            defaultValue={selectedAddress?.address_line2 ?? ""}
+            value={formValues.address_line2}
+            onChange={handleFieldChange("address_line2")}
           />
         </div>
-        <div className="min-w-0 gap-2 col-span-2">
-          <Label htmlFor={`${prefix}-city`}>
+        <div className="min-w-0 space-y-2 col-span-full md:col-span-3">
+          <Label htmlFor="city">
             City <span className="text-red-500">*</span>
           </Label>
           <Input
-            id={`${prefix}-city`}
-            name={`${prefix}.city`}
+            id="city"
+            name="city"
             placeholder={selectedAddress ? "" : "Rosemead"}
             required
             disabled={pending}
-            defaultValue={selectedAddress?.city ?? ""}
+            value={formValues.city}
+            onChange={handleFieldChange("city")}
           />
         </div>
-        <div className="min-w-0 gap-2">
-          <Label htmlFor={`${prefix}.state`}>
+        <div className="min-w-0 space-y-2 col-span-full md:col-span-1">
+          <Label htmlFor="state">
             State <span className="text-red-500">*</span>
           </Label>
           <Select
-            name={`${prefix}.state`}
+            name="state"
             required
-            defaultValue={selectedAddress?.state}
+            value={formValues.state || undefined}
+            onValueChange={(value) =>
+              setFormValues((current) => ({ ...current, state: value }))
+            }
           >
-            <SelectTrigger
-              className="w-full"
-              id={`${prefix}.state`}
-              name={`${prefix}.state`}
-            >
+            <SelectTrigger className="w-full" id="state" name="state">
               <SelectValue placeholder="California" />
             </SelectTrigger>
             <SelectContent>
@@ -336,30 +361,31 @@ export function AddressSection({
             </SelectContent>
           </Select>
         </div>
-        <div className="min-w-0 gap-2">
-          <Label htmlFor={`${prefix}-postal_code`}>
+        <div className="min-w-0 space-y-2 col-span-full md:col-span-2">
+          <Label htmlFor="postal_code">
             Postal Code <span className="text-red-500">*</span>
           </Label>
           <Input
-            id={`${prefix}-postal_code`}
-            name={`${prefix}.postal_code`}
+            id="postal_code"
+            name="postal_code"
             placeholder={selectedAddress ? "" : "73301"}
             required
             disabled={pending}
-            defaultValue={selectedAddress?.postal_code ?? ""}
+            value={formValues.postal_code}
+            onChange={handleFieldChange("postal_code")}
           />
         </div>
-        <div className="flex justify-between items-center gap-2 col-span-full min-w-0">
+        <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-muted/20 p-3 col-span-full md:col-span-2">
           <Label
-            htmlFor={`${prefix}.is_residential`}
+            htmlFor="is_residential"
             className="text-sm text-muted-foreground"
           >
             Residential address?
           </Label>
           <div className="grid grid-cols-2 items-center gap-4">
             <Switch
-              id={`${prefix}.is_residential`}
-              name={`${prefix}.is_residential`}
+              id="is_residential"
+              name="is_residential"
               checked={isResidential}
               onCheckedChange={setIsResidential}
             />
@@ -369,17 +395,14 @@ export function AddressSection({
           </div>
         </div>
         {!selectedAddress && (
-          <div className="flex justify-between items-center gap-2 col-span-full min-w-0">
-            <Label
-              htmlFor={`${prefix}-is_residential`}
-              className="text-sm text-muted-foreground"
-            >
+          <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-muted/20 p-3 col-span-full md:col-span-2">
+            <Label htmlFor="save" className="text-sm text-muted-foreground">
               Save this address?
             </Label>
             <div className="grid grid-cols-2 items-center gap-4">
               <Switch
-                id={`${prefix}-save`}
-                name={`${prefix}.save`}
+                id="save"
+                name="save"
                 checked={saveAddress}
                 onCheckedChange={setSaveAddress}
               />
@@ -389,41 +412,40 @@ export function AddressSection({
             </div>
           </div>
         )}
-        <div className="flex justify-between items-center gap-2 col-span-full min-w-0">
+        <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-muted/20 p-3 col-span-full md:col-span-2">
           <div className="flex items-center gap-2">
             <Label
-              htmlFor={`${prefix}.is_residential`}
+              htmlFor="is_validated"
               className="text-sm text-muted-foreground"
             >
               Address Status
             </Label>
-            {validAddressStatus !== "valid" && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <TriangleAlert className="text-sm text-yellow-500" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <span>
-                    If this address is not validated, a correction fee of $17
-                    might be applied.
-                  </span>
-                </TooltipContent>
-              </Tooltip>
-            )}
           </div>
           <input
             type="hidden"
-            name={`${prefix}.is_validated`}
+            name="is_validated"
             value={validAddressStatus === "valid" ? "on" : "off"}
           />
+
           {validAddressStatus !== "valid" ? (
-            <Button
-              type="button"
-              className="cursor-pointer"
-              onClick={handleValidateAddress}
-            >
-              {ValidateButton}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  className="cursor-pointer"
+                  onClick={handleValidateAddress}
+                  size={"sm"}
+                >
+                  {ValidateButton}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                <span>
+                  If this address is not validated, a correction fee of $17
+                  might be applied.
+                </span>
+              </TooltipContent>
+            </Tooltip>
           ) : (
             <span className="text-sm font-medium text-emerald-600">
               Validated
@@ -431,6 +453,6 @@ export function AddressSection({
           )}
         </div>
       </div>
-    </Fieldset>
+    </>
   );
 }

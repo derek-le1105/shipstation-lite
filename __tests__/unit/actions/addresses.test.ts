@@ -48,7 +48,6 @@ function setFormValue(formData: FormData, key: string, value: string) {
 function buildValidFormData(overrides?: Partial<Record<string, string>>) {
   const formData = new FormData();
 
-  setFormValue(formData, "address_kind", "ship_from");
   setFormValue(formData, "label", "  Warehouse  ");
   setFormValue(formData, "contact_name", "  Jane Doe ");
   setFormValue(formData, "company", "  ");
@@ -89,7 +88,6 @@ function buildAddressRecord(overrides?: Partial<AddressRecord>): AddressRecord {
     country: "US",
     is_residential: false,
     is_validated: false,
-    address_kind: "ship_from",
     created_at: new Date().toISOString(),
     ...overrides,
   };
@@ -130,7 +128,6 @@ describe("createAddressAction", () => {
         country: "US",
         is_residential: true,
         is_validated: true,
-        address_kind: "ship_from",
       })
     );
 
@@ -152,30 +149,16 @@ describe("createAddressAction", () => {
     expect(vi.mocked(createAddress)).not.toHaveBeenCalled();
     expect(vi.mocked(revalidatePath)).not.toHaveBeenCalled();
   });
-
-  it("returns an error when address kind is invalid", async () => {
-    const formData = buildValidFormData({ address_kind: "nope" });
-
-    const result = await createAddressAction({ status: "idle" }, formData);
-
-    expect(result).toEqual({
-      status: "error",
-      message: "A valid address type is required.",
-    });
-    expect(vi.mocked(createAddress)).not.toHaveBeenCalled();
-  });
 });
 
 describe("updateAddressAction", () => {
   it("updates an address and revalidates paths", async () => {
     const existing = buildAddressRecord({
       id: "addr-1",
-      address_kind: "ship_from",
     });
     const updated = buildAddressRecord({
       id: "addr-1",
       label: "Updated",
-      address_kind: "ship_to",
     });
 
     vi.mocked(getAddressById).mockResolvedValue(existing);
@@ -183,7 +166,6 @@ describe("updateAddressAction", () => {
 
     const formData = buildValidFormData({
       address_id: "addr-1",
-      address_kind: "ship_to",
       label: "Updated",
       is_residential: "0",
       is_validated: "1",
@@ -207,7 +189,6 @@ describe("updateAddressAction", () => {
       profile.id,
       expect.objectContaining({
         label: "Updated",
-        address_kind: "ship_to",
         is_residential: false,
         is_validated: true,
       })
@@ -222,11 +203,9 @@ describe("updateAddressAction", () => {
   it("falls back to existing address kind when missing from form data", async () => {
     const existing = buildAddressRecord({
       id: "addr-1",
-      address_kind: "ship_from",
     });
     const updated = buildAddressRecord({
       id: "addr-1",
-      address_kind: "ship_from",
     });
 
     vi.mocked(getAddressById).mockResolvedValue(existing);
@@ -235,7 +214,6 @@ describe("updateAddressAction", () => {
     const formData = buildValidFormData({
       address_id: "addr-1",
     });
-    formData.delete("address_kind");
 
     const result = await updateAddressAction({ status: "idle" }, formData);
 
@@ -243,7 +221,21 @@ describe("updateAddressAction", () => {
     expect(vi.mocked(updateAddress)).toHaveBeenCalledWith(
       "addr-1",
       profile.id,
-      expect.objectContaining({ address_kind: "ship_from" })
+      {
+        address_line1: "123 Main St",
+        address_line2: "Apt 1",
+        city: "Austin",
+        company: null,
+        contact_name: "Jane Doe",
+        country: "US",
+        email: "test@example.com",
+        is_residential: true,
+        is_validated: true,
+        label: "Warehouse",
+        phone: null,
+        postal_code: "78701",
+        state: "TX",
+      }
     );
   });
 

@@ -2,6 +2,7 @@ import type { ShipStationRatesRequest } from "@/lib/shipstation/types";
 import type { AddressRecord } from "@/lib/supabase/addresses";
 import { AddressMode } from "@/components/shipping/types";
 import { PackageRecord } from "../supabase/packages";
+import { WarehouseRecord } from "../supabase/warehouses";
 
 type RateDimensions = ShipStationRatesRequest["dimensions"];
 
@@ -27,11 +28,20 @@ export function resolveAddressFromForm(
   savedAddresses: AddressRecord[],
   fallbackMode: AddressMode
 ): RateAddress | null {
+  const getPrefixedOrFallback = (key: string) => {
+    const prefixed = formData.get(`${prefix}.${key}`);
+    if (prefixed !== null) return prefixed;
+
+    if (prefix !== "to") return null;
+
+    return formData.get(key);
+  };
+
   const modeValue =
     (formData.get(`${prefix}.mode`) as AddressMode | null) ?? fallbackMode;
 
   if (modeValue === "saved") {
-    const addressId = formData.get(`${prefix}.addressId`);
+    const addressId = getPrefixedOrFallback("addressId");
     if (!addressId) return null;
 
     const address = savedAddresses.find((item) => item.id === addressId);
@@ -52,13 +62,22 @@ export function resolveAddressFromForm(
     };
   }
 
-  const city = (formData.get(`${prefix}.city`) as string | null)?.trim() ?? "";
+  const city =
+    (getPrefixedOrFallback("city") as string | null)?.trim() ??
+    (formData.get(`${prefix}.city`) as string | null)?.trim() ??
+    "";
   const state =
-    (formData.get(`${prefix}.state`) as string | null)?.trim() ?? "";
+    (getPrefixedOrFallback("state") as string | null)?.trim() ??
+    (formData.get(`${prefix}.state`) as string | null)?.trim() ??
+    "";
   const postalCode =
-    (formData.get(`${prefix}.postal_code`) as string | null)?.trim() ?? "";
+    (getPrefixedOrFallback("postal_code") as string | null)?.trim() ??
+    (formData.get(`${prefix}.postal_code`) as string | null)?.trim() ??
+    "";
   const country =
-    (formData.get(`${prefix}.country`) as string | null)?.trim() ?? "US";
+    (getPrefixedOrFallback("country") as string | null)?.trim() ??
+    (formData.get(`${prefix}.country`) as string | null)?.trim() ??
+    "US";
 
   if (!city || !state || !postalCode || !country) {
     return null;
@@ -69,7 +88,9 @@ export function resolveAddressFromForm(
     state,
     postalCode,
     country,
-    residential: parseCheckboxValue(formData.get(`${prefix}.is_residential`)),
+    residential: parseCheckboxValue(
+      getPrefixedOrFallback("is_residential") ?? formData.get(`${prefix}.is_residential`)
+    ),
   };
 }
 
@@ -77,9 +98,8 @@ export function buildRatesRequest(
   index: number,
   formData: FormData,
   params: {
-    fromAddresses: AddressRecord[];
+    shipFrom: WarehouseRecord;
     toAddresses: AddressRecord[];
-    fromMode: AddressMode;
     toMode: AddressMode;
   }
 ): ShipStationRatesRequest | null {
@@ -91,24 +111,15 @@ export function buildRatesRequest(
     (formData.get("serviceCode") as string | null)?.trim() ?? "";
   if (!serviceCode) return null;
 
-  const fromAddress = resolveAddressFromForm(
-    formData,
-    "from",
-    params.fromAddresses,
-    params.fromMode
-  );
-  const toAddress = resolveAddressFromForm(
-    formData,
-    "to",
-    params.toAddresses,
-    params.toMode
-  );
+  const { shipFrom, toAddresses, toMode } = params;
+
+  const toAddress = resolveAddressFromForm(formData, "to", toAddresses, toMode);
 
   // for (const [key, value] of formData.entries()) {
   //   console.log(`Form field: ${key}, Value: ${value}`);
   // }
 
-  if (!fromAddress || !toAddress) return null;
+  if (!toAddress) return null;
 
   const weightValueRaw =
     (formData.get(`package-${index}.weight.value`) as string | null)?.trim() ??
@@ -165,9 +176,9 @@ export function buildRatesRequest(
     carrierCode,
     serviceCode,
     packageCode: "package",
-    fromPostalCode: fromAddress.postalCode,
-    fromCity: fromAddress.city,
-    fromState: fromAddress.state,
+    fromPostalCode: shipFrom?.originAddress_postalCode,
+    fromCity: shipFrom?.originAddress_city,
+    fromState: shipFrom?.originAddress_state,
     toPostalCode: toAddress.postalCode,
     toCountry: toAddress.country.toUpperCase(),
     toCity: toAddress.city,

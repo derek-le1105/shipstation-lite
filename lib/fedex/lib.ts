@@ -173,6 +173,7 @@ function summarizeAddressValidation(
 
 export async function validateAddress(formData: FormData) {
   try {
+    console.log(formData);
     const fedexClient = new FedExClient();
     const street1 = formData.get("address_line1") as string;
     const street2 = formData.get("address_line2") as string;

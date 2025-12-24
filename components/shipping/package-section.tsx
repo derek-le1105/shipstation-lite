@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +29,7 @@ import { AddressRecord } from "@/lib/supabase/addresses";
 import { AddressMode } from "./types";
 import { useCreateLabelFormContext } from "@/components/providers/create-label-provider";
 import SwitchLabel from "../switch-label";
+import { WarehouseRecord } from "@/lib/supabase/warehouses";
 
 const RATE_DEBOUNCE_MS = 1500;
 const USD_FORMATTER = new Intl.NumberFormat("en-US", {
@@ -44,9 +46,8 @@ type RateState =
 interface PackageDetailsSectionProps {
   isPending: boolean;
   packages: PackageRecord[];
-  fromAddresses: AddressRecord[];
+  shipFrom: WarehouseRecord;
   toAddresses: AddressRecord[];
-  fromMode: AddressMode;
   toMode: AddressMode;
   selectedCarrier: string | null;
   selectedService: string | null;
@@ -55,9 +56,8 @@ interface PackageDetailsSectionProps {
 export function PackageDetailsSection({
   isPending,
   packages,
-  fromAddresses,
+  shipFrom,
   toAddresses,
-  fromMode,
   toMode,
   selectedCarrier,
   selectedService,
@@ -69,7 +69,7 @@ export function PackageDetailsSection({
   };
 
   return (
-    <Fieldset title="Package Details">
+    <>
       <input type="hidden" name="packages.count" value={packageIds.length} />
       {packageIds.map((packageId, index) => {
         return (
@@ -79,9 +79,8 @@ export function PackageDetailsSection({
               index={index}
               packages={packages}
               handlePackageRemove={handlePackageRemove}
-              fromAddresses={fromAddresses}
+              shipFrom={shipFrom}
               toAddresses={toAddresses}
-              fromMode={fromMode}
               toMode={toMode}
               selectedCarrier={selectedCarrier}
               selectedService={selectedService}
@@ -104,7 +103,7 @@ export function PackageDetailsSection({
           Add Package
         </Button>
       </div>
-    </Fieldset>
+    </>
   );
 }
 
@@ -130,14 +129,18 @@ type PkgFields = {
   };
 };
 
+const positiveNumberSchema = z.preprocess(
+  (value) => (typeof value === "string" ? Number(value) : value),
+  z.number().min(1, "Must be at least 1.")
+);
+
 function Package({
   isPending,
   index,
   packages,
   handlePackageRemove,
-  fromAddresses,
+  shipFrom,
   toAddresses,
-  fromMode,
   toMode,
   selectedCarrier,
   selectedService,
@@ -147,9 +150,8 @@ function Package({
   index: number;
   packages: PackageRecord[];
   handlePackageRemove: (index: number) => void;
-  fromAddresses: AddressRecord[];
+  shipFrom: WarehouseRecord;
   toAddresses: AddressRecord[];
-  fromMode: AddressMode;
   toMode: AddressMode;
   selectedCarrier: string | null;
   selectedService: string | null;
@@ -168,6 +170,32 @@ function Package({
   const debouncedRateRequest = useDebounce(rateRequest, RATE_DEBOUNCE_MS);
 
   const formEventTimeoutRef = useRef<number | null>(null);
+
+  type DimensionField = "length" | "width" | "height" | "weight";
+  const [fieldErrors, setFieldErrors] = useState<
+    Record<DimensionField, string>
+  >({
+    length: "",
+    width: "",
+    height: "",
+    weight: "",
+  });
+
+  const validatePositiveNumber = useCallback((value: string) => {
+    const result = positiveNumberSchema.safeParse(value);
+    if (result.success) return "";
+    return result.error.issues[0]?.message ?? "Enter a number of 1 or more.";
+  }, []);
+
+  const handleNumberValidation = useCallback(
+    (field: DimensionField) =>
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        const message = validatePositiveNumber(event.target.value);
+        event.currentTarget.setCustomValidity(message);
+        setFieldErrors((current) => ({ ...current, [field]: message }));
+      },
+    [validatePositiveNumber]
+  );
 
   const handlePackageChange = useCallback(
     (value: string) => {
@@ -203,9 +231,17 @@ function Package({
     [selectedPackageId, packages]
   );
 
+  useEffect(() => {
+    setFieldErrors({ length: "", width: "", height: "", weight: "" });
+  }, [selectedPackageId]);
+
   const updateRateRequest = useCallback(() => {
-    if (!formRef.current) return;
-    const formData = new FormData(formRef.current);
+    const form =
+      formRef.current ??
+      (document.getElementById("create-label-form") as HTMLFormElement | null);
+    if (!form) return;
+    const formData = new FormData(form);
+
     if (selectedPackageId !== "new-package") {
       const currPackage = packages.find((p) => p.id === selectedPackageId);
       if (!currPackage) throw new Error("Selected package not found");
@@ -214,9 +250,8 @@ function Package({
       savePackageToFormData(formData, index, currPackage);
     }
     const nextRequest = buildRatesRequest(index, formData, {
-      fromAddresses,
+      shipFrom,
       toAddresses,
-      fromMode,
       toMode,
     });
     setRateRequest((current) =>
@@ -227,15 +262,13 @@ function Package({
     packages,
     formRef,
     index,
-    fromAddresses,
+    shipFrom,
     toAddresses,
-    fromMode,
     toMode,
   ]);
 
   useEffect(() => {
-    const form = formRef.current;
-    if (!form) return;
+    let attachedForm: HTMLFormElement | null = null;
 
     const handleFormChange = () => {
       if (formEventTimeoutRef.current !== null) {
@@ -247,12 +280,47 @@ function Package({
       }, 0);
     };
 
-    form.addEventListener("input", handleFormChange);
-    form.addEventListener("change", handleFormChange);
+    const attach = () => {
+      const form =
+        formRef.current ??
+        (document.getElementById(
+          "create-label-form"
+        ) as HTMLFormElement | null);
+      if (!form) return false;
+      if (attachedForm === form) return true;
+
+      attachedForm = form;
+      form.addEventListener("input", handleFormChange);
+      form.addEventListener("change", handleFormChange);
+      return true;
+    };
+
+    // `ref.current` changes don't trigger effects; poll briefly until the form mounts.
+    if (!attach()) {
+      const interval = window.setInterval(() => {
+        if (attach()) {
+          window.clearInterval(interval);
+        }
+      }, 50);
+
+      return () => {
+        window.clearInterval(interval);
+        if (attachedForm) {
+          attachedForm.removeEventListener("input", handleFormChange);
+          attachedForm.removeEventListener("change", handleFormChange);
+        }
+        if (formEventTimeoutRef.current !== null) {
+          window.clearTimeout(formEventTimeoutRef.current);
+          formEventTimeoutRef.current = null;
+        }
+      };
+    }
 
     return () => {
-      form.removeEventListener("input", handleFormChange);
-      form.removeEventListener("change", handleFormChange);
+      if (attachedForm) {
+        attachedForm.removeEventListener("input", handleFormChange);
+        attachedForm.removeEventListener("change", handleFormChange);
+      }
       if (formEventTimeoutRef.current !== null) {
         window.clearTimeout(formEventTimeoutRef.current);
         formEventTimeoutRef.current = null;
@@ -441,46 +509,69 @@ function Package({
           />
         </div>
         <div className="gap-2">
-          <Label htmlFor="dimensions-length">Length</Label>
+          <Label htmlFor="dimensions-length">
+            Length <span className="text-red-500">*</span>
+          </Label>
           <Input
             id="dimensions-length"
             name={`package-${index}.dimensions.length`}
             type="number"
-            min="0"
+            min="1"
             placeholder="10"
             disabled={isPending}
             defaultValue={fields?.dimensions?.length}
             required
+            aria-invalid={!!fieldErrors.length}
+            onChange={handleNumberValidation("length")}
           />
+          {fieldErrors.length ? (
+            <p className="text-xs text-destructive">{fieldErrors.length}</p>
+          ) : null}
         </div>
         <div className="gap-2">
-          <Label htmlFor="dimensions-width">Width</Label>
+          <Label htmlFor="dimensions-width">
+            Width <span className="text-red-500">*</span>
+          </Label>
           <Input
             id="dimensions-width"
             name={`package-${index}.dimensions.width`}
             type="number"
-            min="0"
+            min="1"
             placeholder="6"
             disabled={isPending}
             defaultValue={fields?.dimensions?.width}
             required
+            aria-invalid={!!fieldErrors.width}
+            onChange={handleNumberValidation("width")}
           />
+          {fieldErrors.width ? (
+            <p className="text-xs text-destructive">{fieldErrors.width}</p>
+          ) : null}
         </div>
         <div className="gap-2">
-          <Label htmlFor="dimensions-height">Height</Label>
+          <Label htmlFor="dimensions-height">
+            Height <span className="text-red-500">*</span>
+          </Label>
           <Input
             id="dimensions-height"
             name={`package-${index}.dimensions.height`}
             type="number"
-            min="0"
+            min="1"
             placeholder="4"
             disabled={isPending}
             defaultValue={fields?.dimensions?.height}
             required
+            aria-invalid={!!fieldErrors.height}
+            onChange={handleNumberValidation("height")}
           />
+          {fieldErrors.height ? (
+            <p className="text-xs text-destructive">{fieldErrors.height}</p>
+          ) : null}
         </div>
         <div className="gap-2 col-span-3 md:col-span-1">
-          <Label htmlFor="dimensions-unit">Dimension Unit</Label>
+          <Label htmlFor="dimensions-unit">
+            Dimension Unit <span className="text-red-500">*</span>
+          </Label>
           <Select
             name={`package-${index}.dimensions.unit`}
             disabled={isPending}
@@ -496,20 +587,29 @@ function Package({
           </Select>
         </div>
         <div className="gap-2 col-span-1">
-          <Label htmlFor="weight-value">Weight</Label>
+          <Label htmlFor="weight-value">
+            Weight <span className="text-red-500">*</span>
+          </Label>
           <Input
             id="weight-value"
             name={`package-${index}.weight.value`}
             type="number"
-            min="0"
+            min="1"
             placeholder="16"
             required
             disabled={isPending}
             defaultValue={fields?.weight?.value}
+            aria-invalid={!!fieldErrors.weight}
+            onChange={handleNumberValidation("weight")}
           />
+          {fieldErrors.weight ? (
+            <p className="text-xs text-destructive">{fieldErrors.weight}</p>
+          ) : null}
         </div>
         <div className="gap-2 col-span-2 md:col-span-1">
-          <Label htmlFor="weight-unit">Weight unit</Label>
+          <Label htmlFor="weight-unit">
+            Weight Unit <span className="text-red-500">*</span>
+          </Label>
           <Select
             name={`package-${index}.weight.unit`}
             disabled={isPending}
