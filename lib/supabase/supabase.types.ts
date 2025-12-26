@@ -16,7 +16,6 @@ export type Database = {
     Tables: {
       addresses: {
         Row: {
-          address_kind?: string;
           address_line1: string;
           address_line2: string | null;
           city: string;
@@ -35,7 +34,6 @@ export type Database = {
           user_id: string;
         };
         Insert: {
-          address_kind?: string;
           address_line1: string;
           address_line2?: string | null;
           city: string;
@@ -54,7 +52,6 @@ export type Database = {
           user_id: string;
         };
         Update: {
-          address_kind?: string;
           address_line1?: string;
           address_line2?: string | null;
           city?: string;
@@ -197,6 +194,130 @@ export type Database = {
           confirmation: string | null;
           created_at: string;
           deleted_at: string | null;
+          height: number;
+          id: string;
+          insurance_cost: number | null;
+          insurance_options: Json | null;
+          is_address_validated: boolean;
+          label_data_base64: string | null;
+          length: number;
+          order_id: number | null;
+          order_number: string | null;
+          package_code: string | null;
+          paid_at: string | null;
+          service_code: string;
+          ship_from_id: number | null;
+          ship_to_snapshot: Json;
+          shipment_cost: number | null;
+          shipment_id: number;
+          to_address_id: string | null;
+          total_insurance_cost: number;
+          total_shipment_cost: number;
+          tracking_number: string | null;
+          units: Database["public"]["Enums"]["package_dimension_units"];
+          user_id: string;
+          voided_at: string | null;
+          weight_unit: string;
+          weight_value: number;
+          width: number;
+        };
+        Insert: {
+          advanced_options?: Json | null;
+          carrier_code: string;
+          confirmation?: string | null;
+          created_at?: string;
+          deleted_at?: string | null;
+          height?: number;
+          id?: string;
+          insurance_cost?: number | null;
+          insurance_options?: Json | null;
+          is_address_validated?: boolean;
+          label_data_base64?: string | null;
+          length?: number;
+          order_id?: number | null;
+          order_number?: string | null;
+          package_code?: string | null;
+          paid_at?: string | null;
+          service_code: string;
+          ship_from_id?: number | null;
+          ship_to_snapshot: Json;
+          shipment_cost?: number | null;
+          shipment_id: number;
+          to_address_id?: string | null;
+          total_insurance_cost?: number;
+          total_shipment_cost?: number;
+          tracking_number?: string | null;
+          units?: Database["public"]["Enums"]["package_dimension_units"];
+          user_id: string;
+          voided_at?: string | null;
+          weight_unit: string;
+          weight_value: number;
+          width?: number;
+        };
+        Update: {
+          advanced_options?: Json | null;
+          carrier_code?: string;
+          confirmation?: string | null;
+          created_at?: string;
+          deleted_at?: string | null;
+          height?: number;
+          id?: string;
+          insurance_cost?: number | null;
+          insurance_options?: Json | null;
+          is_address_validated?: boolean;
+          label_data_base64?: string | null;
+          length?: number;
+          order_id?: number | null;
+          order_number?: string | null;
+          package_code?: string | null;
+          paid_at?: string | null;
+          service_code?: string;
+          ship_from_id?: number | null;
+          ship_to_snapshot?: Json;
+          shipment_cost?: number | null;
+          shipment_id?: number;
+          to_address_id?: string | null;
+          total_insurance_cost?: number;
+          total_shipment_cost?: number;
+          tracking_number?: string | null;
+          units?: Database["public"]["Enums"]["package_dimension_units"];
+          user_id?: string;
+          voided_at?: string | null;
+          weight_unit?: string;
+          weight_value?: number;
+          width?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "shipping_labels_ship_from_id_fkey";
+            columns: ["ship_from_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["warehouseId"];
+          },
+          {
+            foreignKeyName: "shipping_labels_to_address_id_fkey";
+            columns: ["to_address_id"];
+            isOneToOne: false;
+            referencedRelation: "addresses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "shipping_labels_user_id_fkey1";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      shipping_labels_v1: {
+        Row: {
+          advanced_options: Json | null;
+          carrier_code: string;
+          confirmation: string | null;
+          created_at: string;
+          deleted_at: string | null;
           from_address_id: string | null;
           height: number;
           id: string;
@@ -211,7 +332,7 @@ export type Database = {
           paid_at: string | null;
           service_code: string;
           ship_from_id: number | null;
-          ship_from_snapshot?: Json | null;
+          ship_from_snapshot: Json | null;
           ship_to_snapshot: Json;
           shipment_cost: number | null;
           shipment_id: number;
@@ -298,28 +419,28 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "shipping_labels_from_address_id_fkey";
+            foreignKeyName: "shipping_labels_v1_from_address_id_fkey";
             columns: ["from_address_id"];
             isOneToOne: false;
             referencedRelation: "addresses";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "shipping_labels_ship_from_id_fkey";
+            foreignKeyName: "shipping_labels_v1_ship_from_id_fkey";
             columns: ["ship_from_id"];
             isOneToOne: false;
             referencedRelation: "warehouses";
             referencedColumns: ["warehouseId"];
           },
           {
-            foreignKeyName: "shipping_labels_to_address_id_fkey";
+            foreignKeyName: "shipping_labels_v1_to_address_id_fkey";
             columns: ["to_address_id"];
             isOneToOne: false;
             referencedRelation: "addresses";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "shipping_labels_user_id_fkey1";
+            foreignKeyName: "shipping_labels_v1_user_id_fkey1";
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
