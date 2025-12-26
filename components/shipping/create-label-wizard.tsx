@@ -100,8 +100,6 @@ export default function CreateLabelWizard({
     [shippingSteps]
   );
 
-  console.log(shippingSteps);
-
   const isValidInputs = useMemo(
     () => shippingSteps.slice(0, 2).every(({ state }) => state === "complete"),
     [shippingSteps]
