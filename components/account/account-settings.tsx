@@ -2,6 +2,7 @@ import type { UserProfile } from "@/lib/auth";
 import NameChange from "./name-change";
 import EmailChange from "./email-change";
 import PasswordChange from "./password-change";
+import ShipFromRecord from "./ship-from-record";
 
 type AccountSettingsProps = {
   profile: UserProfile;
@@ -16,6 +17,8 @@ export function AccountSettings({ profile }: AccountSettingsProps) {
           Update your personal information, email, and password.
         </p>
       </header>
+
+      <ShipFromRecord warehouse={profile.warehouses} />
 
       <NameChange profile={profile} />
 

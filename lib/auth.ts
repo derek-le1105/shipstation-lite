@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/supabase.types";
+import { WarehouseRecord } from "./supabase/warehouses";
 
 export type UserProfile = {
   id: string;
@@ -9,47 +11,54 @@ export type UserProfile = {
   created_at: string;
   updated_at: string;
   warehouse_id: number | null;
+  warehouses?: WarehouseRecord;
+};
+
+type WarehouseRow = Database["public"]["Tables"]["warehouses"]["Row"];
+type ProfileWithWarehouse = UserProfile & {
+  warehouses: WarehouseRecord | null;
 };
 
 async function ensureProfileRecord(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
+  userId: string
+): Promise<UserProfile>;
+async function ensureProfileRecord(
+  supabase: SupabaseClient<Database>,
   userId: string,
-  email: string | null,
-  fullName: string | null
+  getWarehouseForeignTable: boolean
+): Promise<ProfileWithWarehouse>;
+async function ensureProfileRecord(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  getWarehouseForeignTable?: boolean
 ) {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", userId)
-    .maybeSingle();
+  const { data, error } = getWarehouseForeignTable
+    ? await supabase
+        .from("profiles")
+        .select("*, warehouses(*)")
+        .eq("id", userId)
+        .maybeSingle()
+    : await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle();
 
   if (error) {
     throw error;
   }
 
-  if (data) {
-    return data as UserProfile;
+  if (!data) {
+    throw new Error("Profile not found for current user.");
   }
 
-  const { data: inserted, error: insertError } = await supabase
-    .from("profiles")
-    .insert({
-      id: userId,
-      email,
-      full_name: fullName,
-      role: "user",
-    })
-    .select("*")
-    .single();
-
-  if (insertError) {
-    throw insertError;
-  }
-
-  return inserted as UserProfile;
+  return data as UserProfile;
 }
 
-export async function getCurrentProfile(): Promise<UserProfile | null> {
+export async function getCurrentProfile(
+  getWarehouseForeignTable?: boolean
+): Promise<UserProfile | null> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -60,14 +69,11 @@ export async function getCurrentProfile(): Promise<UserProfile | null> {
     return null;
   }
 
-  const email = user.email ?? null;
-
-  const fullName =
-    (typeof user.user_metadata?.full_name === "string"
-      ? (user.user_metadata.full_name as string)
-      : null) ?? null;
-
-  return ensureProfileRecord(supabase, user.id, email, fullName);
+  return ensureProfileRecord(
+    supabase,
+    user.id,
+    getWarehouseForeignTable ?? false
+  );
 }
 
 export async function requireUserProfile(): Promise<UserProfile> {

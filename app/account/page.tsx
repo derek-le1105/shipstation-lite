@@ -7,7 +7,8 @@ export const metadata = {
 };
 
 export default async function AccountPage() {
-  const profile = await getCurrentProfile();
+  const profile = await getCurrentProfile(true);
+
   if (!profile) {
     redirect("/auth/login");
   }
