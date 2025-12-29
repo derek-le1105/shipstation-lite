@@ -13,7 +13,7 @@ import { Button } from "../ui/button";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { validateAddress } from "@/lib/fedex/lib";
-import { FileWarning, Loader2, TriangleAlert } from "lucide-react";
+import { FileWarning, Loader2 } from "lucide-react";
 import { US_STATE_CODES } from "@/lib/shipping-label/state-codes";
 import { Switch } from "../ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";

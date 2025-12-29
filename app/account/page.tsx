@@ -7,13 +7,14 @@ export const metadata = {
 };
 
 export default async function AccountPage() {
-  const profile = await getCurrentProfile();
+  const profile = await getCurrentProfile(true);
+
   if (!profile) {
     redirect("/auth/login");
   }
 
   return (
-    <div className="flex w-full justify-center px-4 py-8">
+    <div className="flex w-full justify-center md:py-8">
       <AccountSettings profile={profile} />
     </div>
   );
