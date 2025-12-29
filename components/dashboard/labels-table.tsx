@@ -29,7 +29,6 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -50,21 +49,14 @@ import {
 } from "@/components/ui/table";
 
 import {
-  cn,
   exportToCSV,
   exportToExcel,
   exportToJson,
-  formatPhoneNumber,
   printLabels,
 } from "@/lib/utils";
 import { FEDEX_SERVICES, generateTrackingLink } from "@/lib/shipstation/fedex";
 import { ShippingLabelRecord } from "@/lib/supabase/shipping-labels";
 import { toast } from "sonner";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "../ui/hover-card";
 import { StatusBadge } from "./status-badge";
 import {
   AlertDialog,
@@ -77,13 +69,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../ui/alert-dialog";
-import {
-  bulkUpdatePaidStatus,
-  bulkVoidShippingLabels,
-  updatePaidStatus,
-  voidShippingLabel,
-} from "@/lib/actions/labels";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { bulkUpdatePaidStatus, updatePaidStatus } from "@/lib/actions/labels";
 import {
   deleteShippingLabel,
   voidShippingLabelAction,
