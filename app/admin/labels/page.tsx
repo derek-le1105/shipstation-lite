@@ -1,4 +1,4 @@
-import { LabelsTable } from "@/components/dashboard/labels-table";
+import { LabelsTable } from "@/components/labels/labels-table";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { requireAdminProfile } from "@/lib/auth";
 import { listAllShippingLabels } from "@/lib/supabase/shipping-labels";

@@ -57,7 +57,7 @@ import {
 import { FEDEX_SERVICES, generateTrackingLink } from "@/lib/shipstation/fedex";
 import { ShippingLabelRecord } from "@/lib/supabase/shipping-labels";
 import { toast } from "sonner";
-import { StatusBadge } from "./status-badge";
+import { StatusBadge } from "../dashboard/status-badge";
 import {
   AlertDialog,
   AlertDialogAction,
