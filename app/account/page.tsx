@@ -14,7 +14,7 @@ export default async function AccountPage() {
   }
 
   return (
-    <div className="flex w-full justify-center px-4 py-8">
+    <div className="flex w-full justify-center md:py-8">
       <AccountSettings profile={profile} />
     </div>
   );

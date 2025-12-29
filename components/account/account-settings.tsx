@@ -10,7 +10,7 @@ type AccountSettingsProps = {
 
 export function AccountSettings({ profile }: AccountSettingsProps) {
   return (
-    <div className="w-full max-w-3xl space-y-8">
+    <div className="w-full max-w-3xl space-y-6">
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">Account</h1>
         <p className="text-sm text-muted-foreground">

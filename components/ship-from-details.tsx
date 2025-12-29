@@ -20,7 +20,7 @@ export default function ShipFromDetails({ warehouse }: Props) {
     .filter(Boolean)
     .join(", ");
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className="grid gap-2 md:grid-cols-2">
       <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
         <p className="text-sm font-semibold">Address</p>
         <div className="mt-2 space-y-1 text-sm text-muted-foreground">
