@@ -44,6 +44,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
+import ShipFromPopover from "./ship-from-popover";
 
 type CreateLabelWizardProps = {
   shipFrom: WarehouseRecord;
@@ -175,7 +176,14 @@ export default function CreateLabelWizard({
             <Separator />
 
             <div className="space-y-2">
-              <h2 className="text-lg font-semibold">{currentStep.title}</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">{currentStep.title}</h2>
+                {stepIndex === 0 ? (
+                  <ShipFromPopover warehouse={shipFrom} />
+                ) : (
+                  <></>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground">
                 {currentStep.description}
               </p>
