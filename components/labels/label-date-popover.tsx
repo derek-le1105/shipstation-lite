@@ -5,19 +5,70 @@ import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Label } from "../ui/label";
 import { useState } from "react";
 import { DatePicker } from "../ui/date-picker";
+import { Table } from "@tanstack/react-table";
 
 type RadioOptions =
   | "today"
   | "last7"
   | "last30"
   | "last90"
-  | "last 12m"
+  | "last12m"
   | "custom";
 
-export default function LabelDatePopover() {
-  const [startDate, setStateDate] = useState<Date>();
-  const [endDate, setEndDate] = useState<Date>();
+export default function LabelDatePopover<T>({ table }: { table: Table<T> }) {
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [selected, setSelected] = useState<RadioOptions | undefined>(undefined);
+
+  const createdAtFilter = table.getColumn("created_at");
+
+  const handleSelectedChange = (value: RadioOptions) => {
+    const from = new Date();
+    from.setHours(0, 0, 0, 0);
+    const to = new Date();
+
+    setSelected(value as RadioOptions);
+    switch (value) {
+      case "today":
+        break;
+      case "last7":
+        from.setDate(from.getDate() - 7);
+        break;
+      case "last30":
+        from.setDate(from.getDate() - 30);
+        break;
+      case "last90":
+        from.setDate(from.getDate() - 90);
+        break;
+      case "last12m":
+        from.setFullYear(from.getFullYear() - 1);
+        break;
+      default:
+        break;
+    }
+    if (value !== "custom") createdAtFilter?.setFilterValue({ from, to });
+  };
+
+  const handleStartDateSet = (newDate: Date) => {
+    setStartDate(newDate);
+    createdAtFilter?.setFilterValue({ from: newDate, to: endDate });
+  };
+
+  const handleEndDateSet = (newDate: Date) => {
+    setEndDate(newDate);
+    createdAtFilter?.setFilterValue({ from: startDate, to: newDate });
+  };
+
+  const handleStartDateClear = () => {
+    setStartDate(undefined);
+    createdAtFilter?.setFilterValue({ from: undefined, to: endDate });
+  };
+
+  const handleEndDateClear = () => {
+    setEndDate(undefined);
+    createdAtFilter?.setFilterValue({ from: startDate, to: undefined });
+  };
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -28,10 +79,7 @@ export default function LabelDatePopover() {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-full">
         <div className="flex flex-col gap-4">
-          <RadioGroup
-            value={selected}
-            onValueChange={(value) => setSelected(value as RadioOptions)}
-          >
+          <RadioGroup value={selected} onValueChange={handleSelectedChange}>
             <div className="flex items-center gap-3">
               <RadioGroupItem value="today" id="today" />
               <Label htmlFor="today">Today</Label>
@@ -60,12 +108,30 @@ export default function LabelDatePopover() {
           {selected === "custom" && (
             <div className="flex flex-col gap-2">
               <div className="flex flex-col items-start gap-2">
-                <Label>Starting</Label>
-                <DatePicker date={startDate} setDate={setStateDate} />
+                <div className="flex items-center justify-between w-full">
+                  <Label>Starting</Label>
+                  <Button
+                    variant="link"
+                    className="p-0 h-full"
+                    onClick={handleStartDateClear}
+                  >
+                    Clear
+                  </Button>
+                </div>
+                <DatePicker date={startDate} setDate={handleStartDateSet} />
               </div>
               <div className="flex flex-col items-start gap-2">
-                <Label>Ending</Label>
-                <DatePicker date={endDate} setDate={setEndDate} />
+                <div className="flex items-center justify-between w-full">
+                  <Label>Ending</Label>
+                  <Button
+                    variant="link"
+                    className="p-0 h-full"
+                    onClick={handleEndDateClear}
+                  >
+                    Clear
+                  </Button>
+                </div>
+                <DatePicker date={endDate} setDate={handleEndDateSet} />
               </div>
             </div>
           )}
