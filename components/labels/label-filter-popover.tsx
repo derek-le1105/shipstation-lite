@@ -960,7 +960,6 @@ function UserFilter<T>({
   table: Table<T>;
 }) {
   const uniqueUserNames = useMemo(() => {
-    console.log("rerender!");
     return Array.from(
       new Set(
         table.getCoreRowModel().flatRows.map((row) => {
