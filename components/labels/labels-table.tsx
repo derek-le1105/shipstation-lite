@@ -84,6 +84,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../ui/dialog";
+import LabelFilterPopover from "./label-filter-popover";
+import LabelDatePopover from "./label-date-popover";
 
 type ColumnOptions = {
   showUserId?: boolean;
@@ -125,17 +127,21 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
           {
             accessorKey: "profiles.full_name",
             header: "User",
+            meta: { label: "User" },
           } satisfies ColumnDef<T>,
         ] as ColumnDef<T>[])
       : []),
     {
       accessorKey: "order_number",
       header: "Order #",
+      meta: { label: "Order Number" },
       cell: ({ row }) => <div>{row.getValue("order_number")}</div>,
+      filterFn: "includesString",
     },
     {
       accessorKey: "service_code",
       header: "Service",
+      meta: { label: "Service" },
       cell: ({ row }) => (
         <div className="font-medium">
           {
@@ -145,26 +151,32 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
           }
         </div>
       ),
+      filterFn: "includesString",
     },
     {
       id: "delivery_city",
       header: "Delivery City",
+      meta: { label: "Delivery City" },
       accessorFn: (row) => {
         const { ship_to_snapshot } = row as ShippingLabelRecord;
         return `${ship_to_snapshot.city}, ${ship_to_snapshot.state}`;
       },
+      filterFn: "includesString",
     },
     {
       id: "delivery_zip",
       header: "Delivery Zip",
+      meta: { label: "Delivery Zip" },
       accessorFn: (row) => {
         const { ship_to_snapshot } = row as ShippingLabelRecord;
         return ship_to_snapshot.postalCode;
       },
+      filterFn: "includesString",
     },
     {
       accessorKey: "created_at",
       header: () => <div className="text-center">Created At</div>,
+      meta: { label: "Created At" },
       cell: ({ row }) => {
         const date = new Date(row.getValue("created_at"));
 
@@ -183,28 +195,49 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
           </div>
         );
       },
+      filterFn: (row, columnId, value) => {
+        const rowDate = new Date(row.getValue(columnId));
+        const from = value?.from ? new Date(value.from) : null;
+        const to = value?.to ? new Date(value.to) : null;
+        if (from && rowDate <= from) return false;
+        if (to && rowDate >= to) return false;
+        return true;
+      },
     },
     {
       accessorKey: "voided_at",
       header: "Active?",
+      meta: { label: "Status" },
       cell: ({ row }) => {
         const variant = row.getValue("voided_at") ? "destructive" : "success";
         const title = row.getValue("voided_at") ? "Voided" : "Active";
         return <StatusBadge variant={variant} title={title} />;
       },
+      filterFn: (row, columnId, filterValue) => {
+        const voidedAt = row.getValue(columnId);
+        if (filterValue === "active") return !voidedAt;
+        else return !!voidedAt;
+      },
     },
     {
       accessorKey: "paid_at",
       header: "Paid?",
+      meta: { label: "Paid" },
       cell: ({ row }) => {
         const variant = row.getValue("paid_at") ? "success" : "destructive";
         const title = row.getValue("paid_at") ? "Paid" : "Unpaid";
         return <StatusBadge variant={variant} title={title} />;
       },
+      filterFn: (row, columnId, filterValue) => {
+        const paidAt = row.getValue(columnId);
+        if (filterValue === "paid") return !!paidAt;
+        else return !paidAt;
+      },
     },
     {
       accessorKey: "tracking_number",
       header: "Tracking #",
+      meta: { label: "Tracking Number" },
       cell: ({ row }) => {
         return (
           <div className="font-medium hover:underline">
@@ -218,10 +251,84 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
           </div>
         );
       },
+      filterFn: "includesString",
     },
     {
       id: "package_dimensions", // Use 'id' instead of 'accessorKey' for virtual columns
       header: () => <div className="text-center">Package Dimensions</div>,
+      meta: { label: "Package Dimensions" },
+      filterFn: (row, _columnId, value) => {
+        const { length, width, height, units, weight_value, weight_unit } =
+          row.original as ShippingLabelRecord;
+        const {
+          minL,
+          maxL,
+          minW,
+          maxW,
+          minH,
+          maxH,
+          minWeight,
+          maxWeight,
+          dimensionUnit = "inches",
+          weightUnit = "pounds",
+        }: {
+          minL?: number;
+          maxL?: number;
+          minW?: number;
+          maxW?: number;
+          minH?: number;
+          maxH?: number;
+          minWeight?: number;
+          maxWeight?: number;
+          dimensionUnit?: "inches" | "centimeters";
+          weightUnit?: "pounds" | "ounces" | "grams";
+        } = value ?? {};
+
+        const convertDimension = (
+          valueToConvert: number,
+          from: "inches" | "centimeters",
+          to: "inches" | "centimeters"
+        ) => {
+          if (from === to) return valueToConvert;
+          return from === "inches"
+            ? valueToConvert * 2.54
+            : valueToConvert / 2.54;
+        };
+        const convertWeight = (
+          valueToConvert: number,
+          from: "pounds" | "ounces" | "grams",
+          to: "pounds" | "ounces" | "grams"
+        ) => {
+          if (from === to) return valueToConvert;
+          const toGrams =
+            from === "grams"
+              ? valueToConvert
+              : from === "ounces"
+              ? valueToConvert * 28.349523125
+              : valueToConvert * 453.59237;
+          if (to === "grams") return toGrams;
+          return to === "ounces" ? toGrams / 28.349523125 : toGrams / 453.59237;
+        };
+
+        const lengthValue = convertDimension(length, units, dimensionUnit);
+        const widthValue = convertDimension(width, units, dimensionUnit);
+        const heightValue = convertDimension(height, units, dimensionUnit);
+        const weightValue = convertWeight(
+          weight_value,
+          weight_unit as "pounds" | "ounces" | "grams",
+          weightUnit
+        );
+
+        if (minL !== undefined && lengthValue < minL) return false;
+        if (maxL !== undefined && lengthValue > maxL) return false;
+        if (minW !== undefined && widthValue < minW) return false;
+        if (maxW !== undefined && widthValue > maxW) return false;
+        if (minH !== undefined && heightValue < minH) return false;
+        if (maxH !== undefined && heightValue > maxH) return false;
+        if (minWeight !== undefined && weightValue < minWeight) return false;
+        if (maxWeight !== undefined && weightValue > maxWeight) return false;
+        return true;
+      },
       cell: ({ row }) => {
         const original = row.original as ShippingLabelRecord;
         const { length, width, height, units, weight_value, weight_unit } =
@@ -241,6 +348,7 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
     {
       accessorKey: "total_shipment_cost",
       header: () => <div>Total Cost</div>,
+      meta: { label: "Total Cost" },
       cell: ({ row }) => {
         const shipmentCost = parseFloat(row.getValue("total_shipment_cost"));
         const insuranceCost = (row.original as ShippingLabelRecord)
@@ -251,6 +359,7 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
         }).format(shipmentCost + insuranceCost);
         return <div className="font-medium">{formatted}</div>;
       },
+      filterFn: "inNumberRange",
     },
     {
       id: "actions",
@@ -314,7 +423,9 @@ export function LabelsTable<T>({
 }: LabelsTableProps<T>) {
   const router = useRouter();
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([
+    { id: "voided_at", value: "active" },
+  ]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
   const [globalFilter, setGlobalFilter] = useState("");
@@ -339,6 +450,8 @@ export function LabelsTable<T>({
       globalFilter,
     },
   });
+
+  console.log(columnFilters);
 
   const handlePrintClick = async () => {
     const selectedLabelsPDFs = table
@@ -561,7 +674,8 @@ export function LabelsTable<T>({
               )}
             </>
           )}
-
+          <LabelDatePopover table={table} />
+          <LabelFilterPopover table={table} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
