@@ -115,19 +115,13 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
       enableSorting: false,
       enableHiding: false,
     },
-    // {
-    //   accessorKey: "shipment_id",
-    //   header: "Shipment ID",
-    //   cell: ({ row }) => (
-    //     <div className="font-medium">{row.getValue("shipment_id")}</div>
-    //   ),
-    // },
     ...(options?.showUserId
       ? ([
           {
             accessorKey: "profiles.full_name",
             header: "User",
             meta: { label: "User" },
+            filterFn: "includesString",
           } satisfies ColumnDef<T>,
         ] as ColumnDef<T>[])
       : []),

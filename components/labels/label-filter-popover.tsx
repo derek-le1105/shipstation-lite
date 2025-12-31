@@ -16,8 +16,10 @@ import {
 } from "../ui/select";
 import { capitalizeWord } from "@/lib/utils";
 import { Separator } from "../ui/separator";
+import { ShippingLabelWithProfile } from "@/lib/supabase/shipping-labels";
 
 export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
+  const [userName, setUserName] = useState<string>("");
   const [orderNumber, setOrderNumber] = useState<string>("");
   const [service, setService] = useState<string>("");
   const [deliveryCity, setDeliveryCity] = useState<string>("");
@@ -76,6 +78,9 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
     setFilters(filters.filter((f) => f.key !== key));
     table.setColumnFilters((prev) => prev.filter((f) => f.id !== key));
     switch (key) {
+      case "profiles_full_name":
+        setUserName("");
+        break;
       case "paid_at":
         setPaid(undefined);
         break;
@@ -179,6 +184,7 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
       return Number.isFinite(numberValue) ? numberValue : undefined;
     };
     const next: ColumnFiltersState = [];
+    if (userName) next.push({ id: "profiles_full_name", value: userName });
     if (orderNumber) next.push({ id: "order_number", value: orderNumber });
     if (service) next.push({ id: "service_code", value: service });
     if (deliveryCity) next.push({ id: "delivery_city", value: deliveryCity });
@@ -211,6 +217,7 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
     const getValue = (id: string) =>
       columnFilters.find((filter) => filter.id === id)?.value;
 
+    const nextUsername = (getValue("profiles_full_name") as string) ?? "";
     const nextOrderNumber = (getValue("order_number") as string) ?? "";
     const nextService = (getValue("service_code") as string) ?? "";
     const nextDeliveryCity = (getValue("delivery_city") as string) ?? "";
@@ -243,6 +250,7 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
       weightUnit: "pounds",
     };
 
+    setUserName(nextUsername);
     setOrderNumber(nextOrderNumber);
     setService(nextService);
     setDeliveryCity(nextDeliveryCity);
@@ -282,6 +290,13 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
     setWeightUnit(nextDimensions.weightUnit ?? "pounds");
 
     const nextSelected = [];
+    if (nextUsername) {
+      nextSelected.push({
+        label: "User is",
+        key: "profiles_full_name",
+        value: nextUsername,
+      });
+    }
     if (nextOrderNumber) {
       nextSelected.push({
         label: "Order Number is",
@@ -408,6 +423,14 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
 
             <div className="border-r border-border px-4 py-3">
               <div className="mb-3 text-sm text-muted-foreground">
+                {selected === "User" && (
+                  <UserFilter
+                    userName={userName}
+                    setUserName={setUserName}
+                    handleFilterChange={handleFilterChange}
+                    table={table}
+                  />
+                )}
                 {selected === "Order Number" && (
                   <>
                     <Label>Order Number</Label>
@@ -921,6 +944,57 @@ function TotalCostFilter() {
           <MoneyInput handleCostChange={handleCostChange} />
         </div>
       )}
+    </div>
+  );
+}
+
+function UserFilter<T>({
+  userName,
+  setUserName,
+  handleFilterChange,
+  table,
+}: {
+  userName: string;
+  setUserName: (value: string) => void;
+  handleFilterChange: (label: string, key: string, value: string) => void;
+  table: Table<T>;
+}) {
+  const uniqueUserNames = useMemo(() => {
+    console.log("rerender!");
+    return Array.from(
+      new Set(
+        table.getCoreRowModel().flatRows.map((row) => {
+          const { profiles } = row.original as ShippingLabelWithProfile;
+          return profiles?.full_name ?? "";
+        })
+      )
+    );
+  }, [table]);
+
+  return (
+    <div>
+      <Label>User</Label>
+      <Select
+        value={userName}
+        onValueChange={(value) => {
+          const nextValue = value;
+          setUserName(nextValue);
+          handleFilterChange("User is", "profiles_full_name", nextValue);
+        }}
+      >
+        <SelectTrigger className="w-full">
+          <SelectValue placeholder="User Name" />
+        </SelectTrigger>
+        <SelectContent>
+          {uniqueUserNames.map((name, idx) => {
+            return (
+              <SelectItem key={name + idx} value={name}>
+                {name}
+              </SelectItem>
+            );
+          })}
+        </SelectContent>
+      </Select>
     </div>
   );
 }
