@@ -18,7 +18,11 @@ import { capitalizeWord } from "@/lib/utils";
 import { Separator } from "../ui/separator";
 import { ShippingLabelWithProfile } from "@/lib/supabase/shipping-labels";
 
-type CostFilter = { type: "exact" | "range"; min: string; max: string };
+type CostFilter = {
+  type: "exact" | "range";
+  min: string | undefined;
+  max: string | undefined;
+};
 
 const buildCostFilterSummary = (
   costFilter: CostFilter,
@@ -42,6 +46,7 @@ const buildCostFilterSummary = (
 };
 
 export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
+  const [open, setOpen] = useState(false);
   const [userName, setUserName] = useState<string>("");
   const [orderNumber, setOrderNumber] = useState<string>("");
   const [service, setService] = useState<string>("");
@@ -86,6 +91,7 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
   >([]);
 
   const handleFilterChange = (label: string, key: string, value: string) => {
+    debugger;
     const newFilters = [...filters];
     const filterIndex = newFilters.findIndex((f) => f.key === key);
     if (!value) {
@@ -207,6 +213,8 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
         weightMax
     );
 
+  const hasCostFilterValues = () => Boolean(costFilter.min || costFilter.max);
+
   const buildColumnFilters = (): ColumnFiltersState => {
     const toNumber = (value: string) => {
       if (!value) return undefined;
@@ -224,7 +232,8 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
     if (paid) next.push({ id: "paid_at", value: paid });
     if (trackingNumber)
       next.push({ id: "tracking_number", value: trackingNumber });
-    if (costFilter) next.push({ id: "total_shipment_cost", value: costFilter });
+    if (hasCostFilterValues())
+      next.push({ id: "total_shipment_cost", value: costFilter });
     const dimensionValue = {
       minL: toNumber(lengthMin),
       maxL: toNumber(lengthMax),
@@ -283,8 +292,6 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
     };
     const nextCostFilter = (getValue("total_shipment_cost") as CostFilter) ?? {
       type: "exact",
-      min: "",
-      max: "",
     };
 
     setUserName(nextUsername);
@@ -432,7 +439,7 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
   }, [columnFilters]);
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button size="sm">
           <Filter />
@@ -867,6 +874,7 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
               <Button
                 onClick={() => {
                   table.setColumnFilters(buildColumnFilters());
+                  setOpen(false);
                 }}
               >
                 Apply
@@ -960,7 +968,7 @@ function TotalCostFilter({
     });
 
     setCostFilter({ ...costFilter, [key]: value });
-    handleFilterChange("Total Cost", "total_cost_shipment", costFilterSummary);
+    handleFilterChange("Total Cost", "total_shipment_cost", costFilterSummary);
   };
 
   return (
@@ -985,7 +993,7 @@ function TotalCostFilter({
           startAdornment="$"
           type="number"
           placeholder="0.00"
-          value={costFilter.min}
+          value={costFilter.min ?? 0}
           onChange={(e) => {
             handleCostFilter("min", e.target.value);
           }}
@@ -997,7 +1005,7 @@ function TotalCostFilter({
             startAdornment="$"
             type="number"
             placeholder="0.00"
-            value={costFilter.min}
+            value={costFilter.min ?? 0}
             onChange={(e) => {
               handleCostFilter("min", e.target.value);
             }}
@@ -1008,7 +1016,7 @@ function TotalCostFilter({
             startAdornment="$"
             type="number"
             placeholder="0.00"
-            value={costFilter.max}
+            value={costFilter.max ?? 0}
             min={costFilter.min}
             onChange={(e) => {
               handleCostFilter("max", e.target.value);
