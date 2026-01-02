@@ -75,4 +75,23 @@ const ThemeSwitcher = () => {
   );
 };
 
-export { ThemeSwitcher };
+const AccountThemeSwitcher = ({ theme }: { theme?: string }) => {
+  if (!(theme === "dark" || theme === "light")) return null;
+
+  if (theme === "dark")
+    return (
+      <>
+        <Sun className="mr-2 h-4 w-4" />
+        <div>Light mode</div>
+      </>
+    );
+  else if (theme === "light")
+    return (
+      <>
+        <Moon className="mr-2 h-4 w-4" />
+        <div>Dark mode</div>
+      </>
+    );
+};
+
+export { ThemeSwitcher, AccountThemeSwitcher };
