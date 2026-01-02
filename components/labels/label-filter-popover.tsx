@@ -885,6 +885,7 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
                 setWeightUnit("pounds");
                 setFilters([]);
                 table.setColumnFilters([]);
+                setOpen(false);
               }}
             >
               Clear
