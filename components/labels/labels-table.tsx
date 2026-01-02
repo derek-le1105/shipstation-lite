@@ -464,8 +464,6 @@ export function LabelsTable<T>({
     },
   });
 
-  console.log(columnFilters);
-
   const handlePrintClick = async () => {
     const selectedLabelsPDFs = table
       .getSelectedRowModel()
@@ -580,7 +578,7 @@ export function LabelsTable<T>({
 
   return (
     <div className="w-full">
-      <div className="flex justify-between gap-2 pb-4 max-sm:flex-col sm:items-center">
+      <div className="flex justify-between gap-2 pb-2 max-sm:flex-col sm:items-center">
         <div className="flex items-center space-x-2">
           <Input
             placeholder="Search all columns..."
@@ -691,7 +689,7 @@ export function LabelsTable<T>({
           <LabelFilterPopover table={table} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button variant="outline">
                 <DownloadIcon className="mr-2 h-4 w-4" />
                 Export
               </Button>
@@ -766,7 +764,7 @@ export function LabelsTable<T>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
+      <div className="flex items-center justify-end space-x-2 py-2">
         <div className="text-muted-foreground flex-1 text-sm">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected.
