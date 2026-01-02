@@ -8,10 +8,23 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { UserProfile } from "@/lib/auth";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NavSecondary } from "./nav-secondary";
+
+import WHITELOGO from "@/public/assets/WHITE LOGO.png";
+import BLACKLOGO from "@/public/assets/UNS-LOGO.png";
+
+import Image from "next/image";
+import Link from "next/link";
+import { useTheme } from "next-themes";
 
 export interface Navigation {
   /**
@@ -97,6 +110,12 @@ const NAV_SECONDARY: SecondaryNavigation[] = [
 ];
 
 export function AppSidebar({ profile }: { profile: UserProfile }) {
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const { state, toggleSidebar } = useSidebar();
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const navMain = useMemo(() => {
     return NAV_MAIN.filter((item) => {
       if (!item.requiredRole) return true;
@@ -112,8 +131,35 @@ export function AppSidebar({ profile }: { profile: UserProfile }) {
     }),
     [profile]
   );
+  const logoSrc = mounted && resolvedTheme === "light" ? BLACKLOGO : WHITELOGO;
   return (
-    <Sidebar className="top-(--header-height) h-[calc(100svh-var(--header-height))]!">
+    <Sidebar collapsible="icon">
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            {state === "collapsed" ? (
+              <SidebarMenuButton
+                tooltip={"Open sidebar"}
+                onClick={toggleSidebar}
+                className="justify-center"
+              >
+                {mounted && (
+                  <Image src={logoSrc} alt="white-logo" height={30} />
+                )}
+              </SidebarMenuButton>
+            ) : (
+              <div className="flex items-center justify-between gap-2 px-2">
+                <Link href="/dashboard" className="flex items-center">
+                  {mounted && (
+                    <Image src={logoSrc} alt="white-logo" height={30} />
+                  )}
+                </Link>
+                <SidebarTrigger />
+              </div>
+            )}
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
       <SidebarContent>
         <NavMain items={navMain} />
         <NavSecondary items={NAV_SECONDARY} className="mt-auto" />

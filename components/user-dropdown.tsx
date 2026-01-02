@@ -24,6 +24,8 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { useCallback } from "react";
 import { UserProfile } from "@/lib/auth";
+import { AccountThemeSwitcher, ThemeSwitcher } from "./theme-switcher";
+import { useTheme } from "next-themes";
 
 type BaseUser = {
   name?: string | null;
@@ -42,6 +44,7 @@ function UserDropdownInternal({
   showDetailsInTrigger,
   variant,
 }: InternalDropdownProps) {
+  const { theme, setTheme } = useTheme();
   const { isMobile } = useSidebar();
   const router = useRouter();
 
@@ -103,7 +106,7 @@ function UserDropdownInternal({
           </Button>
         )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent {...contentProps}>
+      <DropdownMenuContent {...contentProps} align="center" side="top">
         <DropdownMenuLabel className="p-0 font-normal">
           <div className="flex min-w-0 items-center gap-2 px-1 py-1.5 text-left text-sm">
             <UserAvatar user={user} />
@@ -119,6 +122,13 @@ function UserDropdownInternal({
           >
             <CircleUser className="mr-2 h-4 w-4" />
             Account
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() => {
+              setTheme(theme === "dark" ? "light" : "dark");
+            }}
+          >
+            <AccountThemeSwitcher theme={theme} />
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
