@@ -353,7 +353,26 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
         }).format(shipmentCost + insuranceCost);
         return <div className="font-medium">{formatted}</div>;
       },
-      filterFn: "inNumberRange",
+      filterFn: (row, _columnId, filterValue) => {
+        const { type, min, max } = filterValue as {
+          type: "exact" | "range";
+          min: string;
+          max: string;
+        };
+        const { total_shipment_cost } = row.original as ShippingLabelRecord;
+
+        if (type === "exact") {
+          return total_shipment_cost === Number(min);
+        } else {
+          if (!min) return total_shipment_cost <= Number(max);
+          else if (!max) return total_shipment_cost >= Number(min);
+          else
+            return (
+              total_shipment_cost <= Number(max) &&
+              total_shipment_cost >= Number(min)
+            );
+        }
+      },
     },
     {
       id: "actions",

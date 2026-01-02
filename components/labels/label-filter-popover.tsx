@@ -18,6 +18,29 @@ import { capitalizeWord } from "@/lib/utils";
 import { Separator } from "../ui/separator";
 import { ShippingLabelWithProfile } from "@/lib/supabase/shipping-labels";
 
+type CostFilter = { type: "exact" | "range"; min: string; max: string };
+
+const buildCostFilterSummary = (
+  costFilter: CostFilter,
+  next?: Partial<Record<string, string>>
+) => {
+  const values = { ...costFilter, ...next };
+  const parts: string[] = [];
+
+  //if neither min or max is present, dont build a cost filter summary
+  if (!(values.min || values.max)) return "";
+
+  parts.push(`Type: ${values.type}`);
+  if (values.type === "exact") parts.push(`Cost = $${values.min}`);
+  else {
+    if (!values.max) parts.push(`Cost >= $${values.min}`);
+    else if (!values.min) parts.push(`Cost <= $${values.max}`);
+    else parts.push(`Cost $${values.min} - $${values.max}`);
+  }
+
+  return parts.join("\n");
+};
+
 export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
   const [userName, setUserName] = useState<string>("");
   const [orderNumber, setOrderNumber] = useState<string>("");
@@ -35,6 +58,11 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
   const [heightMax, setHeightMax] = useState("");
   const [weightMin, setWeightMin] = useState("");
   const [weightMax, setWeightMax] = useState("");
+  const [costFilter, setCostFilter] = useState<CostFilter>({
+    type: "exact",
+    min: "",
+    max: "",
+  });
   const [dimensionUnit, setDimensionUnit] = useState<"inches" | "centimeters">(
     "inches"
   );
@@ -113,6 +141,9 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
         setWeightMax("");
         setDimensionUnit("inches");
         setWeightUnit("pounds");
+        break;
+      case "total_cost":
+        setCostFilter({ type: "exact", min: "", max: "" });
         break;
       default:
         break;
@@ -193,6 +224,7 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
     if (paid) next.push({ id: "paid_at", value: paid });
     if (trackingNumber)
       next.push({ id: "tracking_number", value: trackingNumber });
+    if (costFilter) next.push({ id: "total_shipment_cost", value: costFilter });
     const dimensionValue = {
       minL: toNumber(lengthMin),
       maxL: toNumber(lengthMax),
@@ -249,6 +281,11 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
       dimensionUnit: "inches",
       weightUnit: "pounds",
     };
+    const nextCostFilter = (getValue("total_shipment_cost") as CostFilter) ?? {
+      type: "exact",
+      min: "",
+      max: "",
+    };
 
     setUserName(nextUsername);
     setOrderNumber(nextOrderNumber);
@@ -288,6 +325,7 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
     );
     setDimensionUnit(nextDimensions.dimensionUnit ?? "inches");
     setWeightUnit(nextDimensions.weightUnit ?? "pounds");
+    setCostFilter(nextCostFilter);
 
     const nextSelected = [];
     if (nextUsername) {
@@ -377,6 +415,19 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
         value: dimensionSummary,
       });
     }
+
+    const costFilterSummary = buildCostFilterSummary(costFilter, {
+      type: nextCostFilter.type !== undefined ? nextCostFilter.type : "",
+      min: nextCostFilter.min !== undefined ? nextCostFilter.min : "",
+      max: nextCostFilter.max !== undefined ? nextCostFilter.max : "",
+    });
+
+    if (costFilterSummary)
+      nextSelected.push({
+        label: "Total Cost",
+        key: "total_shipment_cost",
+        value: costFilterSummary,
+      });
     setFilters(nextSelected);
   }, [columnFilters]);
 
@@ -741,7 +792,13 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
                     </div>
                   </div>
                 )}
-                {selected === "Total Cost" && <TotalCostFilter />}
+                {selected === "Total Cost" && (
+                  <TotalCostFilter
+                    costFilter={costFilter}
+                    setCostFilter={setCostFilter}
+                    handleFilterChange={handleFilterChange}
+                  />
+                )}
               </div>
             </div>
 
@@ -886,36 +943,24 @@ function PaidFilter({
   );
 }
 
-function TotalCostFilter() {
-  const [costFilter, setCostFilter] = useState({
-    type: "exact",
-    min: 0,
-    max: 0,
-  });
+function TotalCostFilter({
+  costFilter,
+  setCostFilter,
+  handleFilterChange,
+}: {
+  costFilter: CostFilter;
+  setCostFilter: (value: CostFilter) => void;
+  handleFilterChange: (label: string, key: string, value: string) => void;
+}) {
   const isExactRange = useMemo(() => costFilter.type === "exact", [costFilter]);
 
-  const handleCostChange = (key: "min" | "max", value: number) => {
-    setCostFilter({ ...costFilter, [key]: value });
-  };
+  const handleCostFilter = (key: "min" | "max", value: string) => {
+    const costFilterSummary = buildCostFilterSummary(costFilter, {
+      [key]: value,
+    });
 
-  const MoneyInput = ({
-    min,
-    max,
-    handleCostChange,
-  }: {
-    min?: number;
-    max?: number;
-    handleCostChange: (key: "min" | "max", value: number) => void;
-  }) => {
-    return (
-      <Input
-        type="number"
-        placeholder="0.00"
-        startAdornment="$"
-        min={min ?? "0"}
-        max={max ?? Infinity}
-      />
-    );
+    setCostFilter({ ...costFilter, [key]: value });
+    handleFilterChange("Total Cost", "total_cost_shipment", costFilterSummary);
   };
 
   return (
@@ -936,12 +981,40 @@ function TotalCostFilter() {
         </ToggleGroupItem>
       </ToggleGroup>
       {isExactRange ? (
-        <MoneyInput handleCostChange={handleCostChange} />
+        <Input
+          startAdornment="$"
+          type="number"
+          placeholder="0.00"
+          value={costFilter.min}
+          onChange={(e) => {
+            handleCostFilter("min", e.target.value);
+          }}
+          className="text-end"
+        />
       ) : (
-        <div className="flex gap-1 items-center">
-          <MoneyInput handleCostChange={handleCostChange} />
+        <div className="flex flex-col gap-2 items-center">
+          <Input
+            startAdornment="$"
+            type="number"
+            placeholder="0.00"
+            value={costFilter.min}
+            onChange={(e) => {
+              handleCostFilter("min", e.target.value);
+            }}
+            className="text-end"
+          />
           <span>to</span>
-          <MoneyInput handleCostChange={handleCostChange} />
+          <Input
+            startAdornment="$"
+            type="number"
+            placeholder="0.00"
+            value={costFilter.max}
+            min={costFilter.min}
+            onChange={(e) => {
+              handleCostFilter("max", e.target.value);
+            }}
+            className="text-end"
+          />
         </div>
       )}
     </div>
