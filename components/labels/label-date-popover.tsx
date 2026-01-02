@@ -22,7 +22,6 @@ export default function LabelDatePopover<T>({ table }: { table: Table<T> }) {
   const [selected, setSelected] = useState<RadioOptions | undefined>(undefined);
 
   const createdAtFilter = table.getColumn("created_at");
-  console.log("caf: ", createdAtFilter?.getFilterValue());
 
   const handleSelectedChange = (value: RadioOptions) => {
     const from = new Date();
