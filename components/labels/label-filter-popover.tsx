@@ -6,7 +6,6 @@ import { Input } from "../ui/input";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Label } from "../ui/label";
 import { Filter, Trash } from "lucide-react";
-import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
 import {
   Select,
   SelectContent,
@@ -19,7 +18,7 @@ import { Separator } from "../ui/separator";
 import { ShippingLabelWithProfile } from "@/lib/supabase/shipping-labels";
 
 type CostFilter = {
-  type: "exact" | "range";
+  type: "greater" | "less" | "equal" | "between" | undefined;
   min: string | undefined;
   max: string | undefined;
 };
@@ -29,20 +28,21 @@ const buildCostFilterSummary = (
   next?: Partial<Record<string, string>>
 ) => {
   const values = { ...costFilter, ...next };
-  const parts: string[] = [];
-
   //if neither min or max is present, dont build a cost filter summary
   if (!(values.min || values.max)) return "";
 
-  parts.push(`Type: ${values.type}`);
-  if (values.type === "exact") parts.push(`Cost = $${values.min}`);
-  else {
-    if (!values.max) parts.push(`Cost >= $${values.min}`);
-    else if (!values.min) parts.push(`Cost <= $${values.max}`);
-    else parts.push(`Cost $${values.min} - $${values.max}`);
+  switch (values.type) {
+    case "greater":
+      return `Greater than $${values.min}`;
+    case "less":
+      return `Less than $${values.max}`;
+    case "equal":
+      return `Equal to $${values.min}`;
+    case "between":
+      return `Between $${values.min} and $${values.max}`;
+    default:
+      return "";
   }
-
-  return parts.join("\n");
 };
 
 export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
@@ -64,7 +64,7 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
   const [weightMin, setWeightMin] = useState("");
   const [weightMax, setWeightMax] = useState("");
   const [costFilter, setCostFilter] = useState<CostFilter>({
-    type: "exact",
+    type: undefined,
     min: "",
     max: "",
   });
@@ -91,7 +91,6 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
   >([]);
 
   const handleFilterChange = (label: string, key: string, value: string) => {
-    debugger;
     const newFilters = [...filters];
     const filterIndex = newFilters.findIndex((f) => f.key === key);
     if (!value) {
@@ -149,7 +148,7 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
         setWeightUnit("pounds");
         break;
       case "total_cost":
-        setCostFilter({ type: "exact", min: "", max: "" });
+        setCostFilter({ type: undefined, min: "", max: "" });
         break;
       default:
         break;
@@ -291,7 +290,9 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
       weightUnit: "pounds",
     };
     const nextCostFilter = (getValue("total_shipment_cost") as CostFilter) ?? {
-      type: "exact",
+      type: undefined,
+      min: "$0",
+      max: "$0",
     };
 
     setUserName(nextUsername);
@@ -960,8 +961,6 @@ function TotalCostFilter({
   setCostFilter: (value: CostFilter) => void;
   handleFilterChange: (label: string, key: string, value: string) => void;
 }) {
-  const isExactRange = useMemo(() => costFilter.type === "exact", [costFilter]);
-
   const handleCostFilter = (key: "min" | "max", value: string) => {
     const costFilterSummary = buildCostFilterSummary(costFilter, {
       [key]: value,
@@ -970,61 +969,100 @@ function TotalCostFilter({
     setCostFilter({ ...costFilter, [key]: value });
     handleFilterChange("Total Cost", "total_shipment_cost", costFilterSummary);
   };
-
   return (
     <div className="flex flex-col gap-2">
-      <ToggleGroup
-        type="single"
-        className="flex w-full min-w-0"
+      <div className="text-muted-foreground">Total Cost</div>
+
+      <RadioGroup
         value={costFilter.type}
-        onValueChange={(v) =>
-          setCostFilter({ ...costFilter, type: v as "exact" | "range" })
-        }
+        onValueChange={(value) => {
+          const newType = value as typeof costFilter.type;
+          setCostFilter({ ...costFilter, type: newType });
+        }}
       >
-        <ToggleGroupItem value="exact" className="flex-1">
-          Exact
-        </ToggleGroupItem>
-        <ToggleGroupItem value="range" className="flex-1">
-          Range
-        </ToggleGroupItem>
-      </ToggleGroup>
-      {isExactRange ? (
-        <Input
-          startAdornment="$"
-          type="number"
-          placeholder="0.00"
-          value={costFilter.min ?? 0}
-          onChange={(e) => {
-            handleCostFilter("min", e.target.value);
-          }}
-          className="text-end"
-        />
-      ) : (
-        <div className="flex flex-col gap-2 items-center">
-          <Input
-            startAdornment="$"
-            type="number"
-            placeholder="0.00"
-            value={costFilter.min ?? 0}
-            onChange={(e) => {
-              handleCostFilter("min", e.target.value);
-            }}
-            className="text-end"
-          />
-          <span>to</span>
-          <Input
-            startAdornment="$"
-            type="number"
-            placeholder="0.00"
-            value={costFilter.max ?? 0}
-            min={costFilter.min}
-            onChange={(e) => {
-              handleCostFilter("max", e.target.value);
-            }}
-            className="text-end"
-          />
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            <RadioGroupItem value="greater" id="greater" />
+            <Label htmlFor="greater">Greater than...</Label>
+          </div>
+          {costFilter.type === "greater" && (
+            <Input
+              startAdornment="$"
+              type="number"
+              placeholder="0.00"
+              value={costFilter.min ?? 0}
+              onChange={(e) => {
+                handleCostFilter("min", e.target.value);
+              }}
+            />
+          )}
         </div>
-      )}
+
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            <RadioGroupItem value="less" id="less" />
+            <Label htmlFor="less">Less than...</Label>
+          </div>
+          {costFilter.type === "less" && (
+            <Input
+              startAdornment="$"
+              type="number"
+              placeholder="0.00"
+              value={costFilter.max ?? 0}
+              min={costFilter.min}
+              onChange={(e) => {
+                handleCostFilter("max", e.target.value);
+              }}
+            />
+          )}
+        </div>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            <RadioGroupItem value="equal" id="equal" />
+            <Label htmlFor="equal">Equal to...</Label>
+          </div>
+          {costFilter.type === "equal" && (
+            <Input
+              startAdornment="$"
+              type="number"
+              placeholder="0.00"
+              value={costFilter.min ?? 0}
+              onChange={(e) => {
+                handleCostFilter("min", e.target.value);
+              }}
+            />
+          )}
+        </div>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            <RadioGroupItem value="between" id="between" />
+            <Label htmlFor="between">Between...</Label>
+          </div>
+          {costFilter.type === "between" && (
+            <div className="flex gap-2 items-center">
+              <Input
+                startAdornment="$"
+                type="number"
+                placeholder="0.00"
+                value={costFilter.min ?? 0}
+                onChange={(e) => {
+                  handleCostFilter("min", e.target.value);
+                }}
+              />
+              <Input
+                startAdornment="$"
+                type="number"
+                placeholder="0.00"
+                value={costFilter.max ?? 0}
+                min={costFilter.min}
+                onChange={(e) => {
+                  handleCostFilter("max", e.target.value);
+                }}
+              />
+            </div>
+          )}
+        </div>
+      </RadioGroup>
     </div>
   );
 }
