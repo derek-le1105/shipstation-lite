@@ -60,13 +60,6 @@ export default async function DashboardPage() {
   }
   return (
     <div className="space-y-10">
-      {/* <CreateLabelForm
-        shipFrom={shipFrom}
-        toAddresses={savedToAddresses}
-        carriers={carriers}
-        services={metadata.services}
-        packages={savedPackages}
-      /> */}
       <CreateLabelWizard
         shipFrom={shipFrom}
         toAddresses={savedToAddresses}

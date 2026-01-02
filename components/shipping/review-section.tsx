@@ -13,12 +13,12 @@ import {
   parseCheckboxValue,
 } from "@/lib/shipping-label/utils";
 import { useDebounce } from "@/lib/hooks/useDebounce";
-import { Fieldset } from "../ui/fieldset";
 import { Badge } from "../ui/badge";
 import { Loader2 } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { formatPhoneNumber } from "@/lib/utils";
 import useNextOrderNumber from "@/hooks/use-next-order-number";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
 const USD_FORMATTER = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -428,170 +428,200 @@ export function ReviewSection({
     <div className="space-y-4">
       <div className="grid gap-2 md:grid-cols-5 items-stretch">
         <div className="h-full md:col-span-2">
-          <Fieldset title="Ship From" className="h-full">
-            <ReviewRow label="Name" value={shipFrom.originAddress_name} />
-            <ReviewRow
-              label="Company"
-              value={shipFrom.originAddress_company}
-              emptyValue="—"
-            />
-            <ReviewRow
-              label="Phone"
-              value={formatPhoneNumber(shipFrom.originAddress_phone)}
-              emptyValue="—"
-            />
-            <ReviewRow label="Email" value={""} emptyValue="—" />
-            <ReviewRow
-              label="Address"
-              value={formatWarehouseRecord(shipFrom)}
-            />
-          </Fieldset>
+          <Card>
+            <CardHeader>
+              <CardTitle>Ship From</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ReviewRow label="Name" value={shipFrom.originAddress_name} />
+              <ReviewRow
+                label="Company"
+                value={shipFrom.originAddress_company}
+                emptyValue="—"
+              />
+              <ReviewRow
+                label="Phone"
+                value={formatPhoneNumber(shipFrom.originAddress_phone)}
+                emptyValue="—"
+              />
+              <ReviewRow label="Email" value={""} emptyValue="—" />
+              <ReviewRow
+                label="Address"
+                value={formatWarehouseRecord(shipFrom)}
+              />
+            </CardContent>
+          </Card>
         </div>
         <div className="h-full md:col-span-2">
-          <Fieldset title="Ship to" className="h-full">
-            <ReviewRow label="Name" value={snapshot.to.contactName} />
-            <ReviewRow
-              label="Company"
-              value={snapshot.to.company}
-              emptyValue="—"
-            />
-            <ReviewRow label="Phone" value={snapshot.to.phone} emptyValue="—" />
-            <ReviewRow label="Email" value={snapshot.to.email} emptyValue="—" />
-            <ReviewRow
-              label="Address"
-              value={formatAddressLines(snapshot.to)}
-            />
-          </Fieldset>
+          <Card>
+            <CardHeader>
+              <CardTitle>Ship To</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ReviewRow label="Name" value={snapshot.to.contactName} />
+              <ReviewRow
+                label="Company"
+                value={snapshot.to.company}
+                emptyValue="—"
+              />
+              <ReviewRow
+                label="Phone"
+                value={snapshot.to.phone}
+                emptyValue="—"
+              />
+              <ReviewRow
+                label="Email"
+                value={snapshot.to.email}
+                emptyValue="—"
+              />
+              <ReviewRow
+                label="Address"
+                value={formatAddressLines(snapshot.to)}
+              />
+            </CardContent>
+          </Card>
         </div>
 
         <div className="min-h-0 h-full w-full md:col-span-1">
-          <Fieldset title="Shipment" className="h-full w-full">
-            <ReviewRow label="Carrier" value={carrierLabel} />
-            <ReviewRow label="Service" value={serviceLabel} />
-            <ReviewRow
-              label="Order #"
-              value={snapshot.orderNumber}
-              emptyValue={data}
-            />
-          </Fieldset>
+          <Card className="h-full w-full">
+            <CardHeader>
+              <CardTitle>Shipment</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ReviewRow label="Carrier" value={carrierLabel} />
+              <ReviewRow label="Service" value={serviceLabel} />
+              <ReviewRow
+                label="Order #"
+                value={snapshot.orderNumber}
+                emptyValue={data}
+              />
+            </CardContent>
+          </Card>
         </div>
       </div>
 
-      <Fieldset title="Packages">
-        <div className="space-y-4">
-          {snapshot.packages.map((pkg) => {
-            const quote = packageQuotes.find((q) => q.index === pkg.index) ?? {
-              index: pkg.index,
-              status: "incomplete" as const,
-            };
-            return (
-              <div
-                key={`review-package-${pkg.index}`}
-                className="rounded-lg border border-border/60 bg-card p-4"
-              >
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div className="flex items-center gap-x-3 gap-y-2">
-                    <p className="font-semibold whitespace-nowrap">
-                      Package {pkg.index + 1}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {pkg.insuranceProvider &&
-                      pkg.insuranceProvider !== "none" ? (
-                        <Badge variant="success">
-                          insurance: {pkg.insuranceProvider}
-                        </Badge>
-                      ) : (
-                        <Badge variant="destructive">No Insurance</Badge>
-                      )}
-                      {pkg.saturdayDelivery ? (
-                        <Badge variant="secondary">Saturday Delivery</Badge>
-                      ) : null}
+      <Card>
+        <CardHeader>
+          <CardTitle>Packages</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {snapshot.packages.map((pkg) => {
+              const quote = packageQuotes.find(
+                (q) => q.index === pkg.index
+              ) ?? {
+                index: pkg.index,
+                status: "incomplete" as const,
+              };
+              return (
+                <div
+                  key={`review-package-${pkg.index}`}
+                  className="rounded-lg border border-border/60 bg-card p-4"
+                >
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div className="flex items-center gap-x-3 gap-y-2">
+                      <p className="font-semibold whitespace-nowrap">
+                        Package {pkg.index + 1}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {pkg.insuranceProvider &&
+                        pkg.insuranceProvider !== "none" ? (
+                          <Badge variant="success">
+                            insurance: {pkg.insuranceProvider}
+                          </Badge>
+                        ) : (
+                          <Badge variant="destructive">No Insurance</Badge>
+                        )}
+                        {pkg.saturdayDelivery ? (
+                          <Badge variant="secondary">Saturday Delivery</Badge>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex w-full items-baseline justify-between gap-4 md:justify-end">
-                    <div className="shrink-0 text-sm text-muted-foreground">
-                      Estimated Quote:
-                    </div>
-                    <div className="min-w-0 text-right">
-                      {quote.status === "loading" ? (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Fetching quote...
-                        </div>
-                      ) : quote.status === "error" ? (
-                        <p className="text-sm text-destructive">
-                          {quote.message}
-                        </p>
-                      ) : quote.status === "success" ? (
-                        quote.selectedRate ? (
-                          <div className="space-y-1">
-                            <p className="text-lg font-semibold">
-                              {USD_FORMATTER.format(
-                                Number(quote.selectedRate.shipmentCost ?? 0) +
-                                  Number(quote.selectedRate.otherCost ?? 0)
-                              )}
-                            </p>
-                            {typeof quote.selectedRate.deliveryDays ===
-                            "number" ? (
-                              <p className="text-xs text-muted-foreground">
-                                Est. delivery in{" "}
-                                {quote.selectedRate.deliveryDays}{" "}
-                                {quote.selectedRate.deliveryDays === 1
-                                  ? "day"
-                                  : "days"}
-                              </p>
-                            ) : null}
+                    <div className="flex w-full items-baseline justify-between gap-4 md:justify-end">
+                      <div className="shrink-0 text-sm text-muted-foreground">
+                        Estimated Quote:
+                      </div>
+                      <div className="min-w-0 text-right">
+                        {quote.status === "loading" ? (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Fetching quote...
                           </div>
+                        ) : quote.status === "error" ? (
+                          <p className="text-sm text-destructive">
+                            {quote.message}
+                          </p>
+                        ) : quote.status === "success" ? (
+                          quote.selectedRate ? (
+                            <div className="space-y-1">
+                              <p className="text-lg font-semibold">
+                                {USD_FORMATTER.format(
+                                  Number(quote.selectedRate.shipmentCost ?? 0) +
+                                    Number(quote.selectedRate.otherCost ?? 0)
+                                )}
+                              </p>
+                              {typeof quote.selectedRate.deliveryDays ===
+                              "number" ? (
+                                <p className="text-xs text-muted-foreground">
+                                  Est. delivery in{" "}
+                                  {quote.selectedRate.deliveryDays}{" "}
+                                  {quote.selectedRate.deliveryDays === 1
+                                    ? "day"
+                                    : "days"}
+                                </p>
+                              ) : null}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">
+                              No rate returned for the selected service.
+                            </p>
+                          )
                         ) : (
                           <p className="text-sm text-muted-foreground">
-                            No rate returned for the selected service.
+                            Complete package details to see a quote.
                           </p>
-                        )
-                      ) : (
-                        <p className="text-sm text-muted-foreground">
-                          Complete package details to see a quote.
-                        </p>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <Separator className="my-2" />
+                  <Separator className="my-2" />
 
-                <div className="mt-3 grid gap-2 md:grid-cols-2">
-                  <ReviewRow
-                    label="Nickname"
-                    value={pkg.nickname}
-                    emptyValue="—"
-                  />
-                  <ReviewRow
-                    label="Confirmation"
-                    value={pkg.confirmation}
-                    emptyValue="—"
-                  />
-                  <ReviewRow
-                    label="Weight"
-                    value={formatWeight(pkg)}
-                    emptyValue="—"
-                  />
-                  <ReviewRow
-                    label="Dimensions"
-                    value={formatDimensions(pkg)}
-                    emptyValue="—"
-                  />
+                  <div className="mt-3 grid gap-2 md:grid-cols-2">
+                    <ReviewRow
+                      label="Nickname"
+                      value={pkg.nickname}
+                      emptyValue="—"
+                    />
+                    <ReviewRow
+                      label="Confirmation"
+                      value={pkg.confirmation}
+                      emptyValue="—"
+                    />
+                    <ReviewRow
+                      label="Weight"
+                      value={formatWeight(pkg)}
+                      emptyValue="—"
+                    />
+                    <ReviewRow
+                      label="Dimensions"
+                      value={formatDimensions(pkg)}
+                      emptyValue="—"
+                    />
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
 
-          <div className="flex flex-col items-start gap-1 rounded-lg border border-dashed border-border/70 bg-muted/40 p-4 sm:flex-row sm:items-center sm:justify-end sm:gap-4">
-            <p className="text-sm text-muted-foreground">Estimated Total:</p>
-            <p className="text-lg font-semibold">
-              {totalQuote !== null ? USD_FORMATTER.format(totalQuote) : "—"}
-            </p>
+            <div className="flex flex-col items-start gap-1 rounded-lg border border-dashed border-border/70 bg-muted/40 p-4 sm:flex-row sm:items-center sm:justify-end sm:gap-4">
+              <p className="text-sm text-muted-foreground">Estimated Total:</p>
+              <p className="text-lg font-semibold">
+                {totalQuote !== null ? USD_FORMATTER.format(totalQuote) : "—"}
+              </p>
+            </div>
           </div>
-        </div>
-      </Fieldset>
+        </CardContent>
+      </Card>
     </div>
   );
 }

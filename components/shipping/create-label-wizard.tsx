@@ -45,6 +45,8 @@ import {
   TooltipTrigger,
 } from "../ui/tooltip";
 import ShipFromPopover from "./ship-from-popover";
+import { SidebarTrigger } from "../ui/sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type CreateLabelWizardProps = {
   shipFrom: WarehouseRecord;
@@ -61,6 +63,7 @@ export default function CreateLabelWizard({
   services,
   packages,
 }: CreateLabelWizardProps) {
+  const isMobile = useIsMobile();
   const formRef = useRef<HTMLFormElement>(null);
   const [formState, formAction, actionPending] = useActionState<
     CreateShippingLabelState,
@@ -158,187 +161,183 @@ export default function CreateLabelWizard({
   return (
     <div className="space-y-6" data-testid="create-label-wizard">
       <CreateLabelProvider formRef={formRef}>
-        <Card>
-          <CardHeader className="space-y-3">
-            <CardTitle className="text-lg">Create a shipping label</CardTitle>
-            <WizardProgressBar
-              stepIndex={stepIndex}
-              totalSteps={totalSteps}
-              progress={progress}
+        <div className="flex h-6 text-lg items-center gap-2">
+          {isMobile && (
+            <>
+              <SidebarTrigger />
+              <Separator orientation="vertical" className="h-full" />
+            </>
+          )}
+          <span className="flex items-center">Create a shipping label</span>
+        </div>
+        <WizardProgressBar
+          stepIndex={stepIndex}
+          totalSteps={totalSteps}
+          progress={progress}
+        />
+        <WizardStepCards
+          shippingSteps={shippingSteps}
+          handleStepChange={handleStepChange}
+        />
+
+        <Separator />
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">{currentStep.title}</h2>
+            {stepIndex === 0 ? <ShipFromPopover warehouse={shipFrom} /> : <></>}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {currentStep.description}
+          </p>
+        </div>
+
+        <form
+          id="create-label-form"
+          ref={formRef}
+          action={onSubmit}
+          className="space-y-8"
+        >
+          <section hidden={stepIndex !== 0}>
+            <AddressSection
+              addresses={toAddresses}
+              setMode={setToMode}
+              pending={isPending}
+              formRef={formRef}
             />
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <WizardStepCards
-              shippingSteps={shippingSteps}
-              handleStepChange={handleStepChange}
+          </section>
+
+          <section hidden={stepIndex !== 1}>
+            <PackageDetailsSection
+              isPending={isPending}
+              packages={packages}
+              shipFrom={shipFrom}
+              toAddresses={toAddresses}
+              toMode={toMode}
+              selectedCarrier={selectedCarrier}
+              selectedService={selectedService}
             />
+          </section>
 
-            <Separator />
+          <section hidden={stepIndex !== 2}>
+            <ShipmentDetailsSection
+              isPending={isPending}
+              selectedCarrier={selectedCarrier}
+              selectedService={selectedService}
+              carriers={carriers}
+              services={services}
+              setSelectedCarrier={setSelectedCarrier}
+              setSelectedService={setSelectedService}
+            />
+          </section>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">{currentStep.title}</h2>
-                {stepIndex === 0 ? (
-                  <ShipFromPopover warehouse={shipFrom} />
-                ) : (
-                  <></>
-                )}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {currentStep.description}
-              </p>
-            </div>
+          <section hidden={stepIndex !== 3}>
+            <ReviewSection
+              visible={stepIndex === 3}
+              shipFrom={shipFrom}
+              toAddresses={toAddresses}
+              toMode={toMode}
+              carriers={carriers}
+              services={services}
+              selectedCarrier={selectedCarrier}
+              selectedService={selectedService}
+              formRef={formRef}
+            />
+          </section>
 
-            <form
-              id="create-label-form"
-              ref={formRef}
-              action={onSubmit}
-              className="space-y-8"
-            >
-              <section hidden={stepIndex !== 0}>
-                <AddressSection
-                  addresses={toAddresses}
-                  setMode={setToMode}
-                  pending={isPending}
-                  formRef={formRef}
-                />
-              </section>
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <div className="flex items-center gap-4">
+              <Button
+                data-testid="wizard-back"
+                type="button"
+                variant="outline"
+                disabled={!canGoBack}
+                onClick={() =>
+                  handleStepChange(Math.min(totalSteps - 1, stepIndex - 1))
+                }
+              >
+                Back
+              </Button>
 
-              <section hidden={stepIndex !== 1}>
-                <PackageDetailsSection
-                  isPending={isPending}
-                  packages={packages}
-                  shipFrom={shipFrom}
-                  toAddresses={toAddresses}
-                  toMode={toMode}
-                  selectedCarrier={selectedCarrier}
-                  selectedService={selectedService}
-                />
-              </section>
-
-              <section hidden={stepIndex !== 2}>
-                <ShipmentDetailsSection
-                  isPending={isPending}
-                  selectedCarrier={selectedCarrier}
-                  selectedService={selectedService}
-                  carriers={carriers}
-                  services={services}
-                  setSelectedCarrier={setSelectedCarrier}
-                  setSelectedService={setSelectedService}
-                />
-              </section>
-
-              <section hidden={stepIndex !== 3}>
-                <ReviewSection
-                  visible={stepIndex === 3}
-                  shipFrom={shipFrom}
-                  toAddresses={toAddresses}
-                  toMode={toMode}
-                  carriers={carriers}
-                  services={services}
-                  selectedCarrier={selectedCarrier}
-                  selectedService={selectedService}
-                  formRef={formRef}
-                />
-              </section>
-
-              <div className="flex flex-wrap items-center justify-end gap-3">
-                <div className="flex items-center gap-4">
-                  <Button
-                    data-testid="wizard-back"
-                    type="button"
-                    variant="outline"
-                    disabled={!canGoBack}
-                    onClick={() =>
-                      handleStepChange(Math.min(totalSteps - 1, stepIndex - 1))
-                    }
-                  >
-                    Back
-                  </Button>
-
-                  {canGoNext ? (
+              {canGoNext ? (
+                <Button
+                  key="wizard-next"
+                  data-testid="wizard-next"
+                  type="button"
+                  disabled={
+                    isPending || (stepIndex === 1 && packageStepInvalid)
+                  }
+                  onClick={(event) => {
+                    event.preventDefault();
+                    handleStepChange(Math.min(totalSteps - 1, stepIndex + 1));
+                  }}
+                >
+                  Next
+                </Button>
+              ) : (
+                (() => {
+                  const isSubmitDisabled = isPending || !isValidInputs;
+                  const submitButton = (
                     <Button
-                      key="wizard-next"
+                      key="wizard-submit"
                       data-testid="wizard-next"
-                      type="button"
-                      disabled={
-                        isPending || (stepIndex === 1 && packageStepInvalid)
-                      }
-                      onClick={(event) => {
-                        event.preventDefault();
-                        handleStepChange(
-                          Math.min(totalSteps - 1, stepIndex + 1)
-                        );
-                      }}
+                      type="submit"
+                      disabled={isSubmitDisabled}
                     >
-                      Next
+                      {isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Truck className="mr-2 h-4 w-4" />
+                          Create label
+                        </>
+                      )}
                     </Button>
-                  ) : (
-                    (() => {
-                      const isSubmitDisabled = isPending || !isValidInputs;
-                      const submitButton = (
-                        <Button
-                          key="wizard-submit"
-                          data-testid="wizard-next"
-                          type="submit"
-                          disabled={isSubmitDisabled}
+                  );
+
+                  if (!isSubmitDisabled) {
+                    return submitButton;
+                  }
+
+                  return (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger
+                          asChild
+                          className="disabled:pointer-events-auto"
                         >
-                          {isPending ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Processing...
-                            </>
-                          ) : (
-                            <>
-                              <Truck className="mr-2 h-4 w-4" />
-                              Create label
-                            </>
-                          )}
-                        </Button>
-                      );
+                          {submitButton}
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          You have unresolved warnings in {invalidStep?.title},
+                          please resolve them first.
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  );
+                })()
+              )}
+            </div>
+          </div>
 
-                      if (!isSubmitDisabled) {
-                        return submitButton;
-                      }
+          {formState.status === "error" ? (
+            <Alert variant="destructive">
+              <AlertCircleIcon />
+              <AlertTitle>Unable to create label</AlertTitle>
+              <AlertDescription>
+                <p>
+                  {formState.message ??
+                    "Could not create the label. Please try again."}
+                </p>
+              </AlertDescription>
+            </Alert>
+          ) : null}
 
-                      return (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger
-                              asChild
-                              className="disabled:pointer-events-auto"
-                            >
-                              {submitButton}
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              You have unresolved warnings in{" "}
-                              {invalidStep?.title}, please resolve them first.
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      );
-                    })()
-                  )}
-                </div>
-              </div>
-
-              {formState.status === "error" ? (
-                <Alert variant="destructive">
-                  <AlertCircleIcon />
-                  <AlertTitle>Unable to create label</AlertTitle>
-                  <AlertDescription>
-                    <p>
-                      {formState.message ??
-                        "Could not create the label. Please try again."}
-                    </p>
-                  </AlertDescription>
-                </Alert>
-              ) : null}
-
-              <FormResponseMessage formState={formState} />
-            </form>
-          </CardContent>
-        </Card>
+          <FormResponseMessage formState={formState} />
+        </form>
       </CreateLabelProvider>
     </div>
   );
