@@ -5,7 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Input } from "../ui/input";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Label } from "../ui/label";
-import { Filter, Trash } from "lucide-react";
+import { Filter, CircleX } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -16,6 +16,7 @@ import {
 import { capitalizeWord } from "@/lib/utils";
 import { Separator } from "../ui/separator";
 import { ShippingLabelWithProfile } from "@/lib/supabase/shipping-labels";
+import { Badge } from "../ui/badge";
 
 type CostFilter = {
   type: "greater" | "less" | "equal" | "between" | undefined;
@@ -291,8 +292,6 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
     };
     const nextCostFilter = (getValue("total_shipment_cost") as CostFilter) ?? {
       type: undefined,
-      min: "$0",
-      max: "$0",
     };
 
     setUserName(nextUsername);
@@ -442,13 +441,23 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button size="sm">
-          <Filter />
-          Filters
-        </Button>
+        <div className="relative">
+          <div className="absolute -top-2 -right-1">
+            {columnFilters.length > 0 && (
+              <Badge
+                className="h-4 min-w-4 rounded-full px-1"
+                variant="destructive"
+              />
+            )}
+          </div>
+          <Button variant="outline">
+            <Filter />
+            Filters
+          </Button>
+        </div>
       </PopoverTrigger>
-      <PopoverContent className="w-[720px] p-0" align="end">
-        <div className="rounded-lg border border-border bg-card text-card-foreground shadow-xl">
+      <PopoverContent className="w-[720px] p-0 " align="end">
+        <div>
           <div className="grid grid-cols-[220px_1fr_220px] border-b border-border">
             <div className="px-5 py-4 text-lg font-semibold">Filters</div>
             <div className="border-x border-border px-5 py-3" />
@@ -483,15 +492,18 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
             <div className="border-r border-border px-4 py-3">
               <div className="mb-3 text-sm text-muted-foreground">
                 {selected === "User" && (
-                  <UserFilter
-                    userName={userName}
-                    setUserName={setUserName}
-                    handleFilterChange={handleFilterChange}
-                    table={table}
-                  />
+                  <div className="flex flex-col gap-2">
+                    <Label>User</Label>
+                    <UserFilter
+                      userName={userName}
+                      setUserName={setUserName}
+                      handleFilterChange={handleFilterChange}
+                      table={table}
+                    />
+                  </div>
                 )}
                 {selected === "Order Number" && (
-                  <>
+                  <div className="flex flex-col gap-2">
                     <Label>Order Number</Label>
                     <Input
                       placeholder="UNS-SM-111"
@@ -506,10 +518,10 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
                         );
                       }}
                     />
-                  </>
+                  </div>
                 )}
                 {selected === "Delivery City" && (
-                  <>
+                  <div className="flex flex-col gap-2">
                     <Label>Delivery City</Label>
                     <Input
                       placeholder="Rosemead"
@@ -524,10 +536,10 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
                         );
                       }}
                     />
-                  </>
+                  </div>
                 )}
                 {selected === "Delivery Zip" && (
-                  <>
+                  <div className="flex flex-col gap-2">
                     <Label>Delivery Zip</Label>
                     <Input
                       placeholder="91770"
@@ -542,10 +554,10 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
                         );
                       }}
                     />
-                  </>
+                  </div>
                 )}
                 {selected === "Service" && (
-                  <>
+                  <div className="flex flex-col gap-2">
                     <Label>Service</Label>
                     <Input
                       placeholder="FedEx Ground"
@@ -556,10 +568,10 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
                         handleFilterChange("Service is", "service_code", value);
                       }}
                     />
-                  </>
+                  </div>
                 )}
                 {selected === "Tracking Number" && (
-                  <>
+                  <div className="flex flex-col gap-2">
                     <Label>Tracking Number</Label>
                     <Input
                       placeholder="1234567890"
@@ -574,24 +586,30 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
                         );
                       }}
                     />
-                  </>
+                  </div>
                 )}
                 {selected === "Paid" && (
-                  <PaidFilter
-                    paid={paid}
-                    setPaid={setPaid}
-                    handleFilterChange={handleFilterChange}
-                  />
+                  <div className="flex flex-col gap-2">
+                    <Label>Paid Status</Label>
+                    <PaidFilter
+                      paid={paid}
+                      setPaid={setPaid}
+                      handleFilterChange={handleFilterChange}
+                    />
+                  </div>
                 )}
                 {selected === "Status" && (
-                  <StatusFilter
-                    status={status}
-                    setStatus={setStatus}
-                    handleFilterChange={handleFilterChange}
-                  />
+                  <div className="flex flex-col gap-2">
+                    <Label>Label Status</Label>
+                    <StatusFilter
+                      status={status}
+                      setStatus={setStatus}
+                      handleFilterChange={handleFilterChange}
+                    />
+                  </div>
                 )}
                 {selected === "Package Dimensions" && (
-                  <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-2">
                     <Label>Package Dimensions</Label>
                     <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
                       <div className="flex flex-col gap-1">
@@ -801,17 +819,19 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
                   </div>
                 )}
                 {selected === "Total Cost" && (
-                  <TotalCostFilter
-                    costFilter={costFilter}
-                    setCostFilter={setCostFilter}
-                    handleFilterChange={handleFilterChange}
-                  />
+                  <div className="flex flex-col gap-2">
+                    <Label>Total Cost</Label>
+                    <TotalCostFilter
+                      costFilter={costFilter}
+                      setCostFilter={setCostFilter}
+                      handleFilterChange={handleFilterChange}
+                    />
+                  </div>
                 )}
               </div>
             </div>
 
-            <div className="px-4 py-3">
-              <div className="text-sm text-muted-foreground">Selected</div>
+            <div className="px-4">
               <div className="flex flex-col gap-2 mt-3 text-sm">
                 {filters.map(({ key, value, label }) => {
                   return (
@@ -819,7 +839,7 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
                       key={key + value}
                       className="flex items-center justify-between"
                     >
-                      <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-1">
                         <span className="text-muted-foreground text-xs">
                           {label}
                         </span>
@@ -829,11 +849,12 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
                       </div>
                       <Button
                         size="icon"
+                        variant="ghost"
                         onClick={() => {
                           handleDeleteFilter(key);
                         }}
                       >
-                        <Trash />
+                        <CircleX />
                       </Button>
                     </div>
                   );
@@ -898,25 +919,22 @@ function StatusFilter({
   handleFilterChange: (label: string, key: string, value: string) => void;
 }) {
   return (
-    <div className="flex flex-col gap-2">
-      <div className="text-muted-foreground">Label Status</div>
-      <RadioGroup
-        value={status ?? ""}
-        onValueChange={(newValue) => {
-          setStatus(newValue as "active" | "void");
-          handleFilterChange("Labels are", "voided_at", newValue);
-        }}
-      >
-        <div className="flex items-center gap-3">
-          <RadioGroupItem value="active" id="active" />
-          <Label htmlFor="active">Active</Label>
-        </div>
-        <div className="flex items-center gap-3">
-          <RadioGroupItem value="void" id="void" />
-          <Label htmlFor="void">Void</Label>
-        </div>
-      </RadioGroup>
-    </div>
+    <RadioGroup
+      value={status ?? ""}
+      onValueChange={(newValue) => {
+        setStatus(newValue as "active" | "void");
+        handleFilterChange("Labels are", "voided_at", newValue);
+      }}
+    >
+      <div className="flex items-center gap-3">
+        <RadioGroupItem value="active" id="active" />
+        <Label htmlFor="active">Active</Label>
+      </div>
+      <div className="flex items-center gap-3">
+        <RadioGroupItem value="void" id="void" />
+        <Label htmlFor="void">Void</Label>
+      </div>
+    </RadioGroup>
   );
 }
 
@@ -930,25 +948,22 @@ function PaidFilter({
   handleFilterChange: (label: string, key: string, value: string) => void;
 }) {
   return (
-    <div className="flex flex-col gap-2">
-      <div className="text-muted-foreground">Paid Status</div>
-      <RadioGroup
-        value={paid ?? ""}
-        onValueChange={(newValue) => {
-          setPaid(newValue as "paid" | "unpaid");
-          handleFilterChange("Labels are", "paid_at", newValue);
-        }}
-      >
-        <div className="flex items-center gap-3">
-          <RadioGroupItem value="paid" id="paid" />
-          <Label htmlFor="paid">Paid</Label>
-        </div>
-        <div className="flex items-center gap-3">
-          <RadioGroupItem value="unpaid" id="unpaid" />
-          <Label htmlFor="unpaid">Unpaid</Label>
-        </div>
-      </RadioGroup>
-    </div>
+    <RadioGroup
+      value={paid ?? ""}
+      onValueChange={(newValue) => {
+        setPaid(newValue as "paid" | "unpaid");
+        handleFilterChange("Labels are", "paid_at", newValue);
+      }}
+    >
+      <div className="flex items-center gap-3">
+        <RadioGroupItem value="paid" id="paid" />
+        <Label htmlFor="paid">Paid</Label>
+      </div>
+      <div className="flex items-center gap-3">
+        <RadioGroupItem value="unpaid" id="unpaid" />
+        <Label htmlFor="unpaid">Unpaid</Label>
+      </div>
+    </RadioGroup>
   );
 }
 
@@ -970,22 +985,73 @@ function TotalCostFilter({
     handleFilterChange("Total Cost", "total_shipment_cost", costFilterSummary);
   };
   return (
-    <div className="flex flex-col gap-2">
-      <div className="text-muted-foreground">Total Cost</div>
+    <RadioGroup
+      value={costFilter.type}
+      onValueChange={(value) => {
+        const newType = value as typeof costFilter.type;
+        setCostFilter({ ...costFilter, type: newType });
+      }}
+    >
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-3">
+          <RadioGroupItem value="greater" id="greater" />
+          <Label htmlFor="greater">Greater than...</Label>
+        </div>
+        {costFilter.type === "greater" && (
+          <Input
+            startAdornment="$"
+            type="number"
+            placeholder="0.00"
+            value={costFilter.min ?? 0}
+            onChange={(e) => {
+              handleCostFilter("min", e.target.value);
+            }}
+          />
+        )}
+      </div>
 
-      <RadioGroup
-        value={costFilter.type}
-        onValueChange={(value) => {
-          const newType = value as typeof costFilter.type;
-          setCostFilter({ ...costFilter, type: newType });
-        }}
-      >
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-3">
-            <RadioGroupItem value="greater" id="greater" />
-            <Label htmlFor="greater">Greater than...</Label>
-          </div>
-          {costFilter.type === "greater" && (
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-3">
+          <RadioGroupItem value="less" id="less" />
+          <Label htmlFor="less">Less than...</Label>
+        </div>
+        {costFilter.type === "less" && (
+          <Input
+            startAdornment="$"
+            type="number"
+            placeholder="0.00"
+            value={costFilter.max ?? 0}
+            min={costFilter.min}
+            onChange={(e) => {
+              handleCostFilter("max", e.target.value);
+            }}
+          />
+        )}
+      </div>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-3">
+          <RadioGroupItem value="equal" id="equal" />
+          <Label htmlFor="equal">Equal to...</Label>
+        </div>
+        {costFilter.type === "equal" && (
+          <Input
+            startAdornment="$"
+            type="number"
+            placeholder="0.00"
+            value={costFilter.min ?? 0}
+            onChange={(e) => {
+              handleCostFilter("min", e.target.value);
+            }}
+          />
+        )}
+      </div>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-3">
+          <RadioGroupItem value="between" id="between" />
+          <Label htmlFor="between">Between...</Label>
+        </div>
+        {costFilter.type === "between" && (
+          <div className="flex gap-2 items-center">
             <Input
               startAdornment="$"
               type="number"
@@ -995,15 +1061,6 @@ function TotalCostFilter({
                 handleCostFilter("min", e.target.value);
               }}
             />
-          )}
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-3">
-            <RadioGroupItem value="less" id="less" />
-            <Label htmlFor="less">Less than...</Label>
-          </div>
-          {costFilter.type === "less" && (
             <Input
               startAdornment="$"
               type="number"
@@ -1014,56 +1071,10 @@ function TotalCostFilter({
                 handleCostFilter("max", e.target.value);
               }}
             />
-          )}
-        </div>
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-3">
-            <RadioGroupItem value="equal" id="equal" />
-            <Label htmlFor="equal">Equal to...</Label>
           </div>
-          {costFilter.type === "equal" && (
-            <Input
-              startAdornment="$"
-              type="number"
-              placeholder="0.00"
-              value={costFilter.min ?? 0}
-              onChange={(e) => {
-                handleCostFilter("min", e.target.value);
-              }}
-            />
-          )}
-        </div>
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-3">
-            <RadioGroupItem value="between" id="between" />
-            <Label htmlFor="between">Between...</Label>
-          </div>
-          {costFilter.type === "between" && (
-            <div className="flex gap-2 items-center">
-              <Input
-                startAdornment="$"
-                type="number"
-                placeholder="0.00"
-                value={costFilter.min ?? 0}
-                onChange={(e) => {
-                  handleCostFilter("min", e.target.value);
-                }}
-              />
-              <Input
-                startAdornment="$"
-                type="number"
-                placeholder="0.00"
-                value={costFilter.max ?? 0}
-                min={costFilter.min}
-                onChange={(e) => {
-                  handleCostFilter("max", e.target.value);
-                }}
-              />
-            </div>
-          )}
-        </div>
-      </RadioGroup>
-    </div>
+        )}
+      </div>
+    </RadioGroup>
   );
 }
 
@@ -1090,29 +1101,26 @@ function UserFilter<T>({
   }, [table]);
 
   return (
-    <div>
-      <Label>User</Label>
-      <Select
-        value={userName}
-        onValueChange={(value) => {
-          const nextValue = value;
-          setUserName(nextValue);
-          handleFilterChange("User is", "profiles_full_name", nextValue);
-        }}
-      >
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder="User Name" />
-        </SelectTrigger>
-        <SelectContent>
-          {uniqueUserNames.map((name, idx) => {
-            return (
-              <SelectItem key={name + idx} value={name}>
-                {name}
-              </SelectItem>
-            );
-          })}
-        </SelectContent>
-      </Select>
-    </div>
+    <Select
+      value={userName}
+      onValueChange={(value) => {
+        const nextValue = value;
+        setUserName(nextValue);
+        handleFilterChange("User is", "profiles_full_name", nextValue);
+      }}
+    >
+      <SelectTrigger className="w-full">
+        <SelectValue placeholder="User Name" />
+      </SelectTrigger>
+      <SelectContent>
+        {uniqueUserNames.map((name, idx) => {
+          return (
+            <SelectItem key={name + idx} value={name}>
+              {name}
+            </SelectItem>
+          );
+        })}
+      </SelectContent>
+    </Select>
   );
 }

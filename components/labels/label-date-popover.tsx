@@ -6,6 +6,7 @@ import { Label } from "../ui/label";
 import { useState } from "react";
 import { DatePicker } from "../ui/date-picker";
 import { Table } from "@tanstack/react-table";
+import { Badge } from "../ui/badge";
 
 type RadioOptions =
   | "today"
@@ -21,6 +22,7 @@ export default function LabelDatePopover<T>({ table }: { table: Table<T> }) {
   const [selected, setSelected] = useState<RadioOptions | undefined>(undefined);
 
   const createdAtFilter = table.getColumn("created_at");
+  console.log("caf: ", createdAtFilter?.getFilterValue());
 
   const handleSelectedChange = (value: RadioOptions) => {
     const from = new Date();
@@ -72,10 +74,20 @@ export default function LabelDatePopover<T>({ table }: { table: Table<T> }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button size="sm">
-          <CalendarDays />
-          Date
-        </Button>
+        <div className="relative">
+          <div className="absolute -top-2 -right-1">
+            {!!createdAtFilter?.getFilterValue() && (
+              <Badge
+                className="h-4 min-w-4 rounded-full px-1"
+                variant="destructive"
+              />
+            )}
+          </div>
+          <Button variant="outline">
+            <CalendarDays />
+            Date
+          </Button>
+        </div>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-full">
         <div className="flex flex-col gap-4">
