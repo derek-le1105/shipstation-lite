@@ -2,7 +2,7 @@ import { getCurrentProfile } from "@/lib/auth";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { redirect } from "next/navigation";
-import AppHeader from "@/components/app-header";
+import { cookies } from "next/headers";
 
 export default async function DashboardLayout({
   children,
@@ -11,10 +11,13 @@ export default async function DashboardLayout({
 }) {
   const profile = await getCurrentProfile();
   if (!profile) redirect("/auth/login");
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get("sidebar_state");
+  const defaultOpen = sidebarCookie ? sidebarCookie.value === "true" : true;
 
   return (
     <div className="[--header-height:4rem]">
-      <SidebarProvider className="flex flex-col">
+      <SidebarProvider defaultOpen={defaultOpen} className="flex flex-col">
         <div className="flex flex-1">
           <AppSidebar profile={profile} />
           <SidebarInset>
