@@ -1003,7 +1003,7 @@ function TotalCostFilter({
             startAdornment="$"
             type="number"
             placeholder="0.00"
-            value={costFilter.min ?? 0}
+            value={costFilter.min ?? ""}
             onChange={(e) => {
               handleCostFilter("min", e.target.value);
             }}
@@ -1021,7 +1021,7 @@ function TotalCostFilter({
             startAdornment="$"
             type="number"
             placeholder="0.00"
-            value={costFilter.max ?? 0}
+            value={costFilter.max ?? ""}
             min={costFilter.min}
             onChange={(e) => {
               handleCostFilter("max", e.target.value);
@@ -1039,7 +1039,7 @@ function TotalCostFilter({
             startAdornment="$"
             type="number"
             placeholder="0.00"
-            value={costFilter.min ?? 0}
+            value={costFilter.min ?? ""}
             onChange={(e) => {
               handleCostFilter("min", e.target.value);
             }}
@@ -1057,7 +1057,7 @@ function TotalCostFilter({
               startAdornment="$"
               type="number"
               placeholder="0.00"
-              value={costFilter.min ?? 0}
+              value={costFilter.min ?? ""}
               onChange={(e) => {
                 handleCostFilter("min", e.target.value);
               }}
@@ -1066,7 +1066,7 @@ function TotalCostFilter({
               startAdornment="$"
               type="number"
               placeholder="0.00"
-              value={costFilter.max ?? 0}
+              value={costFilter.max ?? ""}
               min={costFilter.min}
               onChange={(e) => {
                 handleCostFilter("max", e.target.value);
