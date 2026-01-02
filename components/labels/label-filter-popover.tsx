@@ -891,7 +891,11 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
               Clear
             </Button>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" className="text-muted-foreground">
+              <Button
+                variant="ghost"
+                className="text-muted-foreground"
+                onClick={() => setOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
