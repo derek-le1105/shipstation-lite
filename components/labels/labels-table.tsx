@@ -576,6 +576,10 @@ export function LabelsTable<T>({
     return res;
   };
 
+  const handleClearAllFilters = () => {
+    setColumnFilters([]);
+  };
+
   return (
     <div className="w-full">
       <div className="flex justify-between gap-2 pb-2 max-sm:flex-col sm:items-center">
@@ -588,19 +592,28 @@ export function LabelsTable<T>({
             }
             className="max-w-sm"
           />
+          <LabelDatePopover table={table} />
+          <LabelFilterPopover table={table} />
+          {columnFilters.length > 0 && (
+            <Button
+              variant="link"
+              onClick={handleClearAllFilters}
+              className="p-2"
+            >
+              Clear
+            </Button>
+          )}
         </div>
 
         <div className="flex items-center space-x-2">
           {table.getSelectedRowModel().rows.length > 0 && (
             <>
-              <Button variant="outline" size="sm" onClick={handlePrintClick}>
+              <Button variant="outline" onClick={handlePrintClick}>
                 Print
               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    Void Labels
-                  </Button>
+                  <Button variant="outline">Void Labels</Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
@@ -636,7 +649,7 @@ export function LabelsTable<T>({
               {showUserId && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline">
                       Mark as
                       <ChevronDown />
                     </Button>
@@ -685,8 +698,7 @@ export function LabelsTable<T>({
               )}
             </>
           )}
-          <LabelDatePopover table={table} />
-          <LabelFilterPopover table={table} />
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline">

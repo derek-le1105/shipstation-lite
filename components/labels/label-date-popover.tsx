@@ -104,7 +104,7 @@ export default function LabelDatePopover<T>({ table }: { table: Table<T> }) {
           </Button>
         </div>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-full p-0">
+      <PopoverContent align="start" className="w-full p-0">
         <div>
           <div className="grid grid-cols-[220px_1fr]">
             <div className="flex flex-col">

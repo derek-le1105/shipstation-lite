@@ -456,7 +456,7 @@ export default function LabelFilterPopover<T>({ table }: { table: Table<T> }) {
           </Button>
         </div>
       </PopoverTrigger>
-      <PopoverContent className="w-[720px] p-0 " align="end">
+      <PopoverContent className="w-[720px] p-0 " align="start">
         <div>
           <div className="grid grid-cols-[220px_1fr_220px] border-b border-border">
             <div className="px-5 py-4 text-lg font-semibold">Filters</div>
