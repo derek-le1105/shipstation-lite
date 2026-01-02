@@ -13,7 +13,6 @@ import { AlertCircleIcon, Loader2, Truck } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "../ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Separator } from "../ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { AddressSection } from "./address-section";
@@ -45,8 +44,7 @@ import {
   TooltipTrigger,
 } from "../ui/tooltip";
 import ShipFromPopover from "./ship-from-popover";
-import { SidebarTrigger } from "../ui/sidebar";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { SiteHeaderSidebarTrigger } from "../site-header-sidebar-trigger";
 
 type CreateLabelWizardProps = {
   shipFrom: WarehouseRecord;
@@ -63,7 +61,6 @@ export default function CreateLabelWizard({
   services,
   packages,
 }: CreateLabelWizardProps) {
-  const isMobile = useIsMobile();
   const formRef = useRef<HTMLFormElement>(null);
   const [formState, formAction, actionPending] = useActionState<
     CreateShippingLabelState,
@@ -161,13 +158,8 @@ export default function CreateLabelWizard({
   return (
     <div className="space-y-6" data-testid="create-label-wizard">
       <CreateLabelProvider formRef={formRef}>
-        <div className="flex h-6 text-lg items-center gap-2">
-          {isMobile && (
-            <>
-              <SidebarTrigger />
-              <Separator orientation="vertical" className="h-full" />
-            </>
-          )}
+        <div className="flex h-6 text-lg items-center gap-2 font-semibold">
+          <SiteHeaderSidebarTrigger />
           <span className="flex items-center">Create a shipping label</span>
         </div>
         <WizardProgressBar

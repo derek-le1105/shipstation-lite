@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { AddressManager } from "@/components/dashboard/address-manager";
 import { getCurrentProfile } from "@/lib/auth";
 import { listUserAddresses } from "@/lib/supabase/addresses";
+import { SiteHeaderSidebarTrigger } from "@/components/site-header-sidebar-trigger";
 
 export const metadata = {
   title: "UNS Shipping Manager - Addresses",
@@ -18,12 +19,15 @@ export default async function AddressPage() {
   const [shipToAddresses] = await Promise.all([listUserAddresses(profile.id)]);
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-2">
       <section className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Address book</h1>
+        <div className="flex items-center gap-2 h-6">
+          <SiteHeaderSidebarTrigger />
+          <span className="flex items-center font-semibold">Address Book</span>
+        </div>
         <p className="text-sm text-muted-foreground">
-          Manage your saved ship-from and ship-to locations. Updates here are
-          available when you create future labels.
+          Manage your saved ship-to locations. Updates here are available when
+          you create future labels.
         </p>
       </section>
 
