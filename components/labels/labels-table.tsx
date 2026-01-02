@@ -11,6 +11,10 @@ import {
   FileSpreadsheetIcon,
   ChevronDown,
   Trash,
+  ChevronsLeft,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsRight,
 } from "lucide-react";
 
 import type {
@@ -29,7 +33,6 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -50,22 +53,15 @@ import {
 } from "@/components/ui/table";
 
 import {
-  cn,
   exportToCSV,
   exportToExcel,
   exportToJson,
-  formatPhoneNumber,
   printLabels,
 } from "@/lib/utils";
 import { FEDEX_SERVICES, generateTrackingLink } from "@/lib/shipstation/fedex";
 import { ShippingLabelRecord } from "@/lib/supabase/shipping-labels";
 import { toast } from "sonner";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "../ui/hover-card";
-import { StatusBadge } from "./status-badge";
+import { StatusBadge } from "../dashboard/status-badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -77,13 +73,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../ui/alert-dialog";
-import {
-  bulkUpdatePaidStatus,
-  bulkVoidShippingLabels,
-  updatePaidStatus,
-  voidShippingLabel,
-} from "@/lib/actions/labels";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { bulkUpdatePaidStatus, updatePaidStatus } from "@/lib/actions/labels";
 import {
   deleteShippingLabel,
   voidShippingLabelAction,
@@ -98,6 +88,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../ui/dialog";
+import LabelFilterPopover from "./label-filter-popover";
+import LabelDatePopover from "./label-date-popover";
 
 type ColumnOptions = {
   showUserId?: boolean;
@@ -127,29 +119,27 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
       enableSorting: false,
       enableHiding: false,
     },
-    // {
-    //   accessorKey: "shipment_id",
-    //   header: "Shipment ID",
-    //   cell: ({ row }) => (
-    //     <div className="font-medium">{row.getValue("shipment_id")}</div>
-    //   ),
-    // },
     ...(options?.showUserId
       ? ([
           {
             accessorKey: "profiles.full_name",
             header: "User",
+            meta: { label: "User" },
+            filterFn: "includesString",
           } satisfies ColumnDef<T>,
         ] as ColumnDef<T>[])
       : []),
     {
       accessorKey: "order_number",
       header: "Order #",
+      meta: { label: "Order Number" },
       cell: ({ row }) => <div>{row.getValue("order_number")}</div>,
+      filterFn: "includesString",
     },
     {
       accessorKey: "service_code",
       header: "Service",
+      meta: { label: "Service" },
       cell: ({ row }) => (
         <div className="font-medium">
           {
@@ -159,26 +149,32 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
           }
         </div>
       ),
+      filterFn: "includesString",
     },
     {
       id: "delivery_city",
       header: "Delivery City",
+      meta: { label: "Delivery City" },
       accessorFn: (row) => {
         const { ship_to_snapshot } = row as ShippingLabelRecord;
         return `${ship_to_snapshot.city}, ${ship_to_snapshot.state}`;
       },
+      filterFn: "includesString",
     },
     {
       id: "delivery_zip",
       header: "Delivery Zip",
+      meta: { label: "Delivery Zip" },
       accessorFn: (row) => {
         const { ship_to_snapshot } = row as ShippingLabelRecord;
         return ship_to_snapshot.postalCode;
       },
+      filterFn: "includesString",
     },
     {
       accessorKey: "created_at",
       header: () => <div className="text-center">Created At</div>,
+      meta: { label: "Created At" },
       cell: ({ row }) => {
         const date = new Date(row.getValue("created_at"));
 
@@ -197,28 +193,49 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
           </div>
         );
       },
+      filterFn: (row, columnId, value) => {
+        const rowDate = new Date(row.getValue(columnId));
+        const from = value?.from ? new Date(value.from) : null;
+        const to = value?.to ? new Date(value.to) : null;
+        if (from && rowDate <= from) return false;
+        if (to && rowDate >= to) return false;
+        return true;
+      },
     },
     {
       accessorKey: "voided_at",
       header: "Active?",
+      meta: { label: "Status" },
       cell: ({ row }) => {
         const variant = row.getValue("voided_at") ? "destructive" : "success";
         const title = row.getValue("voided_at") ? "Voided" : "Active";
         return <StatusBadge variant={variant} title={title} />;
       },
+      filterFn: (row, columnId, filterValue) => {
+        const voidedAt = row.getValue(columnId);
+        if (filterValue === "active") return !voidedAt;
+        else return !!voidedAt;
+      },
     },
     {
       accessorKey: "paid_at",
       header: "Paid?",
+      meta: { label: "Paid" },
       cell: ({ row }) => {
         const variant = row.getValue("paid_at") ? "success" : "destructive";
         const title = row.getValue("paid_at") ? "Paid" : "Unpaid";
         return <StatusBadge variant={variant} title={title} />;
       },
+      filterFn: (row, columnId, filterValue) => {
+        const paidAt = row.getValue(columnId);
+        if (filterValue === "paid") return !!paidAt;
+        else return !paidAt;
+      },
     },
     {
       accessorKey: "tracking_number",
       header: "Tracking #",
+      meta: { label: "Tracking Number" },
       cell: ({ row }) => {
         return (
           <div className="font-medium hover:underline">
@@ -232,10 +249,84 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
           </div>
         );
       },
+      filterFn: "includesString",
     },
     {
       id: "package_dimensions", // Use 'id' instead of 'accessorKey' for virtual columns
       header: () => <div className="text-center">Package Dimensions</div>,
+      meta: { label: "Package Dimensions" },
+      filterFn: (row, _columnId, value) => {
+        const { length, width, height, units, weight_value, weight_unit } =
+          row.original as ShippingLabelRecord;
+        const {
+          minL,
+          maxL,
+          minW,
+          maxW,
+          minH,
+          maxH,
+          minWeight,
+          maxWeight,
+          dimensionUnit = "inches",
+          weightUnit = "pounds",
+        }: {
+          minL?: number;
+          maxL?: number;
+          minW?: number;
+          maxW?: number;
+          minH?: number;
+          maxH?: number;
+          minWeight?: number;
+          maxWeight?: number;
+          dimensionUnit?: "inches" | "centimeters";
+          weightUnit?: "pounds" | "ounces" | "grams";
+        } = value ?? {};
+
+        const convertDimension = (
+          valueToConvert: number,
+          from: "inches" | "centimeters",
+          to: "inches" | "centimeters"
+        ) => {
+          if (from === to) return valueToConvert;
+          return from === "inches"
+            ? valueToConvert * 2.54
+            : valueToConvert / 2.54;
+        };
+        const convertWeight = (
+          valueToConvert: number,
+          from: "pounds" | "ounces" | "grams",
+          to: "pounds" | "ounces" | "grams"
+        ) => {
+          if (from === to) return valueToConvert;
+          const toGrams =
+            from === "grams"
+              ? valueToConvert
+              : from === "ounces"
+              ? valueToConvert * 28.349523125
+              : valueToConvert * 453.59237;
+          if (to === "grams") return toGrams;
+          return to === "ounces" ? toGrams / 28.349523125 : toGrams / 453.59237;
+        };
+
+        const lengthValue = convertDimension(length, units, dimensionUnit);
+        const widthValue = convertDimension(width, units, dimensionUnit);
+        const heightValue = convertDimension(height, units, dimensionUnit);
+        const weightValue = convertWeight(
+          weight_value,
+          weight_unit as "pounds" | "ounces" | "grams",
+          weightUnit
+        );
+
+        if (minL !== undefined && lengthValue < minL) return false;
+        if (maxL !== undefined && lengthValue > maxL) return false;
+        if (minW !== undefined && widthValue < minW) return false;
+        if (maxW !== undefined && widthValue > maxW) return false;
+        if (minH !== undefined && heightValue < minH) return false;
+        if (maxH !== undefined && heightValue > maxH) return false;
+        if (minWeight !== undefined && weightValue < minWeight) return false;
+        if (maxWeight !== undefined && weightValue > maxWeight) return false;
+        return true;
+      },
       cell: ({ row }) => {
         const original = row.original as ShippingLabelRecord;
         const { length, width, height, units, weight_value, weight_unit } =
@@ -255,6 +346,7 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
     {
       accessorKey: "total_shipment_cost",
       header: () => <div>Total Cost</div>,
+      meta: { label: "Total Cost" },
       cell: ({ row }) => {
         const shipmentCost = parseFloat(row.getValue("total_shipment_cost"));
         const insuranceCost = (row.original as ShippingLabelRecord)
@@ -264,6 +356,26 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
           currency: "USD",
         }).format(shipmentCost + insuranceCost);
         return <div className="font-medium">{formatted}</div>;
+      },
+      filterFn: (row, _columnId, filterValue) => {
+        const { type, min, max } = filterValue as {
+          type: "exact" | "range";
+          min: string;
+          max: string;
+        };
+        const { total_shipment_cost } = row.original as ShippingLabelRecord;
+
+        if (type === "exact") {
+          return total_shipment_cost === Number(min);
+        } else {
+          if (!min) return total_shipment_cost <= Number(max);
+          else if (!max) return total_shipment_cost >= Number(min);
+          else
+            return (
+              total_shipment_cost <= Number(max) &&
+              total_shipment_cost >= Number(min)
+            );
+        }
       },
     },
     {
@@ -328,7 +440,9 @@ export function LabelsTable<T>({
 }: LabelsTableProps<T>) {
   const router = useRouter();
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([
+    { id: "voided_at", value: "active" },
+  ]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
   const [globalFilter, setGlobalFilter] = useState("");
@@ -466,9 +580,13 @@ export function LabelsTable<T>({
     return res;
   };
 
+  const handleClearAllFilters = () => {
+    setColumnFilters([]);
+  };
+
   return (
     <div className="w-full">
-      <div className="flex justify-between gap-2 pb-4 max-sm:flex-col sm:items-center">
+      <div className="flex justify-between gap-2 pb-2 max-sm:flex-col sm:items-center">
         <div className="flex items-center space-x-2">
           <Input
             placeholder="Search all columns..."
@@ -478,19 +596,28 @@ export function LabelsTable<T>({
             }
             className="max-w-sm"
           />
+          <LabelDatePopover table={table} />
+          <LabelFilterPopover table={table} />
+          {columnFilters.length > 0 && (
+            <Button
+              variant="link"
+              onClick={handleClearAllFilters}
+              className="p-2"
+            >
+              Clear
+            </Button>
+          )}
         </div>
 
         <div className="flex items-center space-x-2">
           {table.getSelectedRowModel().rows.length > 0 && (
             <>
-              <Button variant="outline" size="sm" onClick={handlePrintClick}>
+              <Button variant="outline" onClick={handlePrintClick}>
                 Print
               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    Void Labels
-                  </Button>
+                  <Button variant="outline">Void Labels</Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
@@ -526,7 +653,7 @@ export function LabelsTable<T>({
               {showUserId && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline">
                       Mark as
                       <ChevronDown />
                     </Button>
@@ -578,7 +705,7 @@ export function LabelsTable<T>({
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button variant="outline">
                 <DownloadIcon className="mr-2 h-4 w-4" />
                 Export
               </Button>
@@ -653,28 +780,50 @@ export function LabelsTable<T>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
+      <div className="flex items-center justify-end space-x-2 py-2 gap-3">
         <div className="text-muted-foreground flex-1 text-sm">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
+        <div className="flex justify-between items-center gap-2">
+          <div className="text-muted-foreground flex-1 text-sm">
+            {table.getState().pagination.pageIndex + 1} of{" "}
+            {table.getPageCount()} pages
+          </div>
+          <div className="space-x-2 flex items-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.firstPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <ChevronsLeft />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <ChevronLeft />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              <ChevronRight />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.lastPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              <ChevronsRight />
+            </Button>
+          </div>
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { LabelsTable } from "@/components/dashboard/labels-table";
+import { LabelsTable } from "@/components/labels/labels-table";
 import { getCurrentProfile } from "@/lib/auth";
 import { listShippingLabelsForUser } from "@/lib/supabase/shipping-labels";
 import { redirect } from "next/navigation";

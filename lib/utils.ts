@@ -77,6 +77,11 @@ export function formatPhoneNumber(phoneNumber: string) {
   return phoneNumber;
 }
 
+export function capitalizeWord(value: string) {
+  if (!value) return "";
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 export function exportToCSV<T>(dataToExport: T[]) {
   const csv = Papa.unparse(dataToExport, {
     header: true,
