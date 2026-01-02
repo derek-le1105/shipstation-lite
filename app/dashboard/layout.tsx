@@ -15,7 +15,6 @@ export default async function DashboardLayout({
   return (
     <div className="[--header-height:4rem]">
       <SidebarProvider className="flex flex-col">
-        <AppHeader />
         <div className="flex flex-1">
           <AppSidebar profile={profile} />
           <SidebarInset>
