@@ -19,6 +19,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { PrintButton, VoidButton } from "@/components/util-buttons";
+import { SiteHeaderSidebarTrigger } from "@/components/site-header-sidebar-trigger";
 
 const USD_FORMATTER = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -80,12 +81,13 @@ export default async function LabelDetailsPage({
               <Badge variant="success">Active</Badge>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 h-6">
             <Button variant="ghost" size="icon" asChild>
               <Link href="/dashboard/labels">
                 <ChevronLeft className="h-4 w-4" />
               </Link>
             </Button>
+            <SiteHeaderSidebarTrigger />
             <h1 className="text-2xl font-semibold">{label.order_number}</h1>
           </div>
           <p className="text-sm text-muted-foreground">

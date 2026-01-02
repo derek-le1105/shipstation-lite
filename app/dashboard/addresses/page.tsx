@@ -26,8 +26,7 @@ export default async function AddressPage() {
           <span className="flex items-center font-semibold">Address Book</span>
         </div>
         <p className="text-sm text-muted-foreground">
-          Manage your saved ship-to locations. Updates here are available when
-          you create future labels.
+          Manage your saved ship-to locations.
         </p>
       </section>
 

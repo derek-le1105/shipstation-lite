@@ -10,7 +10,7 @@ export function SiteHeaderSidebarTrigger() {
     return (
       <>
         <SidebarTrigger />
-        <Separator orientation="vertical" className="h-full" />
+        <Separator orientation="vertical" className="mr-2 h-full" />
       </>
     );
 
