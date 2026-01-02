@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Shield, type LucideIcon, Send } from "lucide-react";
+import { Home, Shield, type LucideIcon, Send, Settings } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/user-dropdown";
@@ -8,10 +8,20 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarHeader,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { UserProfile } from "@/lib/auth";
 import { useMemo } from "react";
 import { NavSecondary } from "./nav-secondary";
+
+import WHITELOGO from "@/public/assets/WHITE LOGO.png";
+import BLACKLOGO from "@/public/assets/UNS-LOGO.png";
+
+import Image from "next/image";
+import { Button } from "./ui/button";
+import Link from "next/link";
+import { useTheme } from "next-themes";
 
 export interface Navigation {
   /**
@@ -97,6 +107,7 @@ const NAV_SECONDARY: SecondaryNavigation[] = [
 ];
 
 export function AppSidebar({ profile }: { profile: UserProfile }) {
+  const { theme } = useTheme();
   const navMain = useMemo(() => {
     return NAV_MAIN.filter((item) => {
       if (!item.requiredRole) return true;
@@ -114,6 +125,23 @@ export function AppSidebar({ profile }: { profile: UserProfile }) {
   );
   return (
     <Sidebar className="top-(--header-height) h-[calc(100svh-var(--header-height))]!">
+      <SidebarHeader>
+        <div className="flex items-center justify-between p-1">
+          <Link href="/dashboard">
+            <Image
+              src={theme === "light" ? BLACKLOGO : WHITELOGO}
+              alt="white-logo"
+              height={30}
+            />
+          </Link>
+          <div className="flex items-center gap-1">
+            <SidebarTrigger />
+            <Button size="icon" variant="ghost">
+              <Settings />
+            </Button>
+          </div>
+        </div>
+      </SidebarHeader>
       <SidebarContent>
         <NavMain items={navMain} />
         <NavSecondary items={NAV_SECONDARY} className="mt-auto" />
