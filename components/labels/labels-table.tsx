@@ -90,6 +90,9 @@ import {
 } from "../ui/dialog";
 import LabelFilterPopover from "./label-filter-popover";
 import LabelDatePopover from "./label-date-popover";
+import { PrintIconButton } from "../util-buttons";
+import { Tooltip } from "@radix-ui/react-tooltip";
+import { TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 type ColumnOptions = {
   showUserId?: boolean;
@@ -121,13 +124,13 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
     },
     ...(options?.showUserId
       ? ([
-          {
-            accessorKey: "profiles.full_name",
-            header: "User",
-            meta: { label: "User" },
-            filterFn: "includesString",
-          } satisfies ColumnDef<T>,
-        ] as ColumnDef<T>[])
+        {
+          accessorKey: "profiles.full_name",
+          header: "User",
+          meta: { label: "User" },
+          filterFn: "includesString",
+        } satisfies ColumnDef<T>,
+      ] as ColumnDef<T>[])
       : []),
     {
       accessorKey: "order_number",
@@ -302,8 +305,8 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
             from === "grams"
               ? valueToConvert
               : from === "ounces"
-              ? valueToConvert * 28.349523125
-              : valueToConvert * 453.59237;
+                ? valueToConvert * 28.349523125
+                : valueToConvert * 453.59237;
           if (to === "grams") return toGrams;
           return to === "ounces" ? toGrams / 28.349523125 : toGrams / 453.59237;
         };
@@ -383,44 +386,61 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
       header: "Actions",
       cell: ({ row }) => {
         return (
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Trash />
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Deleting Shipping Label</DialogTitle>
-                <DialogDescription>
-                  Are you sure you want to delete this shipping label? This will
-                  also void the shipping label.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="outline">Cancel</Button>
-                </DialogClose>
-                <Button
-                  variant="destructive"
-                  onClick={() => {
-                    toast.promise(
-                      async () => {
-                        const { id } = row.original as ShippingLabelRecord;
-                        await deleteShippingLabel(id);
-                      },
-                      {
-                        loading: "Deleting label...",
-                        success: "Succesfully deleted label!",
-                      }
-                    );
-                  }}
-                >
-                  Delete
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <div className="flex gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <PrintIconButton variant='ghost' size="icon" label={row.original as ShippingLabelRecord} />
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                Print Label
+              </TooltipContent>
+            </Tooltip>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Trash />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    Delete Label
+                  </TooltipContent>
+                </Tooltip>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Deleting Shipping Label</DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to delete this shipping label? This will
+                    also void the shipping label.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button variant="outline">Cancel</Button>
+                  </DialogClose>
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      toast.promise(
+                        async () => {
+                          const { id } = row.original as ShippingLabelRecord;
+                          await deleteShippingLabel(id);
+                        },
+                        {
+                          loading: "Deleting label...",
+                          success: "Succesfully deleted label!",
+                        }
+                      );
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         );
       },
     },
@@ -572,9 +592,9 @@ export function LabelsTable<T>({
     const res =
       selectedLabels.length > 1
         ? await bulkUpdatePaidStatus(
-            selectedLabels.map((lbl) => lbl.shipment_id),
-            type
-          )
+          selectedLabels.map((lbl) => lbl.shipment_id),
+          type
+        )
         : await updatePaidStatus(selectedLabels[0].shipment_id, type);
 
     return res;
@@ -739,9 +759,9 @@ export function LabelsTable<T>({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   );
                 })}
