@@ -11,7 +11,6 @@ import { FEDEX_SERVICES } from "@/lib/shipstation/fedex";
 import { listPackages } from "@/lib/supabase/packages";
 import CreateLabelWizard from "@/components/shipping/create-label-wizard";
 import { fetchProfileWarehouseRecord } from "@/lib/supabase/warehouses";
-import { CreateLabelForm } from "@/components/shipping/create-label-form";
 
 type CarrierMetadata = {
   carrier: ShipStationCarrier | null;

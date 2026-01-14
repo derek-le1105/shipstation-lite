@@ -328,143 +328,131 @@ export async function createShippingLabelAction(
         throw new Error("Failed to create order in ShipStation.");
       }
     }
-    const settled = await Promise.allSettled<CreateShippingItemResult>(
-      [...Array(packagesCount)].map(async (_, index) => {
-        const prefix = `package-${index}`;
-        try {
-          let labelResponse: ShipStationLabel | ShipStationOrderLabel;
-          const insuranceOptions = processInsuranceOption(formData, prefix);
-          const advancedOptions = processAdvancedOptions(formData, prefix);
-          const { weight, dimensions } = await processPackageMode(
-            prefix,
-            formData,
-            profile
-          );
-          if (createOrderResponse) {
-            labelResponse = await createLabelForOrder({
-              orderId: createOrderResponse.orderId,
-              shipDate: new Date().toISOString(),
-              testLabel: false,
-              carrierCode,
-              serviceCode,
-              packageCode: PACKAGE_CODE,
-              confirmation: CONFIRMATION,
-              weight,
-              dimensions,
-              ...(insuranceOptions && { insuranceOptions }),
-              ...(advancedOptions && { advancedOptions }),
-            });
-          } else {
-            labelResponse = await createLabel({
-              shipTo,
-              carrierCode,
-              serviceCode,
-              packageCode: PACKAGE_CODE,
-              confirmation: CONFIRMATION,
-              weight,
-              dimensions,
-              ...(insuranceOptions && { insuranceOptions }),
-              ...(advancedOptions && { advancedOptions }),
-            });
-          }
+    const items: CreateShippingItemResult[] = [];
 
-          const upchargedShipmentCost = calculateUpchargeCost(
-            upcharge,
-            labelResponse.shipmentCost
-          );
-          const upchargedInsuranceCost = calculateUpchargeCost(
-            upcharge,
-            labelResponse.insuranceCost
-          );
-
-          try {
-            const savedLabel = await insertShippingLabel({
-              user_id: profile.id,
-              to_address_id: toAddressRecord?.id ?? null,
-              ship_to_snapshot: shipTo,
-              length: dimensions.length,
-              width: dimensions.width,
-              height: dimensions.height,
-              units: dimensions.units,
-              weight_value: weight.value,
-              weight_unit: weight.units,
-              carrier_code: carrierCode,
-              service_code: serviceCode,
-              package_code: "package",
-              confirmation: CONFIRMATION,
-              shipment_cost: labelResponse.shipmentCost ?? null,
-              insurance_cost: labelResponse.insuranceCost ?? null,
-              total_shipment_cost: upchargedShipmentCost,
-              total_insurance_cost: upchargedInsuranceCost,
-              tracking_number: labelResponse.trackingNumber ?? null,
-              label_data_base64: labelResponse.labelData ?? null,
-              shipment_id: labelResponse.shipmentId,
-              voided_at: null,
-              paid_at: null,
-              order_number: orderNumber,
-              is_address_validated: addressValidated,
-              insurance_options: insuranceOptions ?? {
-                provider: "none",
-                insureShipment: false,
-                insuredValue: 0,
-              },
-              advanced_options: advancedOptions ?? {
-                saturdayDelivery: false,
-              },
-              order_id: createOrderResponse?.orderId,
-              ship_from_id: profile.warehouse_id,
-            });
-
-            return {
-              index,
-              ok: true as const,
-              savedLabel,
-              shipStationLabel: labelResponse,
-            };
-          } catch (dbErr) {
-            console.log(dbErr);
-            // best-effort rollback of the carrier label if DB insert fails
-            try {
-              if (Number.isFinite(labelResponse.shipmentId)) {
-                await voidLabel(labelResponse.shipmentId);
-              }
-            } catch (voidErr) {
-              console.log("voidLabel after DB failure failed:", voidErr);
-            }
-            throw new Error(
-              dbErr instanceof Error
-                ? dbErr.message
-                : "Failed to save shipping label."
-            );
-          }
-        } catch (err) {
-          const message =
-            err instanceof Error
-              ? err.message
-              : "Unable to create label for this package.";
-          // Throw to be captured by allSettled
-          throw {
-            index,
-            message,
-            savedLabel: undefined,
-            shipStationLabel: undefined,
-          };
+    for (let index = 0; index < packagesCount; index++) {
+      const prefix = `package-${index}`;
+      try {
+        let labelResponse: ShipStationLabel | ShipStationOrderLabel;
+        const insuranceOptions = processInsuranceOption(formData, prefix);
+        const advancedOptions = processAdvancedOptions(formData, prefix);
+        const { weight, dimensions } = await processPackageMode(
+          prefix,
+          formData,
+          profile
+        );
+        if (createOrderResponse) {
+          labelResponse = await createLabelForOrder({
+            orderId: createOrderResponse.orderId,
+            shipDate: new Date().toISOString(),
+            testLabel: false,
+            carrierCode,
+            serviceCode,
+            packageCode: PACKAGE_CODE,
+            confirmation: CONFIRMATION,
+            weight,
+            dimensions,
+            ...(insuranceOptions && { insuranceOptions }),
+            ...(advancedOptions && { advancedOptions }),
+          });
+        } else {
+          labelResponse = await createLabel({
+            shipTo,
+            carrierCode,
+            serviceCode,
+            packageCode: PACKAGE_CODE,
+            confirmation: CONFIRMATION,
+            weight,
+            dimensions,
+            ...(insuranceOptions && { insuranceOptions }),
+            ...(advancedOptions && { advancedOptions }),
+          });
         }
-      })
-    );
 
-    const items = settled.map((r, i) => {
-      if (r.status === "fulfilled") return r.value;
-      const reason = r.reason ?? {};
-      return {
-        index: typeof reason.index === "number" ? reason.index : i,
-        ok: false as const,
-        error:
-          typeof reason.message === "string" ? reason.message : "Unknown error",
-        savedLabel: undefined,
-        shipStationLabel: undefined,
-      };
-    });
+        const upchargedShipmentCost = calculateUpchargeCost(
+          upcharge,
+          labelResponse.shipmentCost
+        );
+        const upchargedInsuranceCost = calculateUpchargeCost(
+          upcharge,
+          labelResponse.insuranceCost
+        );
+
+        try {
+          const savedLabel = await insertShippingLabel({
+            user_id: profile.id,
+            to_address_id: toAddressRecord?.id ?? null,
+            ship_to_snapshot: shipTo,
+            length: dimensions.length,
+            width: dimensions.width,
+            height: dimensions.height,
+            units: dimensions.units,
+            weight_value: weight.value,
+            weight_unit: weight.units,
+            carrier_code: carrierCode,
+            service_code: serviceCode,
+            package_code: "package",
+            confirmation: CONFIRMATION,
+            shipment_cost: labelResponse.shipmentCost ?? null,
+            insurance_cost: labelResponse.insuranceCost ?? null,
+            total_shipment_cost: upchargedShipmentCost,
+            total_insurance_cost: upchargedInsuranceCost,
+            tracking_number: labelResponse.trackingNumber ?? null,
+            label_data_base64: labelResponse.labelData ?? null,
+            shipment_id: labelResponse.shipmentId,
+            voided_at: null,
+            paid_at: null,
+            order_number: orderNumber,
+            is_address_validated: addressValidated,
+            insurance_options: insuranceOptions ?? {
+              provider: "none",
+              insureShipment: false,
+              insuredValue: 0,
+            },
+            advanced_options: advancedOptions ?? {
+              saturdayDelivery: false,
+            },
+            order_id: createOrderResponse?.orderId,
+            ship_from_id: profile.warehouse_id,
+          });
+
+          items.push({
+            index,
+            ok: true as const,
+            savedLabel,
+            shipStationLabel: labelResponse,
+          });
+        } catch (dbErr) {
+          console.log(dbErr);
+          // best-effort rollback of the carrier label if DB insert fails
+          try {
+            if (Number.isFinite(labelResponse.shipmentId)) {
+              await voidLabel(labelResponse.shipmentId);
+            }
+          } catch (voidErr) {
+            console.log("voidLabel after DB failure failed:", voidErr);
+          }
+          throw new Error(
+            dbErr instanceof Error
+              ? dbErr.message
+              : "Failed to save shipping label."
+          );
+        }
+      } catch (err) {
+        const message =
+          err instanceof Error
+            ? err.message
+            : "Unable to create label for this package.";
+
+        items.push({
+          index,
+          ok: false as const,
+          error: message,
+          savedLabel: undefined,
+          shipStationLabel: undefined,
+        });
+      }
+    }
 
     const successCount = items.filter((it) => it.ok).length;
     const total = items.length;
