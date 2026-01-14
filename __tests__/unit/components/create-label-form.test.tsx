@@ -12,7 +12,7 @@ vi.mock("@tanstack/react-query", () => ({
     isPending: false,
     error: null,
   })),
-  QueryClient: class QueryClient {},
+  QueryClient: class QueryClient { },
   QueryClientProvider: ({ children }: { children: React.ReactNode }) =>
     children,
 }));
@@ -39,6 +39,8 @@ vi.mock("@/lib/actions/shipping", () => ({
     })
   ),
 }));
+
+
 
 describe("CreateLabelForm", () => {
   function renderForm() {
