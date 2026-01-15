@@ -8,6 +8,22 @@ import { useFormStatus } from "react-dom";
 import { voidShippingLabelAction } from "@/lib/actions/shipping";
 import { toast } from "sonner";
 
+export function PrintIconButton(
+  props: React.ComponentProps<typeof Button> & { label: ShippingLabelRecord }
+) {
+  const handleClick = async () => {
+    if (props.label?.label_data_base64) {
+      await printLabels([props.label.label_data_base64]);
+    }
+  };
+
+  return (
+    <Button {...props} onClick={handleClick}>
+      <Printer />
+    </Button>
+  );
+}
+
 export function PrintButton(
   props: React.ComponentProps<typeof Button> & { label: ShippingLabelRecord }
 ) {

@@ -290,7 +290,7 @@ export default function CreateLabelWizard({
                     </Button>
                   );
 
-                  if (!isSubmitDisabled) {
+                  if (!isValidInputs) {
                     return submitButton;
                   }
 
