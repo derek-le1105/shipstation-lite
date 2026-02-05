@@ -83,10 +83,10 @@ export default function CreateLabelWizard({
   const canGoNext = stepIndex < totalSteps - 1;
 
   const [toMode, setToMode] = useState<AddressMode>(
-    toAddresses.length > 0 ? "saved" : "new"
+    toAddresses.length > 0 ? "saved" : "new",
   );
   const [selectedCarrier, setSelectedCarrier] = useState<string>(
-    carriers[0]?.code ?? ""
+    carriers[0]?.code ?? "",
   );
   const [selectedService, setSelectedService] = useState<string>("fedex_2day");
 
@@ -98,12 +98,12 @@ export default function CreateLabelWizard({
 
   const invalidStep = useMemo(
     () => shippingSteps.find(({ state }) => state === "warning"),
-    [shippingSteps]
+    [shippingSteps],
   );
 
   const isValidInputs = useMemo(
     () => shippingSteps.slice(0, 2).every(({ state }) => state === "complete"),
-    [shippingSteps]
+    [shippingSteps],
   );
 
   const [packageStepInvalid, setPackageStepInvalid] = useState(false);
@@ -118,7 +118,7 @@ export default function CreateLabelWizard({
       'input[name^="package-"][name$=".weight.value"]',
     ];
     const inputs = Array.from(
-      form.querySelectorAll<HTMLInputElement>(selectors.join(","))
+      form.querySelectorAll<HTMLInputElement>(selectors.join(",")),
     );
     if (inputs.length === 0) {
       setPackageStepInvalid(false);
@@ -294,22 +294,27 @@ export default function CreateLabelWizard({
                     return submitButton;
                   }
 
-                  return (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger
-                          asChild
-                          className="disabled:pointer-events-auto"
-                        >
-                          {submitButton}
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          You have unresolved warnings in {invalidStep?.title},
-                          please resolve them first.
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  );
+                  if (invalidStep) {
+                    return (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger
+                            asChild
+                            className="disabled:pointer-events-auto"
+                          >
+                            {submitButton}
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            You have unresolved warnings in {invalidStep.title},
+                            <br />
+                            please resolve them first.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    );
+                  }
+
+                  return submitButton;
                 })()
               )}
             </div>
@@ -359,9 +364,12 @@ function FormResponseMessage({
 
                 {item?.savedLabel.label_data_base64 ? (
                   <Button
+                    type="button"
                     variant="ghost"
                     className="border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 hover:border-emerald-500/60 hover:text-emerald-800"
-                    onClick={async () => {
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
                       if (item?.savedLabel?.label_data_base64)
                         await printLabels([item.savedLabel.label_data_base64]);
                       else toast.error("No label data available to print.");
