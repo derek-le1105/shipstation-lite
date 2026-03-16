@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json(
       { message: "Invalid request body." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
   ) {
     return NextResponse.json(
       { message: "Missing required rate parameters." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -44,11 +44,12 @@ export async function POST(request: NextRequest) {
         message:
           "FedEx Ground does not support residential addresses.\n Please use FedEx Home Delivery or switch to a commercial address.",
       },
-      { status: 400 }
+      { status: 400 },
     );
 
   try {
     const rates = await getRates(payload);
+    console.log("RATES: ", rates);
     const userUpcharge = await getUserUpcharge(profile.id);
     const upcharge = {
       value: userUpcharge.value,
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
 
 function calculateUpchargeCost(
   upcharge: { value: number; unit: string },
-  totalShipmentCost: number | undefined
+  totalShipmentCost: number | undefined,
 ) {
   if (totalShipmentCost === undefined) return 0;
   const { value: upchargeValue, unit: upchargeUnit } = upcharge;
