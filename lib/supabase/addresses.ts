@@ -24,14 +24,14 @@ export type AddressRecord = {
 export type AddressInput = Omit<AddressRecord, "id" | "user_id" | "created_at">;
 
 async function getClient(
-  client?: ServerSupabaseClient
+  client?: ServerSupabaseClient,
 ): Promise<ServerSupabaseClient> {
   if (client) return client;
   return createClient();
 }
 
 export async function listAllAddresses(
-  client?: ServerSupabaseClient
+  client?: ServerSupabaseClient,
 ): Promise<AddressRecord[]> {
   const supabase = await getClient(client);
 
@@ -49,7 +49,7 @@ export async function listAllAddresses(
 
 export async function listUserAddresses(
   userId: string,
-  client?: ServerSupabaseClient
+  client?: ServerSupabaseClient,
 ): Promise<AddressRecord[]> {
   const supabase = await getClient(client);
 
@@ -57,9 +57,7 @@ export async function listUserAddresses(
     .from("addresses")
     .select("*")
     .eq("user_id", userId)
-    .order("created_at", {
-      ascending: false,
-    });
+    .order("label", { ascending: true });
 
   const { data, error } = await query;
 
@@ -73,7 +71,7 @@ export async function listUserAddresses(
 export async function createAddress(
   userId: string,
   input: AddressInput,
-  client?: ServerSupabaseClient
+  client?: ServerSupabaseClient,
 ): Promise<AddressRecord> {
   const supabase = await getClient(client);
 
@@ -123,7 +121,7 @@ export async function getAddress(id: string): Promise<AddressRecord | null> {
 export async function getAddressById(
   id: string,
   userId: string,
-  client?: ServerSupabaseClient
+  client?: ServerSupabaseClient,
 ): Promise<AddressRecord | null> {
   const supabase = await getClient(client);
 
@@ -154,7 +152,7 @@ export async function updateAddress(
   id: string,
   userId: string,
   input: AddressInput,
-  client?: ServerSupabaseClient
+  client?: ServerSupabaseClient,
 ): Promise<AddressRecord> {
   const supabase = await getClient(client);
 
@@ -178,7 +176,7 @@ export async function updateAddress(
 export async function deleteAddress(
   id: string,
   userId: string,
-  client?: ServerSupabaseClient
+  client?: ServerSupabaseClient,
 ): Promise<void> {
   const supabase = await getClient(client);
 

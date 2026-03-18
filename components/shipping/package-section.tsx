@@ -131,7 +131,7 @@ type PkgFields = {
 
 const positiveNumberSchema = z.preprocess(
   (value) => (typeof value === "string" ? Number(value) : value),
-  z.number().min(1, "Must be at least 1.")
+  z.number().min(1, "Must be at least 1."),
 );
 
 function Package({
@@ -188,13 +188,12 @@ function Package({
   }, []);
 
   const handleNumberValidation = useCallback(
-    (field: DimensionField) =>
-      (event: React.ChangeEvent<HTMLInputElement>) => {
-        const message = validatePositiveNumber(event.target.value);
-        event.currentTarget.setCustomValidity(message);
-        setFieldErrors((current) => ({ ...current, [field]: message }));
-      },
-    [validatePositiveNumber]
+    (field: DimensionField) => (event: React.ChangeEvent<HTMLInputElement>) => {
+      const message = validatePositiveNumber(event.target.value);
+      event.currentTarget.setCustomValidity(message);
+      setFieldErrors((current) => ({ ...current, [field]: message }));
+    },
+    [validatePositiveNumber],
   );
 
   const handlePackageChange = useCallback(
@@ -207,7 +206,7 @@ function Package({
       }
       setSelectedPackageId(value);
       const currForm = document.getElementById(
-        "create-label-form"
+        "create-label-form",
       ) as HTMLFormElement;
       if (!currForm) return;
       const selectedPackage = packages.find((p) => p.id === value);
@@ -228,7 +227,7 @@ function Package({
         });
       }
     },
-    [selectedPackageId, packages]
+    [selectedPackageId, packages],
   );
 
   useEffect(() => {
@@ -255,7 +254,7 @@ function Package({
       toMode,
     });
     setRateRequest((current) =>
-      areRateRequestsEqual(current, nextRequest) ? current : nextRequest
+      areRateRequestsEqual(current, nextRequest) ? current : nextRequest,
     );
   }, [
     selectedPackageId,
@@ -284,7 +283,7 @@ function Package({
       const form =
         formRef.current ??
         (document.getElementById(
-          "create-label-form"
+          "create-label-form",
         ) as HTMLFormElement | null);
       if (!form) return false;
       if (attachedForm === form) return true;
@@ -335,7 +334,7 @@ function Package({
   useEffect(() => {
     if (!debouncedRateRequest) {
       setRateState((current) =>
-        current.status === "idle" ? current : { status: "idle" }
+        current.status === "idle" ? current : { status: "idle" },
       );
       return;
     }
