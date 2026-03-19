@@ -92,6 +92,7 @@ export function CreateLabelForm({
               services={services}
               setSelectedCarrier={setSelectedCarrier}
               setSelectedService={setSelectedService}
+              formRef={formRef}
             />
             <Separator />
             <PackageDetailsSection
