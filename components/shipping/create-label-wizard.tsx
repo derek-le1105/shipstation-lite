@@ -88,7 +88,8 @@ export default function CreateLabelWizard({
   const [selectedCarrier, setSelectedCarrier] = useState<string>(
     carriers[0]?.code ?? "",
   );
-  const [selectedService, setSelectedService] = useState<string>("fedex_2day");
+  const [selectedService, setSelectedService] =
+    useState<string>("fedex_ground");
 
   const onSubmit = (formData: FormData) => {
     startTransition(() => {
