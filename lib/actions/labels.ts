@@ -3,10 +3,83 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "../supabase/server";
 import { voidLabel } from "../shipstation/client";
+import type { ShipStationAddressSnapshot } from "../supabase/shipping-labels";
+
+type CheckDuplicateOrderResult = {
+  duplicate: boolean;
+  addressMismatch: boolean;
+  crossUserDuplicate: boolean;
+  existingAddress?: ShipStationAddressSnapshot;
+};
+
+function normalize(value: string | undefined | null): string {
+  return (value ?? "").trim().toLowerCase();
+}
+
+export async function checkDuplicateOrderNumber(
+  orderNumber: string,
+  shipTo: { street1: string; city: string; state: string; postalCode: string },
+): Promise<CheckDuplicateOrderResult> {
+  const supabase = await createClient();
+
+  const { data: labels, error } = await supabase
+    .from("shipping_labels")
+    .select("user_id, order_number, ship_to_snapshot")
+    .ilike("order_number", `%${orderNumber}`)
+    .is("voided_at", null)
+    .limit(1);
+
+  if (error) {
+    console.error("checkDuplicateOrderNumber error:", error);
+    return {
+      duplicate: false,
+      addressMismatch: false,
+      crossUserDuplicate: false,
+    };
+  }
+
+  if (!labels || labels.length === 0) {
+    return {
+      duplicate: false,
+      addressMismatch: false,
+      crossUserDuplicate: false,
+    };
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const label = labels[0];
+
+  // Label belongs to another user — don't expose their address
+  if (label.user_id !== user?.id) {
+    return {
+      duplicate: true,
+      addressMismatch: false,
+      crossUserDuplicate: true,
+    };
+  }
+
+  // Label belongs to the current user — compare addresses
+  const snapshot = label.ship_to_snapshot as ShipStationAddressSnapshot;
+  const mismatch =
+    normalize(shipTo.street1) !== normalize(snapshot.street1) ||
+    normalize(shipTo.city) !== normalize(snapshot.city) ||
+    normalize(shipTo.state) !== normalize(snapshot.state) ||
+    normalize(shipTo.postalCode) !== normalize(snapshot.postalCode);
+
+  return {
+    duplicate: true,
+    addressMismatch: mismatch,
+    crossUserDuplicate: false,
+    existingAddress: mismatch ? snapshot : undefined,
+  };
+}
 
 export async function updatePaidStatus(
   shipment_id: number,
-  type: "paid" | "unpaid"
+  type: "paid" | "unpaid",
 ) {
   const supabase = await createClient();
   const { data: label, error: fetchError } = await supabase
@@ -26,7 +99,7 @@ export async function updatePaidStatus(
   if (label.paid_at) {
     return {
       message: `Label already paid on ${new Date(
-        label.paid_at ?? ""
+        label.paid_at ?? "",
       ).toDateString()}`,
       shipment_id,
       success: true,
@@ -58,7 +131,7 @@ export async function updatePaidStatus(
 
 export async function bulkUpdatePaidStatus(
   shipment_ids: number[],
-  type: "paid" | "unpaid"
+  type: "paid" | "unpaid",
 ) {
   const supabase = await createClient();
   const { data: labels, error: fetchError } = await supabase
@@ -97,7 +170,7 @@ export async function bulkUpdatePaidStatus(
 
 export async function voidShippingLabel(
   shipment_id: number,
-  type: "dashboard" | "admin"
+  type: "dashboard" | "admin",
 ) {
   const supabase = await createClient();
 
@@ -125,7 +198,7 @@ export async function voidShippingLabel(
 
 export async function bulkVoidShippingLabels(
   shipment_ids: number[],
-  type: "dashboard" | "admin"
+  type: "dashboard" | "admin",
 ) {
   const supabase = await createClient();
 
@@ -134,7 +207,7 @@ export async function bulkVoidShippingLabels(
       shipment_ids.map(async (shipment_id) => {
         const { approved, message } = await voidLabel(shipment_id);
         if (!approved) return { message, success: false };
-      })
+      }),
     );
 
     const { data, error } = await supabase

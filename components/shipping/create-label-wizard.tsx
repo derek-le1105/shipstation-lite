@@ -220,6 +220,7 @@ export default function CreateLabelWizard({
               services={services}
               setSelectedCarrier={setSelectedCarrier}
               setSelectedService={setSelectedService}
+              formRef={formRef}
             />
           </section>
 
