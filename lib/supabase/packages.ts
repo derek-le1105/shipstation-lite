@@ -26,7 +26,7 @@ export async function listPackages(userId: string): Promise<PackageRecord[]> {
     .from("packages")
     .select("*")
     .eq("user_id", userId)
-    .order("created_at", {
+    .order("nickname", {
       ascending: false,
     });
 
@@ -41,7 +41,7 @@ export async function listPackages(userId: string): Promise<PackageRecord[]> {
 
 export async function getPackageById(
   id: string,
-  userId: string
+  userId: string,
 ): Promise<PackageRecord | null> {
   const supabase = await createClient();
 
@@ -66,7 +66,7 @@ export async function getPackageById(
 
 export async function createPackage(
   userId: string,
-  input: PackageInput
+  input: PackageInput,
 ): Promise<PackageRecord> {
   const supabase = await createClient();
 
@@ -89,7 +89,7 @@ export async function createPackage(
 export async function updatePackage(
   id: string,
   userId: string,
-  input: PackageInput
+  input: PackageInput,
 ): Promise<PackageRecord> {
   const supabase = await createClient();
 
