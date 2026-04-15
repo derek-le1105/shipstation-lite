@@ -124,13 +124,13 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
     },
     ...(options?.showUserId
       ? ([
-        {
-          accessorKey: "profiles.full_name",
-          header: "User",
-          meta: { label: "User" },
-          filterFn: "includesString",
-        } satisfies ColumnDef<T>,
-      ] as ColumnDef<T>[])
+          {
+            accessorKey: "profiles.full_name",
+            header: "User",
+            meta: { label: "User" },
+            filterFn: "includesString",
+          } satisfies ColumnDef<T>,
+        ] as ColumnDef<T>[])
       : []),
     {
       accessorKey: "order_number",
@@ -147,7 +147,7 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
         <div className="font-medium">
           {
             FEDEX_SERVICES.find(
-              (service) => service.code === row.getValue("service_code")
+              (service) => service.code === row.getValue("service_code"),
             )?.name
           }
         </div>
@@ -288,7 +288,7 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
         const convertDimension = (
           valueToConvert: number,
           from: "inches" | "centimeters",
-          to: "inches" | "centimeters"
+          to: "inches" | "centimeters",
         ) => {
           if (from === to) return valueToConvert;
           return from === "inches"
@@ -298,7 +298,7 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
         const convertWeight = (
           valueToConvert: number,
           from: "pounds" | "ounces" | "grams",
-          to: "pounds" | "ounces" | "grams"
+          to: "pounds" | "ounces" | "grams",
         ) => {
           if (from === to) return valueToConvert;
           const toGrams =
@@ -317,7 +317,7 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
         const weightValue = convertWeight(
           weight_value,
           weight_unit as "pounds" | "ounces" | "grams",
-          weightUnit
+          weightUnit,
         );
 
         if (minL !== undefined && lengthValue < minL) return false;
@@ -389,11 +389,13 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
           <div className="flex gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
-                <PrintIconButton variant='ghost' size="icon" label={row.original as ShippingLabelRecord} />
+                <PrintIconButton
+                  variant="ghost"
+                  size="icon"
+                  label={row.original as ShippingLabelRecord}
+                />
               </TooltipTrigger>
-              <TooltipContent side="bottom">
-                Print Label
-              </TooltipContent>
+              <TooltipContent side="bottom">Print Label</TooltipContent>
             </Tooltip>
             <Dialog>
               <DialogTrigger asChild>
@@ -403,17 +405,15 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
                       <Trash />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    Delete Label
-                  </TooltipContent>
+                  <TooltipContent side="bottom">Delete Label</TooltipContent>
                 </Tooltip>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Deleting Shipping Label</DialogTitle>
                   <DialogDescription>
-                    Are you sure you want to delete this shipping label? This will
-                    also void the shipping label.
+                    Are you sure you want to delete this shipping label? This
+                    will also void the shipping label.
                   </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
@@ -431,7 +431,7 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
                         {
                           loading: "Deleting label...",
                           success: "Succesfully deleted label!",
-                        }
+                        },
                       );
                     }}
                   >
@@ -492,7 +492,7 @@ export function LabelsTable<T>({
     const selectedLabelsPDFs = table
       .getSelectedRowModel()
       .rows.map(
-        (row) => (row.original as ShippingLabelRecord).label_data_base64
+        (row) => (row.original as ShippingLabelRecord).label_data_base64,
       );
     await printLabels(selectedLabelsPDFs);
   };
@@ -510,7 +510,7 @@ export function LabelsTable<T>({
     const formData = new FormData();
     formData.append(
       "shipment_ids",
-      JSON.stringify(selectedLabels.map((lbl) => lbl.shipment_id))
+      JSON.stringify(selectedLabels.map((lbl) => lbl.shipment_id)),
     );
     formData.append("path", showUserId ? `admin/labels` : "dashboard/labels");
     const res = await voidShippingLabelAction(formData);
@@ -522,18 +522,31 @@ export function LabelsTable<T>({
       exportData: Omit<
         ShippingLabelRecord,
         "label_data_base64" | "user_id" | "from_address_id" | "to_address_id"
-      >[]
+      >[],
     ) => {
-      return exportData.map(({ ship_to_snapshot, id, ...rest }) => {
-        const delivery_zip = ship_to_snapshot.postalCode;
-        const delivery_city = `${ship_to_snapshot.city}, ${ship_to_snapshot.state}`;
-        return {
+      return exportData.map(
+        ({
+          ship_to_snapshot,
           id,
-          delivery_city,
-          delivery_zip,
-          ...rest,
-        };
-      });
+          profiles,
+          insurance_options,
+          advanced_options,
+          ...rest
+        }) => {
+          const delivery_zip = ship_to_snapshot.postalCode;
+          const delivery_city = `${ship_to_snapshot.city}, ${ship_to_snapshot.state}`;
+          const full_name = profiles?.full_name;
+          return {
+            id,
+            delivery_city,
+            delivery_zip,
+            name: full_name,
+            ...rest,
+            insurance_options: JSON.stringify(insurance_options),
+            advanced_options: JSON.stringify(advanced_options),
+          };
+        },
+      );
     };
 
     const selectedRows = table.getSelectedRowModel().rows;
@@ -564,14 +577,14 @@ export function LabelsTable<T>({
 
   const handleRowClick = (
     event: MouseEvent<HTMLTableRowElement>,
-    row: Row<T>
+    row: Row<T>,
   ) => {
     if (event.defaultPrevented) return;
 
     const target = event.target as HTMLElement | null;
     if (
       target?.closest(
-        'a, button, input, textarea, select, [role="button"], [role="link"], [data-prevent-row-nav]'
+        'a, button, input, textarea, select, [role="button"], [role="link"], [data-prevent-row-nav]',
       )
     ) {
       return;
@@ -592,9 +605,9 @@ export function LabelsTable<T>({
     const res =
       selectedLabels.length > 1
         ? await bulkUpdatePaidStatus(
-          selectedLabels.map((lbl) => lbl.shipment_id),
-          type
-        )
+            selectedLabels.map((lbl) => lbl.shipment_id),
+            type,
+          )
         : await updatePaidStatus(selectedLabels[0].shipment_id, type);
 
     return res;
@@ -661,7 +674,7 @@ export function LabelsTable<T>({
                             loading: "Voiding Labels...",
                             success: "Labels have been voided",
                             error: "Error voiding labels",
-                          }
+                          },
                         );
                       }}
                     >
@@ -692,7 +705,7 @@ export function LabelsTable<T>({
                               success: boolean;
                             }) => data?.message,
                             error: "Failed to update label.",
-                          }
+                          },
                         );
                       }}
                     >
@@ -711,7 +724,7 @@ export function LabelsTable<T>({
                               success: boolean;
                             }) => data?.message,
                             error: "Failed to update label.",
-                          }
+                          },
                         );
                       }}
                     >
@@ -759,9 +772,9 @@ export function LabelsTable<T>({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
                     </TableHead>
                   );
                 })}
@@ -781,7 +794,7 @@ export function LabelsTable<T>({
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}
