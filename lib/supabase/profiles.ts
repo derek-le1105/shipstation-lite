@@ -21,6 +21,7 @@ export async function listProfiles() {
   const { data, error } = await supabase
     .from("profiles")
     .select("*, shipping_labels(sum:total_shipment_cost)")
+    .filter("shipping_labels.voided_at", "is", null)
     .order("created_at", { ascending: false });
   if (error) throw error;
 
