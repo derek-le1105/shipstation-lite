@@ -53,7 +53,7 @@ export type ShippingLabelRecord = {
   ship_from_id?: number | null;
 };
 
-type ShippingLabelInsert = Omit<
+export type ShippingLabelInsert = Omit<
   ShippingLabelRecord,
   | "id"
   | "created_at"
@@ -107,14 +107,14 @@ const SHIPPING_LABEL_COLUMNS = [
 ] as const satisfies ReadonlyArray<keyof ShippingLabelRecord>;
 
 type ListShippingLabelsOptions<
-  Exclude extends keyof ShippingLabelRecord = never
+  Exclude extends keyof ShippingLabelRecord = never,
 > = {
   client?: ServerSupabaseClient;
   excludeColumns?: Exclude[];
 };
 
 async function getClient(
-  client?: ServerSupabaseClient
+  client?: ServerSupabaseClient,
 ): Promise<ServerSupabaseClient> {
   if (client) return client;
   return createClient();
@@ -122,7 +122,7 @@ async function getClient(
 
 export async function insertShippingLabel(
   input: ShippingLabelInsert,
-  client?: ServerSupabaseClient
+  client?: ServerSupabaseClient,
 ): Promise<ShippingLabelRecord> {
   const supabase = await getClient(client);
 
@@ -143,7 +143,7 @@ export async function insertShippingLabel(
 
 export async function getMostRecentShippingLabel(
   userId: string,
-  client?: ServerSupabaseClient
+  client?: ServerSupabaseClient,
 ): Promise<ShippingLabelRecord | null> {
   const supabase = await getClient(client);
   const { data, error } = await supabase
@@ -164,7 +164,7 @@ export async function getMostRecentShippingLabel(
 
 export async function getUserLabelStats(
   userId: string,
-  client?: ServerSupabaseClient
+  client?: ServerSupabaseClient,
 ): Promise<UserLabelStats> {
   const supabase = await getClient(client);
   const { data, error } = await supabase
@@ -190,7 +190,7 @@ export async function getUserLabelStats(
 
       return acc;
     },
-    { totalSpent: 0, totalPaid: 0, labelCount: 0 }
+    { totalSpent: 0, totalPaid: 0, labelCount: 0 },
   );
 
   return stats;
@@ -217,7 +217,7 @@ export async function getShippingLabel(labelId: string) {
 export async function getShippingLabelById(
   userId: string,
   labelId: string,
-  client?: ServerSupabaseClient
+  client?: ServerSupabaseClient,
 ): Promise<ShippingLabelRecord | null> {
   const supabase = await getClient(client);
   const { data, error } = await supabase
@@ -238,14 +238,14 @@ export async function getShippingLabelById(
 }
 
 export async function listShippingLabelsForUser<
-  Exclude extends keyof ShippingLabelRecord = never
+  Exclude extends keyof ShippingLabelRecord = never,
 >(
   userId: string,
   clientOrOptions?: ServerSupabaseClient | ListShippingLabelsOptions<Exclude>,
-  maybeOptions?: ListShippingLabelsOptions<Exclude>
+  maybeOptions?: ListShippingLabelsOptions<Exclude>,
 ): Promise<Array<Omit<ShippingLabelRecord, Exclude>>> {
   const isSupabaseClient = (
-    candidate: unknown
+    candidate: unknown,
   ): candidate is ServerSupabaseClient =>
     typeof candidate === "object" &&
     candidate !== null &&
@@ -267,7 +267,7 @@ export async function listShippingLabelsForUser<
   const supabase = await getClient(client);
 
   const excludeSet = new Set<keyof ShippingLabelRecord>(
-    excludeColumns as (keyof ShippingLabelRecord)[]
+    excludeColumns as (keyof ShippingLabelRecord)[],
   );
   const selectedColumns =
     excludeColumns.length > 0
@@ -279,7 +279,7 @@ export async function listShippingLabelsForUser<
     .select(
       selectedColumns && selectedColumns.length > 0
         ? selectedColumns.join(",")
-        : "*"
+        : "*",
     )
     .eq("user_id", userId)
     .is("deleted_at", null)
@@ -307,15 +307,16 @@ export async function listShippingLabelsForUser<
 }
 
 export async function listAllShippingLabels(
-  referenceProfile?: boolean
+  referenceProfile?: boolean,
 ): Promise<ShippingLabelWithProfile[]> {
   const supabase = await getClient();
 
   const shippingLabelsTable = supabase.from("shipping_labels");
 
-  const { data, error } = await (referenceProfile
-    ? shippingLabelsTable.select("*, profiles(full_name, email)")
-    : shippingLabelsTable.select("*")
+  const { data, error } = await (
+    referenceProfile
+      ? shippingLabelsTable.select("*, profiles(full_name, email)")
+      : shippingLabelsTable.select("*")
   ).order("created_at", { ascending: false });
   if (error) {
     throw error;
