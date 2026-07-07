@@ -129,6 +129,7 @@ export async function getAddressById(
     .from("addresses")
     .select("*")
     .eq("id", id)
+    .eq("user_id", userId)
     .maybeSingle();
 
   if (error) {
