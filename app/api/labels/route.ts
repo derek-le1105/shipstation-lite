@@ -38,6 +38,7 @@ interface Label {
 interface CreateLabelRequest {
   labels: Label[];
   orderId: string;
+  userId: string;
   channel: "uns" | "aquatx";
 }
 
@@ -230,7 +231,7 @@ export async function POST(
       );
     }
 
-    const { labels, orderId, channel } = body;
+    const { labels, orderId, userId, channel } = body;
 
     console.log(
       `[LABELS_API:${requestId}] Request validated: ${labels.length} labels for order ${orderId} (channel: ${channel})`,
@@ -286,15 +287,9 @@ export async function POST(
     // STEP 6: Insert Records
     // ==========================================
 
-    const atx_user_id = process.env.AQUATX_USER_ID;
-
-    if (!atx_user_id) {
-      throw new Error(`UNKNOWN ATX USER ID: ${atx_user_id}`);
-    }
-
     const recordsToInsert: ShippingLabelInsert[] = labels.map(
       (label: Label) => ({
-        user_id: atx_user_id,
+        user_id: userId,
         to_address_id: null,
         voided_at: null,
         paid_at: null,
