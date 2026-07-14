@@ -44,7 +44,7 @@ export function AddressSection({
   };
 
   const [selectedAddressId, setSelectedAddressId] = useState<string>(
-    addresses[0]?.id ?? ""
+    addresses[0]?.id ?? "",
   );
   const [isResidential, setIsResidential] = useState(false);
   const [saveAddress, setSaveAddress] = useState(false);
@@ -102,11 +102,11 @@ export function AddressSection({
       state: address?.state ?? "",
       postal_code: address?.postal_code ?? "",
     }),
-    []
+    [],
   );
 
   const [formValues, setFormValues] = useState<AddressFormValues>(() =>
-    buildFormValues(selectedAddress)
+    buildFormValues(selectedAddress),
   );
 
   const handleFieldChange = useCallback(
@@ -115,7 +115,7 @@ export function AddressSection({
         const { value } = event.target;
         setFormValues((current) => ({ ...current, [field]: value }));
       },
-    []
+    [],
   );
 
   useEffect(() => {
@@ -350,7 +350,7 @@ export function AddressSection({
             }
           >
             <SelectTrigger className="w-full" id="state" name="state">
-              <SelectValue placeholder="California" />
+              <SelectValue placeholder="Select a State" />
             </SelectTrigger>
             <SelectContent>
               {Object.entries(US_STATE_CODES).map(([code, name]) => (
