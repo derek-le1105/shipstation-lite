@@ -61,7 +61,7 @@ interface ApiResponse<T = any> {
  * Format: "Bearer {key}"
  */
 function validateApiKey(request: NextRequest): boolean {
-  const authHeader = request.headers.get("authorization");
+  const authHeader = request.headers.get("Authorization");
   const expectedKey = process.env.UNS_SHIPPING_LABELS_API_KEY;
 
   // Guard: env var must be set
