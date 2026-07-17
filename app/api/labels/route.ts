@@ -30,6 +30,12 @@ interface Label {
   shipmentCost: number;
   labelData: string;
   shippingAddress: ShippingAddress;
+  length: number;
+  width: number;
+  height: number;
+  weight: number;
+  service_code: string;
+  package_code: string;
 }
 
 /**
@@ -277,6 +283,14 @@ export async function POST(
       shipment_cost: label.shipmentCost,
       order_number: orderId,
       label_data_base64: label.labelData,
+      length: label.length,
+      width: label.width,
+      height: label.height,
+      units: "inches",
+      weight_value: label.weight,
+      weight_unit: "lb",
+      service_code: label.service_code,
+      package_code: label.package_code,
     }));
 
     console.log(
@@ -310,15 +324,15 @@ export async function POST(
         shipment_cost: label.shipmentCost,
         order_number: orderId,
         label_data_base64: label.labelData,
-        carrier_code: "external",
-        service_code: "external",
-        package_code: null,
-        length: 0,
-        width: 0,
-        height: 0,
-        units: "inches" as const,
-        weight_value: 0,
+        length: label.length,
+        width: label.width,
+        height: label.height,
+        units: "inches",
+        weight_value: label.weight,
         weight_unit: "lb",
+        carrier_code: "fedex",
+        service_code: label.service_code,
+        package_code: label.package_code,
         confirmation: null,
         insurance_cost: 0,
         total_insurance_cost: 0,
