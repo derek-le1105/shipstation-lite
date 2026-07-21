@@ -81,14 +81,11 @@ export function VoidButton(
 
   const handleClick = async (formData: FormData) => {
     try {
-      formData.append(
-        "shipment_ids",
-        JSON.stringify([props.label.shipment_id])
-      );
+      formData.append("label_ids", JSON.stringify([props.label.label_id]));
       formData.append("path", props.path || "");
       await voidShippingLabelAction(formData);
       toast.success("Label voided", {
-        description: `Shipment #${props.label.shipment_id}`,
+        description: `Tracking #${props.label.tracking_number}`,
       });
     } catch (error) {
       toast.error("Could not void label", {

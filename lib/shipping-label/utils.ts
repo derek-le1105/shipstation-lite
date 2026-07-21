@@ -12,6 +12,11 @@ type RateAddress = {
   postalCode: string;
   country: string;
   residential?: boolean;
+  name?: string;
+  company?: string;
+  street1?: string;
+  street2?: string;
+  phone?: string;
 };
 
 const VALID_WEIGHT_UNITS = new Set(["ounces", "pounds", "grams"]);
@@ -47,7 +52,18 @@ export function resolveAddressFromForm(
     const address = savedAddresses.find((item) => item.id === addressId);
     if (!address) return null;
 
-    const { city, state, postal_code, country, is_residential } = address;
+    const {
+      city,
+      state,
+      postal_code,
+      country,
+      is_residential,
+      contact_name,
+      company,
+      address_line1,
+      address_line2,
+      phone,
+    } = address;
 
     if (!city || !state || !postal_code || !country) {
       return null;
@@ -59,6 +75,11 @@ export function resolveAddressFromForm(
       postalCode: postal_code.trim(),
       country: country.trim(),
       residential: is_residential,
+      name: contact_name?.trim() ?? undefined,
+      company: company?.trim() ?? undefined,
+      street1: address_line1?.trim() ?? undefined,
+      street2: address_line2?.trim() ?? undefined,
+      phone: phone?.trim() ?? undefined,
     };
   }
 
@@ -83,11 +104,27 @@ export function resolveAddressFromForm(
     return null;
   }
 
+  const name =
+    (getPrefixedOrFallback("contact_name") as string | null)?.trim() ?? "";
+  const company =
+    (getPrefixedOrFallback("company") as string | null)?.trim() ?? "";
+  const street1 =
+    (getPrefixedOrFallback("address_line1") as string | null)?.trim() ?? "";
+  const street2 =
+    (getPrefixedOrFallback("address_line2") as string | null)?.trim() ?? "";
+  const phone =
+    (getPrefixedOrFallback("phone") as string | null)?.trim() ?? "";
+
   return {
     city,
     state,
     postalCode,
     country,
+    name: name || undefined,
+    company: company || undefined,
+    street1: street1 || undefined,
+    street2: street2 || undefined,
+    phone: phone || undefined,
     residential: parseCheckboxValue(
       getPrefixedOrFallback("is_residential") ?? formData.get(`${prefix}.is_residential`)
     ),
@@ -183,6 +220,11 @@ export function buildRatesRequest(
     toCountry: toAddress.country.toUpperCase(),
     toCity: toAddress.city,
     toState: toAddress.state,
+    toName: toAddress.name,
+    toCompany: toAddress.company,
+    toStreet1: toAddress.street1,
+    toStreet2: toAddress.street2,
+    toPhone: toAddress.phone,
     weight: {
       value: weightValue,
       units: weightUnit as ShipStationRatesRequest["weight"]["units"],

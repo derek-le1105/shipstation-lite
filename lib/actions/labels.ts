@@ -77,15 +77,12 @@ export async function checkDuplicateOrderNumber(
   };
 }
 
-export async function updatePaidStatus(
-  shipment_id: number,
-  type: "paid" | "unpaid",
-) {
+export async function updatePaidStatus(id: string, type: "paid" | "unpaid") {
   const supabase = await createClient();
   const { data: label, error: fetchError } = await supabase
     .from("shipping_labels")
-    .select("id, shipment_id, paid_at")
-    .eq("shipment_id", shipment_id)
+    .select("id, paid_at")
+    .eq("id", id)
     .maybeSingle();
   if (fetchError) {
     console.log("fetchError: ", fetchError);
@@ -101,7 +98,7 @@ export async function updatePaidStatus(
       message: `Label already paid on ${new Date(
         label.paid_at ?? "",
       ).toDateString()}`,
-      shipment_id,
+      id,
       success: true,
     };
   }
@@ -109,7 +106,7 @@ export async function updatePaidStatus(
   const { data: updatedLabel, error: updateError } = await supabase
     .from("shipping_labels")
     .update({ paid_at: type === "paid" ? new Date().toISOString() : null })
-    .eq("shipment_id", shipment_id)
+    .eq("id", id)
     .select("*")
     .single();
 
@@ -117,27 +114,27 @@ export async function updatePaidStatus(
     return {
       message: updateError.message,
       success: false,
-      shipment_id,
+      id,
     };
   }
   revalidatePath("/admin/labels");
 
   return {
     message: "Succesfully updated label.",
-    shipment_id: updatedLabel?.shipment_id,
+    id: updatedLabel?.id,
     success: true,
   };
 }
 
 export async function bulkUpdatePaidStatus(
-  shipment_ids: number[],
+  ids: string[],
   type: "paid" | "unpaid",
 ) {
   const supabase = await createClient();
   const { data: labels, error: fetchError } = await supabase
     .from("shipping_labels")
-    .select("id, shipment_id, paid_at")
-    .in("shipment_id", shipment_ids);
+    .select("id, paid_at")
+    .in("id", ids);
   if (fetchError) {
     console.log("fetchError: ", fetchError);
     throw new Error(fetchError.message);
@@ -150,7 +147,7 @@ export async function bulkUpdatePaidStatus(
   const { error: updateError } = await supabase
     .from("shipping_labels")
     .update({ paid_at: type === "paid" ? new Date().toISOString() : null })
-    .in("shipment_id", shipment_ids)
+    .in("id", ids)
     .select("*");
 
   if (updateError) {
@@ -169,19 +166,19 @@ export async function bulkUpdatePaidStatus(
 }
 
 export async function voidShippingLabel(
-  shipment_id: number,
+  label_id: string,
   type: "dashboard" | "admin",
 ) {
   const supabase = await createClient();
 
   try {
-    const { approved, message } = await voidLabel(shipment_id);
+    const { approved, message } = await voidLabel(label_id);
     if (!approved) return { message: message, success: false };
 
     const { data, error } = await supabase
       .from("shipping_labels")
       .update({ voided_at: new Date().toISOString() })
-      .eq("shipment_id", shipment_id)
+      .eq("label_id", label_id)
       .select("*")
       .single();
 
@@ -197,15 +194,15 @@ export async function voidShippingLabel(
 }
 
 export async function bulkVoidShippingLabels(
-  shipment_ids: number[],
+  label_ids: string[],
   type: "dashboard" | "admin",
 ) {
   const supabase = await createClient();
 
   try {
     await Promise.all(
-      shipment_ids.map(async (shipment_id) => {
-        const { approved, message } = await voidLabel(shipment_id);
+      label_ids.map(async (label_id) => {
+        const { approved, message } = await voidLabel(label_id);
         if (!approved) return { message, success: false };
       }),
     );
@@ -213,7 +210,7 @@ export async function bulkVoidShippingLabels(
     const { data, error } = await supabase
       .from("shipping_labels")
       .update({ voided_at: new Date().toISOString() })
-      .in("shipment_id", shipment_ids)
+      .in("label_id", label_ids)
       .select("*");
 
     if (error || !data) return { message: error.message, success: false };

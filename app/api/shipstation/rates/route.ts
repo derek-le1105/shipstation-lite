@@ -1,9 +1,72 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { requireUserProfile } from "@/lib/auth";
-import { getRates } from "@/lib/shipstation/client";
+import { getFedexCarrierId, getRates } from "@/lib/shipstation/client";
 import { getUserUpcharge } from "@/lib/supabase/admin";
 import { ShipStationRatesRequest } from "@/lib/shipstation/types";
+import type { V2RateRequest } from "@/lib/shipstation/v2-types";
+import { fetchProfileWarehouseRecord } from "@/lib/supabase/warehouses";
+import type { WarehouseRecord } from "@/lib/supabase/warehouses";
+
+const WEIGHT_UNIT_MAP: Record<string, V2RateRequest["shipment"]["packages"][number]["weight"]["unit"]> = {
+  ounces: "ounce",
+  pounds: "pound",
+  grams: "gram",
+};
+
+function toV2RateRequest(
+  payload: ShipStationRatesRequest,
+  shipFrom: WarehouseRecord,
+): V2RateRequest {
+  return {
+    rate_options: { carrier_ids: [], service_codes: payload.serviceCode ? [payload.serviceCode] : undefined },
+    shipment: {
+      ship_from: {
+        name: shipFrom.originAddress_name,
+        company_name: shipFrom.originAddress_company || undefined,
+        address_line1: shipFrom.originAddress_street1,
+        address_line2: shipFrom.originAddress_street2 || undefined,
+        city_locality: shipFrom.originAddress_city,
+        state_province: shipFrom.originAddress_state,
+        postal_code: shipFrom.originAddress_postalCode,
+        country_code: shipFrom.originAddress_country || "US",
+        phone: shipFrom.originAddress_phone || undefined,
+        address_residential_indicator: shipFrom.originAddress_residential
+          ? "yes"
+          : "no",
+      },
+      ship_to: {
+        name: payload.toName || "Recipient",
+        company_name: payload.toCompany || undefined,
+        address_line1: payload.toStreet1 || "",
+        address_line2: payload.toStreet2 || undefined,
+        city_locality: payload.toCity ?? "",
+        state_province: payload.toState ?? "",
+        postal_code: payload.toPostalCode,
+        country_code: payload.toCountry,
+        phone: payload.toPhone || undefined,
+        address_residential_indicator: payload.residential ? "yes" : "no",
+      },
+      confirmation: payload.confirmation,
+      packages: [
+        {
+          weight: {
+            value: payload.weight.value,
+            unit: WEIGHT_UNIT_MAP[payload.weight.units] ?? "pound",
+          },
+          ...(payload.dimensions && {
+            dimensions: {
+              unit: payload.dimensions.units === "centimeters" ? "centimeter" : "inch",
+              length: payload.dimensions.length,
+              width: payload.dimensions.width,
+              height: payload.dimensions.height,
+            },
+          }),
+        },
+      ],
+    },
+  };
+}
 
 export async function POST(request: NextRequest) {
   let profile = null;
@@ -48,7 +111,17 @@ export async function POST(request: NextRequest) {
     );
 
   try {
-    const rates = await getRates(payload);
+    const carrierId = await getFedexCarrierId();
+    if (!carrierId) {
+      return NextResponse.json(
+        { message: "FedEx carrier is not configured in ShipStation." },
+        { status: 500 },
+      );
+    }
+    const shipFrom = await fetchProfileWarehouseRecord(profile);
+    const rateRequest = toV2RateRequest(payload, shipFrom);
+    rateRequest.rate_options.carrier_ids = [carrierId];
+    const rates = await getRates(rateRequest);
     console.log("RATES: ", rates);
     const userUpcharge = await getUserUpcharge(profile.id);
     const upcharge = {

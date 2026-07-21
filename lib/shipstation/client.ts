@@ -1,22 +1,21 @@
 import type {
-  ShipStationRatesRequest as RatesRequest,
-  ShipStationLabel as Label,
   ShipStationCarrier as Carrier,
   ShipStationService as Service,
   ShipStationPackage as Package,
   ShipstationVoidLabelResponse as VoidLabelResponse,
   ShipStationRate as Rate,
-  CreateLabelPayload,
-  CreateOrderPayload,
-  ShipStationOrder,
-  CreateLabelForOrderPayload,
-  ShipStationOrderLabel as OrderLabel,
-  ListOrdersResponse,
   Warehouse,
-  ShipStationDeleteOrderResponse,
 } from "./types";
+import type {
+  V2CreateShipmentPayload,
+  V2LabelResponse,
+  V2Carrier,
+  V2RateRequest,
+  V2RateResponse,
+  V2Warehouse,
+} from "./v2-types";
 
-const DEFAULT_API_BASE = "https://ssapi.shipstation.com";
+const DEFAULT_API_BASE = "https://api.shipstation.com";
 
 export const SUPPORTED_SERVICES = [
   "fedex_ground",
@@ -29,28 +28,26 @@ export const SUPPORTED_SERVICES = [
 ];
 
 function getConfig() {
-  const apiKey = process.env.SHIPSTATION_API_KEY;
-  const apiSecret = process.env.SHIPSTATION_API_SECRET;
-  if (!apiKey || !apiSecret) {
+  const apiKey = process.env.SHIPSTATION_V2_API_KEY;
+  if (!apiKey) {
     throw new Error(
-      "ShipStation API credentials are not configured. Please set SHIPSTATION_API_KEY and SHIPSTATION_API_SECRET."
+      "ShipStation V2 API credentials are not configured. Please set SHIPSTATION_V2_API_KEY."
     );
   }
 
   const base = process.env.SHIPSTATION_API_BASE ?? DEFAULT_API_BASE;
-  const auth = Buffer.from(`${apiKey}:${apiSecret}`).toString("base64");
 
-  return { base, auth };
+  return { base, apiKey };
 }
 
 async function shipStationRequest<TResponse>(
   path: string,
   init: Omit<RequestInit, "headers"> & { headers?: Record<string, string> } = {}
 ): Promise<TResponse> {
-  const { base, auth } = getConfig();
+  const { base, apiKey } = getConfig();
 
   const headers = {
-    Authorization: `Basic ${auth}`,
+    "API-Key": apiKey,
     Accept: "application/json",
     "Content-Type": "application/json",
     ...init.headers,
@@ -71,11 +68,8 @@ async function shipStationRequest<TResponse>(
     }
     console.log("detail: ", detail);
     const message =
-      typeof detail === "object" && detail !== null && "Message" in detail
-        ? `ShipStation error: ${
-            (detail as { Message: string; ExceptionMessage: string })
-              .ExceptionMessage
-          }`
+      typeof detail === "object" && detail !== null && "message" in detail
+        ? `ShipStation error: ${(detail as { message: string }).message}`
         : `ShipStation request failed with status ${response.status}`;
 
     throw new Error(message);
@@ -88,125 +82,146 @@ async function shipStationRequest<TResponse>(
   return (await response.json()) as TResponse;
 }
 
-export async function listOrders(
-  params?: Record<string, string | number>
-): Promise<ListOrdersResponse> {
-  const searchParams = params
-    ? new URLSearchParams(
-        Object.entries(params).map(([key, value]) => [key, String(value)])
-      ).toString()
-    : "";
-  const path = searchParams ? `/orders?${searchParams}` : "/orders";
-  return shipStationRequest<ListOrdersResponse>(path, { method: "GET" });
-}
-
-export async function createOrder(
-  payload: CreateOrderPayload
-): Promise<ShipStationOrder> {
-  return shipStationRequest<ShipStationOrder>("/orders/createorder", {
+/**
+ * Create a shipment label via V2. When payload.shipment.packages has more
+ * than one entry, ShipStation returns a shipment-level parent tracking_number
+ * plus a tracking_number per package in the packages[] array.
+ */
+export async function createShipment(
+  payload: V2CreateShipmentPayload
+): Promise<V2LabelResponse> {
+  return shipStationRequest<V2LabelResponse>("/v2/labels", {
     method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
-export async function createLabelForOrder(
-  payload: CreateLabelForOrderPayload
-): Promise<OrderLabel> {
-  return shipStationRequest<OrderLabel>("/orders/createlabelfororder", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
-export async function createLabel(payload: CreateLabelPayload): Promise<Label> {
-  return shipStationRequest<Label>("/shipments/createlabel", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
-export async function getRates(request: RatesRequest): Promise<Rate[]> {
-  return shipStationRequest<Rate[]>("/shipments/getrates", {
-    method: "POST",
-    body: JSON.stringify(request),
-  });
-}
-
-export async function listCarriers(): Promise<Carrier[]> {
-  const carrierRequest = shipStationRequest<Carrier[]>("/carriers").then(
-    (data) => data.filter((carrier) => carrier.code === "fedex")
+export async function voidLabel(labelId: string): Promise<VoidLabelResponse> {
+  const result = await shipStationRequest<{ approved: boolean; message?: string }>(
+    `/v2/labels/${labelId}/void`,
+    { method: "PUT" }
   );
-  return carrierRequest;
+  return { approved: result.approved, message: result.message };
 }
 
 /**
- * Fetches the list of services for a given carrier from ShipStation.
- * 10/22 -> Reduced to only FedEx Carriers as shown in listCarriers
- * Filter for only select services
- * @param carrierCode The code of the carrier to list services for
- * @returns A promise that resolves to an array of Service objects
+ * Looks up a shipment by our client-generated external_shipment_id.
+ * Used as V2's replacement for V1's orderNumber-based dedup - returns null
+ * when no shipment exists yet for this id (nothing to reuse).
+ */
+export async function getShipmentByExternalId(
+  externalShipmentId: string
+): Promise<{ shipment_id: string } | null> {
+  try {
+    return await shipStationRequest<{ shipment_id: string }>(
+      `/v2/shipments/external_shipment_id/${externalShipmentId}`,
+      { method: "GET" }
+    );
+  } catch {
+    return null;
+  }
+}
+
+async function fetchFedexCarrier(): Promise<V2Carrier | null> {
+  const { carriers } = await shipStationRequest<{ carriers: V2Carrier[] }>(
+    "/v2/carriers"
+  );
+  return carriers.find((carrier) => carrier.carrier_code === "fedex") ?? null;
+}
+
+/** V2's rate/carrier-scoped endpoints need the opaque carrier_id, not carrier_code. */
+export async function getFedexCarrierId(): Promise<string | null> {
+  const carrier = await fetchFedexCarrier();
+  return carrier?.carrier_id ?? null;
+}
+
+export async function listCarriers(): Promise<Carrier[]> {
+  const carrier = await fetchFedexCarrier();
+  if (!carrier) return [];
+  return [{ code: carrier.carrier_code, name: carrier.friendly_name }];
+}
+
+/**
+ * Fetches the list of services for a given carrier from ShipStation V2.
+ * Filtered down to the subset this app supports.
  */
 export async function listServices(carrierCode: string): Promise<Service[]> {
-  const params = new URLSearchParams({ carrierCode });
-  return shipStationRequest<Service[]>(
-    `/carriers/listservices?${params.toString()}`
-  ).then((data) =>
-    data
-      .filter((service) => SUPPORTED_SERVICES.includes(service.code))
-      .sort((a, b) => a.name.localeCompare(b.name))
-  );
+  if (carrierCode !== "fedex") return [];
+  const carrier = await fetchFedexCarrier();
+  if (!carrier) return [];
+  return carrier.services
+    .filter((service) => SUPPORTED_SERVICES.includes(service.service_code))
+    .map((service) => ({
+      carrierCode: service.carrier_code,
+      code: service.service_code,
+      name: service.name,
+      domestic: service.domestic,
+      international: service.international,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function listPackages(carrierCode: string): Promise<Package[]> {
-  const params = new URLSearchParams({ carrierCode });
-  return shipStationRequest<Package[]>(
-    `/carriers/listpackages?${params.toString()}`
-  );
+  if (carrierCode !== "fedex") return [];
+  const carrier = await fetchFedexCarrier();
+  if (!carrier) return [];
+  return carrier.packages.map((pkg) => ({
+    carrierCode: carrier.carrier_code,
+    packageCode: pkg.package_code,
+    name: pkg.name,
+    dimensionsRequired: pkg.dimensions_required,
+    domestic: pkg.domestic,
+    international: pkg.international,
+  }));
+}
+
+function mapV2Warehouse(warehouse: V2Warehouse): Warehouse {
+  const mapAddress = (address: V2Warehouse["origin_address"]) => ({
+    name: address.name,
+    company: address.company_name ?? "",
+    street1: address.address_line1,
+    street2: address.address_line2 ?? "",
+    street3: "",
+    city: address.city_locality,
+    state: address.state_province,
+    postalCode: address.postal_code,
+    country: address.country_code,
+    phone: address.phone ?? "",
+    residential: address.address_residential_indicator === "yes",
+    addressVerified: null,
+  });
+
+  return {
+    warehouseId: warehouse.warehouse_id,
+    warehouseName: warehouse.name,
+    originAddress: mapAddress(warehouse.origin_address),
+    returnAddress: mapAddress(warehouse.return_address),
+    createDate: "",
+    isDefault: warehouse.is_default,
+    sellerIntegrationId: null,
+    extInventoryIdentity: null,
+    registerFedexMeter: null,
+  };
 }
 
 export async function listWarehouses(): Promise<Warehouse[]> {
-  return shipStationRequest<Warehouse[]>(`/warehouses`);
+  const { warehouses } = await shipStationRequest<{
+    warehouses: V2Warehouse[];
+  }>("/v2/warehouses");
+  return warehouses.map(mapV2Warehouse);
 }
 
-export async function voidLabel(
-  shipmentId: number
-): Promise<VoidLabelResponse> {
-  return shipStationRequest<VoidLabelResponse>(`/shipments/voidlabel`, {
+export async function getRates(request: V2RateRequest): Promise<Rate[]> {
+  const response = await shipStationRequest<V2RateResponse>("/v2/rates", {
     method: "POST",
-    body: JSON.stringify({ shipmentId }),
+    body: JSON.stringify(request),
   });
-}
-
-//endpoint is createorder because shipstation uses same endpoint to update order status when providing orderId
-export async function cancelOrder(orderId: number): Promise<ShipStationOrder> {
-  const { orderKey, orderNumber, orderDate, billTo, shipTo } =
-    await shipStationRequest<ShipStationOrder>(`/orders/${orderId}`, {
-      method: "GET",
-    });
-  if (!orderKey)
-    throw new Error(
-      `Order ${orderId} does not have an orderKey and cannot be cancelled.`
-    );
-  return shipStationRequest<ShipStationOrder>(`/orders/createorder`, {
-    method: "POST",
-    body: JSON.stringify({
-      orderKey,
-      orderNumber,
-      orderDate,
-      billTo,
-      shipTo,
-      orderStatus: "cancelled",
-    }),
-  });
-}
-
-export async function deleteOrder(
-  orderId: number
-): Promise<ShipStationDeleteOrderResponse> {
-  return shipStationRequest<ShipStationDeleteOrderResponse>(
-    `/orders/${orderId}`,
-    {
-      method: "DELETE",
-    }
-  );
+  return response.rate_response.rates.map((rate) => ({
+    carrierCode: "fedex",
+    serviceCode: rate.service_code,
+    serviceName: rate.service_type,
+    shipmentCost: rate.shipping_amount.amount,
+    otherCost: rate.confirmation_amount?.amount,
+    deliveryDays: rate.delivery_days ?? null,
+  }));
 }

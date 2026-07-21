@@ -152,7 +152,7 @@ function FormResponseMessage({
     <div className="flex flex-col gap-2">
       {formState.items.length > 0 &&
         formState.items.map((item) => {
-          if (item.savedLabel && item.shipStationLabel) {
+          if (item.savedLabel) {
             return (
               <div
                 key={`label-${item.index}`}

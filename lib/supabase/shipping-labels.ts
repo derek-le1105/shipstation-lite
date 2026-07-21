@@ -41,7 +41,7 @@ export type ShippingLabelRecord = {
   tracking_number: string | null;
   label_data_base64: string;
   created_at: string;
-  shipment_id: number;
+  shipment_id: string;
   voided_at: string | null;
   order_number?: string | null;
   is_address_validated: boolean;
@@ -51,6 +51,11 @@ export type ShippingLabelRecord = {
   profiles?: Omit<UserProfile, "id" | "created_at" | "updated_at">;
   order_id?: number | null;
   ship_from_id?: number | null;
+  // V2 migration fields (null for pre-migration V1 rows)
+  label_id: string | null;
+  shipment_group_id: string | null;
+  parent_tracking_number: string | null;
+  package_sequence: number | null;
 };
 
 export type ShippingLabelInsert = Omit<
@@ -104,6 +109,10 @@ const SHIPPING_LABEL_COLUMNS = [
   "shipment_id",
   "voided_at",
   "paid_at",
+  "label_id",
+  "shipment_group_id",
+  "parent_tracking_number",
+  "package_sequence",
 ] as const satisfies ReadonlyArray<keyof ShippingLabelRecord>;
 
 type ListShippingLabelsOptions<

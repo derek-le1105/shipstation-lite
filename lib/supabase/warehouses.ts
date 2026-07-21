@@ -71,7 +71,7 @@ export async function fetchWarehouseRecord(
 export async function fetchDefaultWarehouseRecord(
   client?: ServerSupabaseClient
 ) {
-  const supabase = await getClient();
+  const supabase = await getClient(client);
 
   const { data, error } = await supabase
     .from("warehouses")

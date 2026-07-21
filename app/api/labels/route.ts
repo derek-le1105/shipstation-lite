@@ -336,8 +336,12 @@ export async function POST(
         confirmation: null,
         insurance_cost: 0,
         total_insurance_cost: 0,
-        shipment_id: 0,
+        shipment_id: "0",
         is_address_validated: false,
+        label_id: null,
+        shipment_group_id: null,
+        parent_tracking_number: null,
+        package_sequence: null,
       }),
     );
 

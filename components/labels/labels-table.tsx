@@ -240,9 +240,17 @@ export const columns = <T,>(options?: ColumnOptions): ColumnDef<T>[] => {
       header: "Tracking #",
       meta: { label: "Tracking Number" },
       cell: ({ row }) => {
+        const label = row.original as ShippingLabelRecord;
         return (
-          <div className="font-medium hover:underline">
+          <div className="font-medium">
+            {label.parent_tracking_number && (
+              <div className="text-xs text-muted-foreground">
+                Shipment: {label.parent_tracking_number}
+                {label.package_sequence ? ` (pkg ${label.package_sequence})` : ""}
+              </div>
+            )}
             <a
+              className="hover:underline"
               href={generateTrackingLink(row.getValue("tracking_number"))}
               target="_blank"
               rel="noopener noreferrer"
@@ -509,8 +517,8 @@ export function LabelsTable<T>({
 
     const formData = new FormData();
     formData.append(
-      "shipment_ids",
-      JSON.stringify(selectedLabels.map((lbl) => lbl.shipment_id)),
+      "label_ids",
+      JSON.stringify(selectedLabels.map((lbl) => lbl.label_id)),
     );
     formData.append("path", showUserId ? `admin/labels` : "dashboard/labels");
     const res = await voidShippingLabelAction(formData);
@@ -605,10 +613,10 @@ export function LabelsTable<T>({
     const res =
       selectedLabels.length > 1
         ? await bulkUpdatePaidStatus(
-            selectedLabels.map((lbl) => lbl.shipment_id),
+            selectedLabels.map((lbl) => lbl.id),
             type,
           )
-        : await updatePaidStatus(selectedLabels[0].shipment_id, type);
+        : await updatePaidStatus(selectedLabels[0].id, type);
 
     return res;
   };

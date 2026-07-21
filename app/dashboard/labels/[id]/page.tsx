@@ -127,7 +127,14 @@ export default async function LabelDetailsPage({
           <CardContent>
             <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
               <DetailItem label="Label ID" value={label.id} />
-              <DetailItem label="Shipment ID" value={label.shipment_id} />
+              {label.parent_tracking_number ? (
+                <DetailItem
+                  label="Shipment tracking # (parent)"
+                  value={`${label.parent_tracking_number}${
+                    label.package_sequence ? ` — package ${label.package_sequence}` : ""
+                  }`}
+                />
+              ) : null}
               <DetailItem
                 label="Tracking number"
                 value={

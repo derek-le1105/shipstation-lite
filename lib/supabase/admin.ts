@@ -32,10 +32,7 @@ export function createAdminClient() {
 export async function getUserUpcharge(userId: string): Promise<UserUpcharge> {
   const supabase = createAdminClient();
   const { data, error } = await supabase
-    .schema("private")
-    .from("user_upcharges")
-    .select("*")
-    .eq("user_id", userId)
+    .rpc("get_user_upcharge", { p_user_id: userId })
     .maybeSingle();
   if (error) {
     console.error("Error fetching user upcharge:", error);
@@ -59,20 +56,18 @@ export async function upsertUserUpcharge(
   value: number
 ) {
   const supabase = createAdminClient();
-  const upsert = await supabase
-    .schema("private")
-    .from("user_upcharges")
-    .upsert({ user_id: userId, unit, value }, { onConflict: "user_id" });
+  const upsert = await supabase.rpc("upsert_user_upcharge", {
+    p_user_id: userId,
+    p_unit: unit,
+    p_value: value,
+  });
   if (upsert.error) throw upsert.error;
   return upsert;
 }
 
 export async function listUpcharges(): Promise<UserUpcharge[]> {
   const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .schema("private")
-    .from("user_upcharges")
-    .select("*");
+  const { data, error } = await supabase.rpc("list_user_upcharges");
   if (error) throw error;
   return data;
 }

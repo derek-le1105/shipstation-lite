@@ -209,7 +209,7 @@ export type Database = {
           ship_from_id: number | null;
           ship_to_snapshot: Json;
           shipment_cost: number | null;
-          shipment_id: number;
+          shipment_id: string;
           to_address_id: string | null;
           total_insurance_cost: number;
           total_shipment_cost: number;
@@ -220,6 +220,10 @@ export type Database = {
           weight_unit: string;
           weight_value: number;
           width: number;
+          label_id: string | null;
+          shipment_group_id: string | null;
+          parent_tracking_number: string | null;
+          package_sequence: number | null;
         };
         Insert: {
           advanced_options?: Json | null;
@@ -242,7 +246,7 @@ export type Database = {
           ship_from_id?: number | null;
           ship_to_snapshot: Json;
           shipment_cost?: number | null;
-          shipment_id: number;
+          shipment_id: string;
           to_address_id?: string | null;
           total_insurance_cost?: number;
           total_shipment_cost?: number;
@@ -253,6 +257,10 @@ export type Database = {
           weight_unit: string;
           weight_value: number;
           width?: number;
+          label_id?: string | null;
+          shipment_group_id?: string | null;
+          parent_tracking_number?: string | null;
+          package_sequence?: number | null;
         };
         Update: {
           advanced_options?: Json | null;
@@ -275,7 +283,7 @@ export type Database = {
           ship_from_id?: number | null;
           ship_to_snapshot?: Json;
           shipment_cost?: number | null;
-          shipment_id?: number;
+          shipment_id?: string;
           to_address_id?: string | null;
           total_insurance_cost?: number;
           total_shipment_cost?: number;
@@ -286,6 +294,10 @@ export type Database = {
           weight_unit?: string;
           weight_value?: number;
           width?: number;
+          label_id?: string | null;
+          shipment_group_id?: string | null;
+          parent_tracking_number?: string | null;
+          package_sequence?: number | null;
         };
         Relationships: [
           {

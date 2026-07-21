@@ -15,25 +15,14 @@ import {
   incrementOrderNumberSequence,
   type ShippingLabelRecord,
 } from "@/lib/supabase/shipping-labels";
-import {
-  cancelOrder,
-  createLabel,
-  createLabelForOrder,
-  createOrder,
-  deleteOrder,
-  listOrders,
-  voidLabel,
-} from "@/lib/shipstation/client";
+import { createShipment, voidLabel } from "@/lib/shipstation/client";
 import {
   AdvancedOptions,
-  CreateOrderPayload,
   InsuranceOption,
-  ShipStationOrder,
-  ShipStationOrderLabel,
   type ShipStationAddress,
-  type ShipStationLabel,
   type ShipStationWeight,
 } from "@/lib/shipstation/types";
+import type { V2Address, V2LabelResponse, V2Package } from "@/lib/shipstation/v2-types";
 import { createClient } from "../supabase/server";
 import { getUserUpcharge } from "../supabase/admin";
 import {
@@ -41,10 +30,10 @@ import {
   getPackageById,
   updatePackage,
 } from "../supabase/packages";
+import { fetchProfileWarehouseRecord } from "../supabase/warehouses";
 
 type AddressMode = "saved" | "new";
 
-const PACKAGE_CODE = "package";
 const CONFIRMATION = "delivery";
 
 const REQUIRED_ADDRESS_FIELDS = [
@@ -118,6 +107,32 @@ function inputToShipStationAddress(input: AddressInput): ShipStationAddress {
     country: input.country,
     phone: input.phone ?? undefined,
     residential: input.is_residential,
+  };
+}
+
+const WEIGHT_UNIT_MAP: Record<ShipStationWeight["units"], V2Package["weight"]["unit"]> = {
+  ounces: "ounce",
+  pounds: "pound",
+  grams: "gram",
+};
+
+const DIMENSION_UNIT_MAP: Record<"inches" | "centimeters", "inch" | "centimeter"> = {
+  inches: "inch",
+  centimeters: "centimeter",
+};
+
+function toV2Address(address: ShipStationAddress): V2Address {
+  return {
+    name: address.name,
+    company_name: address.company ?? undefined,
+    phone: address.phone ?? undefined,
+    address_line1: address.street1,
+    address_line2: address.street2 ?? undefined,
+    city_locality: address.city,
+    state_province: address.state,
+    postal_code: address.postalCode,
+    country_code: address.country,
+    address_residential_indicator: address.residential ? "yes" : "no",
   };
 }
 
@@ -201,14 +216,12 @@ export type CreateShippingItemResult =
       index: number;
       ok: true;
       savedLabel: ShippingLabelRecord;
-      shipStationLabel: ShipStationLabel | ShipStationOrderLabel;
     }
   | {
       index: number;
       ok: false;
       error: string;
       savedLabel: undefined;
-      shipStationLabel: undefined;
     };
 
 export type CreateShippingLabelState = {
@@ -220,63 +233,37 @@ export type CreateShippingLabelState = {
 export async function voidShippingLabelAction(
   formData: FormData
 ): Promise<{ success: boolean; message: string }> {
-  const shipmentIds = JSON.parse(
-    formData.get("shipment_ids") as string
-  ) as number[];
+  const labelIds = JSON.parse(formData.get("label_ids") as string) as string[];
   const path = formData.get("path") as string;
-  if (!Array.isArray(shipmentIds) || shipmentIds.length === 0)
-    return { success: false, message: "No shipment IDs provided." };
+  if (!Array.isArray(labelIds) || labelIds.length === 0)
+    return { success: false, message: "No label IDs provided." };
 
   const profile = await requireUserProfile();
   const supabase = await createClient();
 
   await Promise.all(
-    shipmentIds.map(async (shipmentId) => {
-      if (!Number.isFinite(shipmentId)) throw new Error("Invalid shipment id");
+    labelIds.map(async (labelId) => {
+      if (typeof labelId !== "string" || labelId.length === 0)
+        throw new Error("Invalid label id");
       const { data: row, error } = await supabase
         .from("shipping_labels")
-        .select("id, user_id, voided_at, order_id")
-        .eq("shipment_id", shipmentId)
+        .select("id, user_id, voided_at, shipment_group_id")
+        .eq("label_id", labelId)
         .maybeSingle();
       if (error) throw error;
       if (!row || row.user_id !== profile.id) throw new Error("Not found");
       if (!row.voided_at) {
-        const { approved, message } = await voidLabel(shipmentId);
+        // One V2 label_id may cover multiple packages in the same shipment;
+        // voiding it voids every package in that shipment together.
+        const { approved, message } = await voidLabel(labelId);
         if (!approved)
           throw new Error(message || "Unable to void label at this time.");
 
-        const { data: updatedLabel, error: updatedLabelError } = await supabase
+        const { error: updatedLabelError } = await supabase
           .from("shipping_labels")
           .update({ voided_at: new Date().toISOString() })
-          .eq("shipment_id", shipmentId)
-          .select("*")
-          .single();
+          .eq("label_id", labelId);
         if (updatedLabelError) throw updatedLabelError;
-        if (!updatedLabel.voided_at)
-          throw new Error("Failed to update label status.");
-
-        // Using 'order_id' column, cancel the ShipStation order if all labels with the same order_id
-        // are voided or going to be voided
-        if (row.order_id) {
-          const { data: orderData, error: orderError } = await supabase
-            .from("shipping_labels")
-            .select("shipment_id, voided_at")
-            .eq("order_id", row.order_id);
-          if (orderData === null || orderError) throw orderError;
-          const allVoided = orderData.every(
-            (label) =>
-              label.voided_at !== null || label.shipment_id === shipmentId
-          );
-
-          // if all labels for this order are voided, cancel the order in ShipStation
-          if (allVoided) {
-            try {
-              await cancelOrder(row.order_id);
-            } catch (error) {
-              console.log("Error cancelling ShipStation order:", error);
-            }
-          }
-        }
       }
     })
   );
@@ -291,7 +278,6 @@ export async function createShippingLabelAction(
 ): Promise<CreateShippingLabelState> {
   try {
     const profile = await requireUserProfile();
-    console.log("here");
     const upcharge = await getUserUpcharge(profile.id).then((data) => ({
       value: data.value,
       unit: data.unit,
@@ -310,172 +296,186 @@ export async function createShippingLabelAction(
       addressValidated,
     } = await processAddressMode(toMode, formData, profile);
 
+    const warehouse = await fetchProfileWarehouseRecord(profile);
+    const shipFrom: ShipStationAddress = {
+      name: warehouse.originAddress_name,
+      company: warehouse.originAddress_company || undefined,
+      street1: warehouse.originAddress_street1,
+      street2: warehouse.originAddress_street2 || undefined,
+      city: warehouse.originAddress_city,
+      state: warehouse.originAddress_state,
+      postalCode: warehouse.originAddress_postalCode,
+      country: warehouse.originAddress_country,
+      phone: warehouse.originAddress_phone || undefined,
+      residential: warehouse.originAddress_residential,
+    };
+
     const packagesCount = Number(formData.get("packages.count")) || 1;
 
-    let createOrderResponse: ShipStationOrder | null = null;
-    if (orderNumber) {
-      createOrderResponse = await createShipStationOrder({
-        orderNumber,
-        shipTo,
-        billTo: shipTo,
-        orderDate: new Date().toISOString(),
-        orderStatus: "awaiting_shipment",
-        advancedOptions: {
-          warehouseId: profile?.warehouse_id,
-        },
-      });
-      if (!createOrderResponse) {
-        throw new Error("Failed to create order in ShipStation.");
-      }
-    }
-    const items: CreateShippingItemResult[] = [];
-
+    // Build every package spec up front - V2 creates a whole multi-package
+    // shipment in a single call, not one call per package.
+    type PackageSpec = {
+      insuranceOptions: InsuranceOption | undefined;
+      advancedOptions: AdvancedOptions | undefined;
+      weight: ShipStationWeight;
+      dimensions: {
+        length: number;
+        width: number;
+        height: number;
+        units: "inches" | "centimeters";
+      };
+    };
+    const packageSpecs: PackageSpec[] = [];
     for (let index = 0; index < packagesCount; index++) {
       const prefix = `package-${index}`;
-      try {
-        let labelResponse: ShipStationLabel | ShipStationOrderLabel;
-        const insuranceOptions = processInsuranceOption(formData, prefix);
-        const advancedOptions = processAdvancedOptions(formData, prefix);
-        const { weight, dimensions } = await processPackageMode(
-          prefix,
-          formData,
-          profile
-        );
-        if (createOrderResponse) {
-          labelResponse = await createLabelForOrder({
-            orderId: createOrderResponse.orderId,
-            shipDate: new Date().toISOString(),
-            testLabel: false,
-            carrierCode,
-            serviceCode,
-            packageCode: PACKAGE_CODE,
-            confirmation: CONFIRMATION,
-            weight,
-            dimensions,
-            ...(insuranceOptions && { insuranceOptions }),
-            ...(advancedOptions && { advancedOptions }),
-          });
-        } else {
-          labelResponse = await createLabel({
-            shipTo,
-            carrierCode,
-            serviceCode,
-            packageCode: PACKAGE_CODE,
-            confirmation: CONFIRMATION,
-            weight,
-            dimensions,
-            ...(insuranceOptions && { insuranceOptions }),
-            ...(advancedOptions && { advancedOptions }),
-          });
-        }
+      const insuranceOptions = processInsuranceOption(formData, prefix);
+      const advancedOptions = processAdvancedOptions(formData, prefix);
+      const { weight, dimensions } = await processPackageMode(
+        prefix,
+        formData,
+        profile
+      );
+      packageSpecs.push({ insuranceOptions, advancedOptions, weight, dimensions });
+    }
 
-        const upchargedShipmentCost = calculateUpchargeCost(
-          upcharge,
-          labelResponse.shipmentCost
-        );
-        const upchargedInsuranceCost = calculateUpchargeCost(
-          upcharge,
-          labelResponse.insuranceCost
-        );
+    const shipmentGroupId = crypto.randomUUID();
+    const v2Packages: V2Package[] = packageSpecs.map((spec) => ({
+      weight: {
+        value: spec.weight.value,
+        unit: WEIGHT_UNIT_MAP[spec.weight.units],
+      },
+      dimensions: {
+        unit: DIMENSION_UNIT_MAP[spec.dimensions.units],
+        length: spec.dimensions.length,
+        width: spec.dimensions.width,
+        height: spec.dimensions.height,
+      },
+      ...(spec.insuranceOptions?.insureShipment && {
+        insured_value: {
+          currency: "usd",
+          amount: spec.insuranceOptions.insuredValue,
+        },
+      }),
+    }));
+    const saturdayDelivery = packageSpecs.some(
+      (spec) => spec.advancedOptions?.saturdayDelivery
+    );
 
-        try {
-          const savedLabel = await insertShippingLabel({
-            user_id: profile.id,
-            to_address_id: toAddressRecord?.id ?? null,
-            ship_to_snapshot: shipTo,
-            length: dimensions.length,
-            width: dimensions.width,
-            height: dimensions.height,
-            units: dimensions.units,
-            weight_value: weight.value,
-            weight_unit: weight.units,
-            carrier_code: carrierCode,
-            service_code: serviceCode,
-            package_code: "package",
-            confirmation: CONFIRMATION,
-            shipment_cost: labelResponse.shipmentCost ?? null,
-            insurance_cost: labelResponse.insuranceCost ?? null,
-            total_shipment_cost: upchargedShipmentCost,
-            total_insurance_cost: upchargedInsuranceCost,
-            tracking_number: labelResponse.trackingNumber ?? null,
-            label_data_base64: labelResponse.labelData ?? null,
-            shipment_id: labelResponse.shipmentId,
-            voided_at: null,
-            paid_at: null,
-            order_number: orderNumber,
-            is_address_validated: addressValidated,
-            insurance_options: insuranceOptions ?? {
-              provider: "none",
-              insureShipment: false,
-              insuredValue: 0,
-            },
-            advanced_options: advancedOptions ?? {
-              saturdayDelivery: false,
-            },
-            order_id: createOrderResponse?.orderId,
-            ship_from_id: profile.warehouse_id,
-          });
+    let labelResponse: V2LabelResponse;
+    try {
+      labelResponse = await createShipment({
+        shipment: {
+          carrier_id: "se-96255",
+          service_code: serviceCode,
+          ship_to: toV2Address(shipTo),
+          ship_from: toV2Address(shipFrom),
+          confirmation: CONFIRMATION,
+          external_order_id: orderNumber,
+          external_shipment_id: shipmentGroupId,
+          insurance_provider: packageSpecs.some(
+            (spec) => spec.insuranceOptions?.insureShipment
+          )
+            ? "carrier"
+            : "none",
+          advanced_options: { saturday_delivery: saturdayDelivery },
+          packages: v2Packages,
+        },
+      });
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Unable to create shipment via ShipStation.";
+      return { status: "error", message };
+    }
 
-          items.push({
-            index,
-            ok: true as const,
-            savedLabel,
-            shipStationLabel: labelResponse,
-          });
-        } catch (dbErr) {
-          console.log(dbErr);
-          // best-effort rollback of the carrier label if DB insert fails
-          try {
-            if (Number.isFinite(labelResponse.shipmentId)) {
-              await voidLabel(labelResponse.shipmentId);
-            }
-          } catch (voidErr) {
-            console.log("voidLabel after DB failure failed:", voidErr);
-          }
-          throw new Error(
-            dbErr instanceof Error
-              ? dbErr.message
-              : "Failed to save shipping label."
-          );
-        }
-      } catch (err) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : "Unable to create label for this package.";
+    const upchargedShipmentCost = calculateUpchargeCost(
+      upcharge,
+      labelResponse.shipment_cost.amount
+    );
+    const upchargedInsuranceCost = calculateUpchargeCost(
+      upcharge,
+      labelResponse.insurance_cost.amount
+    );
+    const isMultiPackage = labelResponse.packages.length > 1;
 
-        items.push({
-          index,
-          ok: false as const,
-          error: message,
-          savedLabel: undefined,
-          shipStationLabel: undefined,
+    console.log('labelResponse: ', labelResponse)
+
+    const items: CreateShippingItemResult[] = [];
+    try {
+      for (let index = 0; index < labelResponse.packages.length; index++) {
+        const pkgResult = labelResponse.packages[index];
+        const spec = packageSpecs[index];
+        const savedLabel = await insertShippingLabel({
+          user_id: profile.id,
+          to_address_id: toAddressRecord?.id ?? null,
+          ship_to_snapshot: shipTo,
+          length: spec.dimensions.length,
+          width: spec.dimensions.width,
+          height: spec.dimensions.height,
+          units: spec.dimensions.units,
+          weight_value: spec.weight.value,
+          weight_unit: spec.weight.units,
+          carrier_code: carrierCode,
+          service_code: serviceCode,
+          package_code: "package",
+          confirmation: CONFIRMATION,
+          shipment_cost: labelResponse.shipment_cost.amount,
+          insurance_cost: labelResponse.insurance_cost.amount,
+          total_shipment_cost: upchargedShipmentCost,
+          total_insurance_cost: upchargedInsuranceCost,
+          tracking_number: pkgResult.tracking_number,
+          label_data_base64: labelResponse.label_download?.pdf ?? null,
+          shipment_id: labelResponse.shipment_id,
+          label_id: labelResponse.label_id,
+          shipment_group_id: shipmentGroupId,
+          parent_tracking_number: isMultiPackage
+            ? labelResponse.tracking_number
+            : null,
+          package_sequence: isMultiPackage ? index + 1 : null,
+          voided_at: null,
+          paid_at: null,
+          order_number: orderNumber,
+          is_address_validated: addressValidated,
+          insurance_options: spec.insuranceOptions ?? {
+            provider: "none",
+            insureShipment: false,
+            insuredValue: 0,
+          },
+          advanced_options: spec.advancedOptions ?? {
+            saturdayDelivery: false,
+          },
+          ship_from_id: profile.warehouse_id,
         });
+
+        items.push({ index, ok: true as const, savedLabel });
       }
+    } catch (dbErr) {
+      console.log(dbErr);
+      // best-effort rollback of the whole carrier shipment if any DB insert fails
+      try {
+        console.log('voiding!')
+        await voidLabel(labelResponse.label_id);
+      } catch (voidErr) {
+        console.log("voidLabel after DB failure failed:", voidErr);
+      }
+      const message =
+        dbErr instanceof Error
+          ? dbErr.message
+          : "Failed to save shipping label.";
+      return { status: "error", message };
     }
 
     const successCount = items.filter((it) => it.ok).length;
     const total = items.length;
-
-    const status =
-      successCount === 0
-        ? "error"
-        : successCount === total
-        ? "success"
-        : "partial";
 
     if (successCount > 0) await incrementOrderNumberSequence();
 
     revalidatePath("/dashboard");
 
     return {
-      status, // "success" | "partial" | "error"
-      message:
-        status === "success"
-          ? "All labels created successfully."
-          : status === "partial"
-          ? `${successCount}/${total} labels created.`
-          : "No labels were created.",
+      status: "success",
+      message: "All labels created successfully.",
       items,
     };
   } catch (error) {
@@ -490,23 +490,6 @@ export async function createShippingLabelAction(
       message,
     };
   }
-}
-
-async function createShipStationOrder(payload: CreateOrderPayload) {
-  const { orderNumber } = payload;
-
-  const existingOrders = await listOrders({ orderNumber });
-
-  if (existingOrders.total > 0) {
-    const valid = existingOrders.orders.filter(
-      (order) => order.orderStatus !== "cancelled"
-    );
-    if (valid.length > 0) {
-      console.log("Using existing ShipStation order:", valid[0].orderId);
-      return valid[0];
-    }
-  }
-  return createOrder(payload);
 }
 
 function processInsuranceOption(
