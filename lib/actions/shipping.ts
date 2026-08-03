@@ -148,7 +148,7 @@ function parseWeight(formData: FormData, prefix: string): ShipStationWeight {
 
 function parseDimensions(
   formData: FormData,
-  prefix: string
+  prefix: string,
 ): {
   length: number;
   width: number;
@@ -169,13 +169,13 @@ function parseDimensions(
   }
 
   const length = Number.parseFloat(
-    (formData.get(`${prefix}.dimensions.length`) as string) ?? "0"
+    (formData.get(`${prefix}.dimensions.length`) as string) ?? "0",
   );
   const width = Number.parseFloat(
-    (formData.get(`${prefix}.dimensions.width`) as string) ?? "0"
+    (formData.get(`${prefix}.dimensions.width`) as string) ?? "0",
   );
   const height = Number.parseFloat(
-    (formData.get(`${prefix}.dimensions.height`) as string) ?? "0"
+    (formData.get(`${prefix}.dimensions.height`) as string) ?? "0",
   );
   const units =
     (formData.get(`${prefix}.dimensions.unit`) as string) ?? "inches";
@@ -218,10 +218,10 @@ export type CreateShippingLabelState = {
 };
 
 export async function voidShippingLabelAction(
-  formData: FormData
+  formData: FormData,
 ): Promise<{ success: boolean; message: string }> {
   const shipmentIds = JSON.parse(
-    formData.get("shipment_ids") as string
+    formData.get("shipment_ids") as string,
   ) as number[];
   const path = formData.get("path") as string;
   if (!Array.isArray(shipmentIds) || shipmentIds.length === 0)
@@ -265,7 +265,7 @@ export async function voidShippingLabelAction(
           if (orderData === null || orderError) throw orderError;
           const allVoided = orderData.every(
             (label) =>
-              label.voided_at !== null || label.shipment_id === shipmentId
+              label.voided_at !== null || label.shipment_id === shipmentId,
           );
 
           // if all labels for this order are voided, cancel the order in ShipStation
@@ -278,7 +278,7 @@ export async function voidShippingLabelAction(
           }
         }
       }
-    })
+    }),
   );
 
   revalidatePath(path);
@@ -287,7 +287,7 @@ export async function voidShippingLabelAction(
 
 export async function createShippingLabelAction(
   _: CreateShippingLabelState,
-  formData: FormData
+  formData: FormData,
 ): Promise<CreateShippingLabelState> {
   try {
     const profile = await requireUserProfile();
@@ -339,7 +339,7 @@ export async function createShippingLabelAction(
         const { weight, dimensions } = await processPackageMode(
           prefix,
           formData,
-          profile
+          profile,
         );
         if (createOrderResponse) {
           labelResponse = await createLabelForOrder({
@@ -371,11 +371,11 @@ export async function createShippingLabelAction(
 
         const upchargedShipmentCost = calculateUpchargeCost(
           upcharge,
-          labelResponse.shipmentCost
+          labelResponse.shipmentCost,
         );
         const upchargedInsuranceCost = calculateUpchargeCost(
           upcharge,
-          labelResponse.insuranceCost
+          labelResponse.insuranceCost,
         );
 
         try {
@@ -435,7 +435,7 @@ export async function createShippingLabelAction(
           throw new Error(
             dbErr instanceof Error
               ? dbErr.message
-              : "Failed to save shipping label."
+              : "Failed to save shipping label.",
           );
         }
       } catch (err) {
@@ -461,8 +461,8 @@ export async function createShippingLabelAction(
       successCount === 0
         ? "error"
         : successCount === total
-        ? "success"
-        : "partial";
+          ? "success"
+          : "partial";
 
     if (successCount > 0) await incrementOrderNumberSequence();
 
@@ -474,8 +474,8 @@ export async function createShippingLabelAction(
         status === "success"
           ? "All labels created successfully."
           : status === "partial"
-          ? `${successCount}/${total} labels created.`
-          : "No labels were created.",
+            ? `${successCount}/${total} labels created.`
+            : "No labels were created.",
       items,
     };
   } catch (error) {
@@ -499,7 +499,9 @@ async function createShipStationOrder(payload: CreateOrderPayload) {
 
   if (existingOrders.total > 0) {
     const valid = existingOrders.orders.filter(
-      (order) => order.orderStatus !== "cancelled"
+      (order) =>
+        order.orderNumber === orderNumber &&
+        order.orderStatus !== "cancelled",
     );
     if (valid.length > 0) {
       console.log("Using existing ShipStation order:", valid[0].orderId);
@@ -511,17 +513,17 @@ async function createShipStationOrder(payload: CreateOrderPayload) {
 
 function processInsuranceOption(
   formData: FormData,
-  prefix: string
+  prefix: string,
 ): InsuranceOption | undefined {
   const provider = formData.get(
-    `${prefix}.insuranceOptions.provider`
+    `${prefix}.insuranceOptions.provider`,
   ) as string as InsuranceOption["provider"];
   if (typeof provider !== "string" || provider === "none") {
     return undefined;
   }
 
   const insuredValue = Number(
-    formData.get(`${prefix}.insuranceOptions.insuredValue`)
+    formData.get(`${prefix}.insuranceOptions.insuredValue`),
   );
   if (!Number.isFinite(insuredValue) || insuredValue <= 0) {
     return undefined;
@@ -536,11 +538,11 @@ function processInsuranceOption(
 
 function processAdvancedOptions(
   formData: FormData,
-  prefix: string
+  prefix: string,
 ): AdvancedOptions | undefined {
   const options: AdvancedOptions = { saturdayDelivery: false };
   const saturdayDelivery = formData.get(
-    `${prefix}.advancedOptions.saturday_delivery`
+    `${prefix}.advancedOptions.saturday_delivery`,
   );
   if (saturdayDelivery === "on") options.saturdayDelivery = true;
 
@@ -550,7 +552,7 @@ function processAdvancedOptions(
 
 function calculateUpchargeCost(
   upcharge: { value: number; unit: string },
-  totalShipmentCost: number
+  totalShipmentCost: number,
 ): number {
   const { value: upchargeValue, unit: upchargeUnit } = upcharge;
 
@@ -574,7 +576,7 @@ function calculateUpchargeCost(
 async function processAddressMode(
   mode: AddressMode,
   formData: FormData,
-  profile: UserProfile
+  profile: UserProfile,
 ) {
   let shipAddress: ShipStationAddress;
   let addressRecord: AddressRecord | null = null;
@@ -606,7 +608,7 @@ async function processAddressMode(
 async function processPackageMode(
   prefix: string,
   formData: FormData,
-  profile: UserProfile
+  profile: UserProfile,
 ) {
   const id = formData.get(`${prefix}.id`);
   const savePackage = formData.get(`${prefix}.save`) === "on";
