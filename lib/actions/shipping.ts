@@ -16,6 +16,7 @@ import {
   type ShippingLabelRecord,
 } from "@/lib/supabase/shipping-labels";
 import { createShipment, voidLabel } from "@/lib/shipstation/client";
+import { cancelSeAutoOrders } from "@/lib/shipstation/v1-client";
 import {
   AdvancedOptions,
   InsuranceOption,
@@ -387,6 +388,15 @@ export async function createShippingLabelAction(
           ? err.message
           : "Unable to create shipment via ShipStation.";
       return { status: "error", message };
+    }
+
+    try {
+      const { cancelled, orderNumbers } = await cancelSeAutoOrders();
+      if (cancelled > 0) {
+        console.log("Cancelled SEAuto orders:", orderNumbers);
+      }
+    } catch (cleanupErr) {
+      console.log("cancelSeAutoOrders failed:", cleanupErr);
     }
 
     const upchargedShipmentCost = calculateUpchargeCost(
