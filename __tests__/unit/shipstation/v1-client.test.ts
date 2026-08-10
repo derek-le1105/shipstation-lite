@@ -86,7 +86,7 @@ describe("cancelSeAutoOrders", () => {
     expect(headers.Authorization).toBe(`Basic ${expectedAuth}`);
   });
 
-  it("pages through multiple result pages", async () => {
+  it("only processes the first page of results, even when more pages exist", async () => {
     const orderA = {
       orderId: 1,
       orderNumber: "SEAuto-1",
@@ -119,8 +119,15 @@ describe("cancelSeAutoOrders", () => {
     const { cancelSeAutoOrders } = await import("@/lib/shipstation/v1-client");
     const result = await cancelSeAutoOrders();
 
-    expect(result.cancelled).toBe(2);
-    expect(result.orderNumbers.sort()).toEqual(["SEAuto-1", "SEAuto-2"]);
+    expect(result).toEqual({ cancelled: 1, orderNumbers: ["SEAuto-1"] });
+
+    const getCalls = fetchMock.mock.calls.filter(
+      ([, init]) => (init as RequestInit | undefined)?.method !== "POST"
+    );
+    expect(getCalls).toHaveLength(1);
+    expect(new URL(getCalls[0][0] as string).searchParams.get("page")).toBe(
+      "1"
+    );
   });
 
   it("does not let one failed cancel stop the others from succeeding", async () => {

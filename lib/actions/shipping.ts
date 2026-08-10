@@ -390,15 +390,6 @@ export async function createShippingLabelAction(
       return { status: "error", message };
     }
 
-    try {
-      const { cancelled, orderNumbers } = await cancelSeAutoOrders();
-      if (cancelled > 0) {
-        console.log("Cancelled SEAuto orders:", orderNumbers);
-      }
-    } catch (cleanupErr) {
-      console.log("cancelSeAutoOrders failed:", cleanupErr);
-    }
-
     const upchargedShipmentCost = calculateUpchargeCost(
       upcharge,
       labelResponse.shipment_cost.amount
@@ -480,6 +471,15 @@ export async function createShippingLabelAction(
     const total = items.length;
 
     if (successCount > 0) await incrementOrderNumberSequence();
+
+    try {
+      const { cancelled, orderNumbers } = await cancelSeAutoOrders();
+      if (cancelled > 0) {
+        console.log("Cancelled SEAuto orders:", orderNumbers);
+      }
+    } catch (cleanupErr) {
+      console.error("cancelSeAutoOrders failed:", cleanupErr);
+    }
 
     revalidatePath("/dashboard");
 

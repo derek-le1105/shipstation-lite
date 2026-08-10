@@ -42,6 +42,7 @@ async function v1Request<TResponse>(
     cache: "no-store",
     ...init,
     headers,
+    signal: AbortSignal.timeout(10_000),
   });
 
   if (!response.ok) {
@@ -71,27 +72,20 @@ async function listSeAutoOrdersPage(page: number): Promise<V1OrdersListResponse>
   );
 }
 
-async function listAllSeAutoOrders(): Promise<V1Order[]> {
-  const allOrders: V1Order[] = [];
-  let page = 1;
-  while (true) {
-    const { orders, pages } = await listSeAutoOrdersPage(page);
-    allOrders.push(...orders);
-    if (page >= pages) break;
-    page += 1;
-  }
-  return allOrders;
-}
-
 /**
- * Cancels every SEAuto- prefixed, still-open ShipStation order.
+ * Cancels SEAuto- prefixed, still-open ShipStation orders from the first
+ * page of results only. This runs after every label creation, so any
+ * backlog beyond one page drains gradually across subsequent calls rather
+ * than needing to be cleared in a single pass (which would risk fanning out
+ * too many concurrent cancel requests and hitting ShipStation's V1 rate
+ * limits).
  * See docs/superpowers/specs/2026-08-10-seauto-order-cleanup-design.md.
  */
 export async function cancelSeAutoOrders(): Promise<{
   cancelled: number;
   orderNumbers: string[];
 }> {
-  const orders = await listAllSeAutoOrders();
+  const { orders } = await listSeAutoOrdersPage(1);
 
   const results = await Promise.allSettled(
     orders.map((order) =>
@@ -107,7 +101,7 @@ export async function cancelSeAutoOrders(): Promise<{
     if (result.status === "fulfilled") {
       orderNumbers.push(result.value);
     } else {
-      console.log("Failed to cancel SEAuto order:", result.reason);
+      console.error("Failed to cancel SEAuto order:", result.reason);
     }
   }
 
