@@ -61,6 +61,7 @@ export type V2CreateShipmentPayload = {
     insurance_provider?: "none" | "shipsurance" | "carrier" | "third_party";
     advanced_options?: V2AdvancedOptions;
     packages: V2Package[];
+    create_sales_order?: boolean;
   };
   test_label?: boolean;
 };

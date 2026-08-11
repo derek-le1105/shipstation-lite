@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "../supabase/server";
-import { voidLabel } from "../shipstation/client";
+import { voidLabel, cancelShipment } from "../shipstation/client";
 import type { ShipStationAddressSnapshot } from "../supabase/shipping-labels";
 
 type CheckDuplicateOrderResult = {
@@ -183,6 +183,15 @@ export async function voidShippingLabel(
       .single();
 
     if (error || !data) return { message: error.message, success: false };
+
+    if (data.shipment_id) {
+      try {
+        await cancelShipment(data.shipment_id);
+      } catch (cancelErr) {
+        console.log("cancelShipment failed:", cancelErr);
+      }
+    }
+
     revalidatePath(`${type}/labels`);
     return {
       message: "Succesfully voided label",
@@ -214,6 +223,22 @@ export async function bulkVoidShippingLabels(
       .select("*");
 
     if (error || !data) return { message: error.message, success: false };
+
+    await Promise.all(
+      data
+        .filter(
+          (label): label is typeof label & { shipment_id: string } =>
+            !!label.shipment_id,
+        )
+        .map(async (label) => {
+          try {
+            await cancelShipment(label.shipment_id);
+          } catch (cancelErr) {
+            console.log("cancelShipment failed:", cancelErr);
+          }
+        }),
+    );
+
     revalidatePath(`${type}/labels`);
 
     return {

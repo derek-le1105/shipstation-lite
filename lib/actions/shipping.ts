@@ -15,7 +15,11 @@ import {
   incrementOrderNumberSequence,
   type ShippingLabelRecord,
 } from "@/lib/supabase/shipping-labels";
-import { createShipment, voidLabel } from "@/lib/shipstation/client";
+import {
+  createShipment,
+  voidLabel,
+  cancelShipment,
+} from "@/lib/shipstation/client";
 import {
   AdvancedOptions,
   InsuranceOption,
@@ -257,7 +261,7 @@ export async function voidShippingLabelAction(
         throw new Error("Invalid label id");
       const { data: row, error } = await supabase
         .from("shipping_labels")
-        .select("id, user_id, voided_at, shipment_group_id")
+        .select("id, user_id, voided_at, shipment_group_id, shipment_id")
         .eq("label_id", labelId)
         .maybeSingle();
       if (error) throw error;
@@ -274,6 +278,14 @@ export async function voidShippingLabelAction(
           .update({ voided_at: new Date().toISOString() })
           .eq("label_id", labelId);
         if (updatedLabelError) throw updatedLabelError;
+
+        if (row.shipment_id) {
+          try {
+            await cancelShipment(row.shipment_id);
+          } catch (cancelErr) {
+            console.log("cancelShipment failed:", cancelErr);
+          }
+        }
       }
     }),
   );
@@ -387,6 +399,7 @@ export async function createShippingLabelAction(
           confirmation: CONFIRMATION,
           external_order_id: orderNumber,
           external_shipment_id: orderNumber,
+          create_sales_order: true,
           insurance_provider: packageSpecs.some(
             (spec) => spec.insuranceOptions?.insureShipment,
           )

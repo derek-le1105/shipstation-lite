@@ -103,7 +103,17 @@ export async function voidLabel(labelId: string): Promise<VoidLabelResponse> {
     approved: boolean;
     message?: string;
   }>(`/v2/labels/${labelId}/void`, { method: "PUT" });
-  return { approved: result.approved, message: result.message };
+  return result;
+}
+
+/**
+ * Cancels a V2 shipment. Any labels on the shipment must already be voided -
+ * ShipStation rejects the cancel otherwise. Responds 204 on success.
+ */
+export async function cancelShipment(shipmentId: string): Promise<void> {
+  await shipStationRequest<void>(`/v2/shipments/${shipmentId}/cancel`, {
+    method: "PUT",
+  });
 }
 
 /**
