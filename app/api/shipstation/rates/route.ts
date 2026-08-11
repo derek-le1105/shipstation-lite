@@ -8,7 +8,10 @@ import type { V2RateRequest } from "@/lib/shipstation/v2-types";
 import { fetchProfileWarehouseRecord } from "@/lib/supabase/warehouses";
 import type { WarehouseRecord } from "@/lib/supabase/warehouses";
 
-const WEIGHT_UNIT_MAP: Record<string, V2RateRequest["shipment"]["packages"][number]["weight"]["unit"]> = {
+const WEIGHT_UNIT_MAP: Record<
+  string,
+  V2RateRequest["shipment"]["packages"][number]["weight"]["unit"]
+> = {
   ounces: "ounce",
   pounds: "pound",
   grams: "gram",
@@ -19,7 +22,11 @@ function toV2RateRequest(
   shipFrom: WarehouseRecord,
 ): V2RateRequest {
   return {
-    rate_options: { carrier_ids: [], service_codes: payload.serviceCode ? [payload.serviceCode] : undefined },
+    rate_options: {
+      rate_type: "quick",
+      carrier_ids: [],
+      service_codes: payload.serviceCode ? [payload.serviceCode] : undefined,
+    },
     shipment: {
       ship_from: {
         name: shipFrom.originAddress_name,
@@ -56,7 +63,10 @@ function toV2RateRequest(
           },
           ...(payload.dimensions && {
             dimensions: {
-              unit: payload.dimensions.units === "centimeters" ? "centimeter" : "inch",
+              unit:
+                payload.dimensions.units === "centimeters"
+                  ? "centimeter"
+                  : "inch",
               length: payload.dimensions.length,
               width: payload.dimensions.width,
               height: payload.dimensions.height,

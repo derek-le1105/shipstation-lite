@@ -31,7 +31,7 @@ function getConfig() {
   const apiKey = process.env.SHIPSTATION_V2_API_KEY;
   if (!apiKey) {
     throw new Error(
-      "ShipStation V2 API credentials are not configured. Please set SHIPSTATION_V2_API_KEY."
+      "ShipStation V2 API credentials are not configured. Please set SHIPSTATION_V2_API_KEY.",
     );
   }
 
@@ -42,7 +42,9 @@ function getConfig() {
 
 async function shipStationRequest<TResponse>(
   path: string,
-  init: Omit<RequestInit, "headers"> & { headers?: Record<string, string> } = {}
+  init: Omit<RequestInit, "headers"> & {
+    headers?: Record<string, string>;
+  } = {},
 ): Promise<TResponse> {
   const { base, apiKey } = getConfig();
 
@@ -88,7 +90,7 @@ async function shipStationRequest<TResponse>(
  * plus a tracking_number per package in the packages[] array.
  */
 export async function createShipment(
-  payload: V2CreateShipmentPayload
+  payload: V2CreateShipmentPayload,
 ): Promise<V2LabelResponse> {
   return shipStationRequest<V2LabelResponse>("/v2/labels", {
     method: "POST",
@@ -97,10 +99,10 @@ export async function createShipment(
 }
 
 export async function voidLabel(labelId: string): Promise<VoidLabelResponse> {
-  const result = await shipStationRequest<{ approved: boolean; message?: string }>(
-    `/v2/labels/${labelId}/void`,
-    { method: "PUT" }
-  );
+  const result = await shipStationRequest<{
+    approved: boolean;
+    message?: string;
+  }>(`/v2/labels/${labelId}/void`, { method: "PUT" });
   return { approved: result.approved, message: result.message };
 }
 
@@ -110,12 +112,12 @@ export async function voidLabel(labelId: string): Promise<VoidLabelResponse> {
  * when no shipment exists yet for this id (nothing to reuse).
  */
 export async function getShipmentByExternalId(
-  externalShipmentId: string
+  externalShipmentId: string,
 ): Promise<{ shipment_id: string } | null> {
   try {
     return await shipStationRequest<{ shipment_id: string }>(
       `/v2/shipments/external_shipment_id/${externalShipmentId}`,
-      { method: "GET" }
+      { method: "GET" },
     );
   } catch {
     return null;
@@ -124,7 +126,7 @@ export async function getShipmentByExternalId(
 
 async function fetchFedexCarrier(): Promise<V2Carrier | null> {
   const { carriers } = await shipStationRequest<{ carriers: V2Carrier[] }>(
-    "/v2/carriers"
+    "/v2/carriers",
   );
   return carriers.find((carrier) => carrier.carrier_code === "fedex") ?? null;
 }

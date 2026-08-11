@@ -48,7 +48,12 @@ export type V2CreateShipmentPayload = {
     service_code: string;
     ship_to: V2Address;
     ship_from: V2Address;
-    confirmation?: "none" | "delivery" | "signature" | "adult_signature" | "direct_signature";
+    confirmation?:
+      | "none"
+      | "delivery"
+      | "signature"
+      | "adult_signature"
+      | "direct_signature";
     warehouse_id?: number;
     external_order_id: string | null;
     external_shipment_id: string | null;
@@ -117,6 +122,7 @@ export type V2PackageType = {
 
 export type V2RateRequest = {
   rate_options: {
+    rate_type: string;
     carrier_ids: string[];
     service_codes?: string[];
   };

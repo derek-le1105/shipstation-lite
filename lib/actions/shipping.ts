@@ -16,14 +16,17 @@ import {
   type ShippingLabelRecord,
 } from "@/lib/supabase/shipping-labels";
 import { createShipment, voidLabel } from "@/lib/shipstation/client";
-import { cancelSeAutoOrders } from "@/lib/shipstation/v1-client";
 import {
   AdvancedOptions,
   InsuranceOption,
   type ShipStationAddress,
   type ShipStationWeight,
 } from "@/lib/shipstation/types";
-import type { V2Address, V2LabelResponse, V2Package } from "@/lib/shipstation/v2-types";
+import type {
+  V2Address,
+  V2LabelResponse,
+  V2Package,
+} from "@/lib/shipstation/v2-types";
 import { createClient } from "../supabase/server";
 import { getUserUpcharge } from "../supabase/admin";
 import {
@@ -111,13 +114,19 @@ function inputToShipStationAddress(input: AddressInput): ShipStationAddress {
   };
 }
 
-const WEIGHT_UNIT_MAP: Record<ShipStationWeight["units"], V2Package["weight"]["unit"]> = {
+const WEIGHT_UNIT_MAP: Record<
+  ShipStationWeight["units"],
+  V2Package["weight"]["unit"]
+> = {
   ounces: "ounce",
   pounds: "pound",
   grams: "gram",
 };
 
-const DIMENSION_UNIT_MAP: Record<"inches" | "centimeters", "inch" | "centimeter"> = {
+const DIMENSION_UNIT_MAP: Record<
+  "inches" | "centimeters",
+  "inch" | "centimeter"
+> = {
   inches: "inch",
   centimeters: "centimeter",
 };
@@ -164,7 +173,7 @@ function parseWeight(formData: FormData, prefix: string): ShipStationWeight {
 
 function parseDimensions(
   formData: FormData,
-  prefix: string
+  prefix: string,
 ): {
   length: number;
   width: number;
@@ -185,13 +194,13 @@ function parseDimensions(
   }
 
   const length = Number.parseFloat(
-    (formData.get(`${prefix}.dimensions.length`) as string) ?? "0"
+    (formData.get(`${prefix}.dimensions.length`) as string) ?? "0",
   );
   const width = Number.parseFloat(
-    (formData.get(`${prefix}.dimensions.width`) as string) ?? "0"
+    (formData.get(`${prefix}.dimensions.width`) as string) ?? "0",
   );
   const height = Number.parseFloat(
-    (formData.get(`${prefix}.dimensions.height`) as string) ?? "0"
+    (formData.get(`${prefix}.dimensions.height`) as string) ?? "0",
   );
   const units =
     (formData.get(`${prefix}.dimensions.unit`) as string) ?? "inches";
@@ -232,7 +241,7 @@ export type CreateShippingLabelState = {
 };
 
 export async function voidShippingLabelAction(
-  formData: FormData
+  formData: FormData,
 ): Promise<{ success: boolean; message: string }> {
   const labelIds = JSON.parse(formData.get("label_ids") as string) as string[];
   const path = formData.get("path") as string;
@@ -266,7 +275,7 @@ export async function voidShippingLabelAction(
           .eq("label_id", labelId);
         if (updatedLabelError) throw updatedLabelError;
       }
-    })
+    }),
   );
 
   revalidatePath(path);
@@ -275,7 +284,7 @@ export async function voidShippingLabelAction(
 
 export async function createShippingLabelAction(
   _: CreateShippingLabelState,
-  formData: FormData
+  formData: FormData,
 ): Promise<CreateShippingLabelState> {
   try {
     const profile = await requireUserProfile();
@@ -334,9 +343,14 @@ export async function createShippingLabelAction(
       const { weight, dimensions } = await processPackageMode(
         prefix,
         formData,
-        profile
+        profile,
       );
-      packageSpecs.push({ insuranceOptions, advancedOptions, weight, dimensions });
+      packageSpecs.push({
+        insuranceOptions,
+        advancedOptions,
+        weight,
+        dimensions,
+      });
     }
 
     const shipmentGroupId = crypto.randomUUID();
@@ -359,7 +373,7 @@ export async function createShippingLabelAction(
       }),
     }));
     const saturdayDelivery = packageSpecs.some(
-      (spec) => spec.advancedOptions?.saturdayDelivery
+      (spec) => spec.advancedOptions?.saturdayDelivery,
     );
 
     let labelResponse: V2LabelResponse;
@@ -372,9 +386,9 @@ export async function createShippingLabelAction(
           ship_from: toV2Address(shipFrom),
           confirmation: CONFIRMATION,
           external_order_id: orderNumber,
-          external_shipment_id: shipmentGroupId,
+          external_shipment_id: orderNumber,
           insurance_provider: packageSpecs.some(
-            (spec) => spec.insuranceOptions?.insureShipment
+            (spec) => spec.insuranceOptions?.insureShipment,
           )
             ? "carrier"
             : "none",
@@ -392,15 +406,13 @@ export async function createShippingLabelAction(
 
     const upchargedShipmentCost = calculateUpchargeCost(
       upcharge,
-      labelResponse.shipment_cost.amount
+      labelResponse.shipment_cost.amount,
     );
     const upchargedInsuranceCost = calculateUpchargeCost(
       upcharge,
-      labelResponse.insurance_cost.amount
+      labelResponse.insurance_cost.amount,
     );
     const isMultiPackage = labelResponse.packages.length > 1;
-
-    console.log('labelResponse: ', labelResponse)
 
     const items: CreateShippingItemResult[] = [];
     try {
@@ -455,7 +467,7 @@ export async function createShippingLabelAction(
       console.log(dbErr);
       // best-effort rollback of the whole carrier shipment if any DB insert fails
       try {
-        console.log('voiding!')
+        console.log("voiding!");
         await voidLabel(labelResponse.label_id);
       } catch (voidErr) {
         console.log("voidLabel after DB failure failed:", voidErr);
@@ -471,15 +483,6 @@ export async function createShippingLabelAction(
     const total = items.length;
 
     if (successCount > 0) await incrementOrderNumberSequence();
-
-    try {
-      const { cancelled, orderNumbers } = await cancelSeAutoOrders();
-      if (cancelled > 0) {
-        console.log("Cancelled SEAuto orders:", orderNumbers);
-      }
-    } catch (cleanupErr) {
-      console.error("cancelSeAutoOrders failed:", cleanupErr);
-    }
 
     revalidatePath("/dashboard");
 
@@ -504,17 +507,17 @@ export async function createShippingLabelAction(
 
 function processInsuranceOption(
   formData: FormData,
-  prefix: string
+  prefix: string,
 ): InsuranceOption | undefined {
   const provider = formData.get(
-    `${prefix}.insuranceOptions.provider`
+    `${prefix}.insuranceOptions.provider`,
   ) as string as InsuranceOption["provider"];
   if (typeof provider !== "string" || provider === "none") {
     return undefined;
   }
 
   const insuredValue = Number(
-    formData.get(`${prefix}.insuranceOptions.insuredValue`)
+    formData.get(`${prefix}.insuranceOptions.insuredValue`),
   );
   if (!Number.isFinite(insuredValue) || insuredValue <= 0) {
     return undefined;
@@ -529,11 +532,11 @@ function processInsuranceOption(
 
 function processAdvancedOptions(
   formData: FormData,
-  prefix: string
+  prefix: string,
 ): AdvancedOptions | undefined {
   const options: AdvancedOptions = { saturdayDelivery: false };
   const saturdayDelivery = formData.get(
-    `${prefix}.advancedOptions.saturday_delivery`
+    `${prefix}.advancedOptions.saturday_delivery`,
   );
   if (saturdayDelivery === "on") options.saturdayDelivery = true;
 
@@ -543,7 +546,7 @@ function processAdvancedOptions(
 
 function calculateUpchargeCost(
   upcharge: { value: number; unit: string },
-  totalShipmentCost: number
+  totalShipmentCost: number,
 ): number {
   const { value: upchargeValue, unit: upchargeUnit } = upcharge;
 
@@ -567,7 +570,7 @@ function calculateUpchargeCost(
 async function processAddressMode(
   mode: AddressMode,
   formData: FormData,
-  profile: UserProfile
+  profile: UserProfile,
 ) {
   let shipAddress: ShipStationAddress;
   let addressRecord: AddressRecord | null = null;
@@ -599,7 +602,7 @@ async function processAddressMode(
 async function processPackageMode(
   prefix: string,
   formData: FormData,
-  profile: UserProfile
+  profile: UserProfile,
 ) {
   const id = formData.get(`${prefix}.id`);
   const savePackage = formData.get(`${prefix}.save`) === "on";
