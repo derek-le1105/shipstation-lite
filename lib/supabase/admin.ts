@@ -17,7 +17,7 @@ export function createAdminClient() {
 
   if (!url || !serviceKey) {
     throw new Error(
-      "Missing Supabase service role configuration. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
+      "Missing Supabase service role configuration. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
     );
   }
 
@@ -34,6 +34,7 @@ export async function getUserUpcharge(userId: string): Promise<UserUpcharge> {
   const { data, error } = await supabase
     .rpc("get_user_upcharge", { p_user_id: userId })
     .maybeSingle();
+
   if (error) {
     console.error("Error fetching user upcharge:", error);
     throw error;
@@ -47,13 +48,13 @@ export async function getUserUpcharge(userId: string): Promise<UserUpcharge> {
       updated_at: "",
     };
   }
-  return data;
+  return data as UserUpcharge;
 }
 
 export async function upsertUserUpcharge(
   userId: string,
   unit: "dollars" | "percent",
-  value: number
+  value: number,
 ) {
   const supabase = createAdminClient();
   const upsert = await supabase.rpc("upsert_user_upcharge", {
