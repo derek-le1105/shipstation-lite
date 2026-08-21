@@ -36,6 +36,7 @@ interface Label {
   weight: number;
   service_code: string;
   package_code: string;
+  shipmentId: number;
 }
 
 /**
@@ -134,6 +135,10 @@ function validateRequestBody(body: unknown): body is CreateLabelRequest {
       typeof l.shipmentCost !== "number" ||
       typeof l.labelData !== "string"
     ) {
+      return false;
+    }
+
+    if (typeof l.shipmentId !== "number" || l.shipmentId === null) {
       return false;
     }
 
@@ -336,7 +341,7 @@ export async function POST(
         confirmation: null,
         insurance_cost: 0,
         total_insurance_cost: 0,
-        shipment_id: 0,
+        shipment_id: label.shipmentId,
         is_address_validated: false,
       }),
     );
