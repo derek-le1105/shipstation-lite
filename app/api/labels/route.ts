@@ -37,6 +37,7 @@ interface Label {
   service_code: string;
   package_code: string;
   shipmentId: number;
+  orderId: number;
 }
 
 /**
@@ -334,7 +335,7 @@ export async function POST(
         height: label.height,
         units: "inches",
         weight_value: label.weight,
-        weight_unit: "lb",
+        weight_unit: "pounds",
         carrier_code: "fedex",
         service_code: label.service_code,
         package_code: label.package_code,
@@ -342,6 +343,7 @@ export async function POST(
         insurance_cost: 0,
         total_insurance_cost: 0,
         shipment_id: label.shipmentId,
+        order_id: label.orderId,
         is_address_validated: false,
       }),
     );
